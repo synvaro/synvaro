@@ -1,0 +1,39 @@
+# Data model v0.1
+
+**Design draft, not migrated schema.** Every table has UUID id and timestamps unless otherwise noted.
+
+| Entity | Key fields / foreign keys |
+|---|---|
+| organizations | name, slug, status |
+| users | email, name, status |
+| organization_members | organization_id, user_id, role |
+| brands | organization_id, name, slug, status |
+| brand_profiles | brand_id, tone, languages, audience, guidelines |
+| brand_locations | brand_id, name, address, status |
+| social_accounts | brand_id, platform, external_account_id, status |
+| social_credentials | social_account_id, encrypted_token_ref, scopes, expires_at |
+| campaigns | brand_id, title, dates, objective |
+| content_ideas | brand_id, campaign_id?, brief, status |
+| contents | brand_id, idea_id?, title, type, status |
+| content_revisions | content_id, revision_no, body, created_by, immutable_snapshot |
+| content_variants | content_revision_id, platform, caption, status |
+| assets | brand_id, storage_key, mime_type, origin, metadata |
+| content_assets | content_variant_id, asset_id, position, purpose |
+| generation_jobs | brand_id, content_id?, type, provider, model, status, cost_usd |
+| generation_outputs | generation_job_id, asset_id?, text_output?, metadata |
+| publications | content_variant_id, social_account_id, scheduled_at, published_at, status, external_post_id, idempotency_key |
+| publication_attempts | publication_id, attempted_at, status, error_code, response |
+| products | brand_id, sku?, name, description, status |
+| product_facts | product_id, key, value, verified_at, valid_until |
+| offers | brand_id, product_id?, location_id?, price, currency, starts_at, ends_at |
+| content_reviews | content_revision_id, reviewer_id, decision, reviewed_at |
+| audit_events | organization_id, actor_id?, entity_type, entity_id, action, metadata |
+| notifications | organization_id, recipient_id, type, payload, read_at |
+
+## Cardinalities
+Organization 1:N Brands, Members; User 1:N Members; Brand 1:N Accounts, Contents, Assets, Campaigns, Products, Locations; Content 1:N Revisions; Revision 1:N Variants and Reviews; Variant 1:N Publications and Content Assets; Account 1:N Publications; Publication 1:N Attempts; Generation Job 1:N Outputs; Product 1:N Facts and Offers.
+
+## Constraints to implement
+Unique organization slug; unique brand slug within organization; unique (platform, external_account_id) pending shared-account policy; unique (social_account_id, external_post_id) when present; unique idempotency_key scoped to publication intent. Reviews reference immutable revisions. OAuth secrets never stored in plaintext.
+
+**Open questions:** shared social accounts across brands; whether shops are locations or independent brands; multi-product offers; how generated media is linked to source facts.
