@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { AiPanel } from './ai-panel';
 import { AttachedMedia } from './attachments';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
@@ -21,6 +22,7 @@ export function DraftEditor({
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [leaving, setLeaving] = useState<HTMLElement | 'discard' | null>(null);
+  const [pendingAI, setPendingAI] = useState<string | null>(null);
   const bypass = useRef(false);
   const keepButton = useRef<HTMLButtonElement>(null);
   const dirty = value.title !== saved.title || value.body !== saved.body;
@@ -113,6 +115,41 @@ export function DraftEditor({
       setBusy(false);
     }
   }
+  async function applySuggestion(text: string, confirmed = false) {
+    if (!content) return;
+    if (value.body !== saved.body && !confirmed) {
+      setPendingAI(text);
+      return;
+    }
+    setPendingAI(null);
+    setBusy(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/contents/${content.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: text }),
+      });
+      const result = await response.json();
+      if (!response.ok)
+        throw new Error(result.message ?? 'Unable to apply suggestion.');
+      const next = (result as ContentResponse).content;
+      setContent(next);
+      setSaved((previous) => ({ ...previous, body: next.body }));
+      setValue((previous) => ({ ...previous, body: next.body }));
+      setNotice(
+        'AI suggestion applied and saved. Any unsaved title is preserved.',
+      );
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to apply. Your edits are still here.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <section className="draft-editor">
       <Link className="auth-link" href={`/content?brandId=${brand.id}`}>
@@ -182,6 +219,42 @@ export function DraftEditor({
         />
       ) : (
         <p>Save this draft before attaching existing brand media.</p>
+      )}
+      {content && (
+        <AiPanel
+          contentId={content.id}
+          disabled={busy || !!leaving || pendingAI !== null}
+          onApply={(text) => void applySuggestion(text)}
+        />
+      )}
+      {pendingAI !== null && (
+        <section
+          className="discard-prompt"
+          role="alertdialog"
+          aria-labelledby="ai-replace-title"
+        >
+          <h2 id="ai-replace-title">Replace unsaved body edits?</h2>
+          <p>
+            Applying saves the AI suggestion in place of your current body. Your
+            unsaved title is preserved.
+          </p>
+          <div className="form-actions">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => setPendingAI(null)}
+            >
+              Keep my body edits
+            </button>
+            <button
+              type="button"
+              className="button"
+              onClick={() => void applySuggestion(pendingAI, true)}
+            >
+              Replace body and save
+            </button>
+          </div>
+        </section>
       )}
       {leaving && (
         <section

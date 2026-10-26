@@ -64,7 +64,11 @@ export async function forwardApi(req: NextRequest, path: string) {
       body,
       cache: 'no-store',
       redirect: 'error',
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(
+        /^\/contents\/[0-9a-f-]{36}\/ai-generations$/i.test(path)
+          ? 70_000
+          : 10_000,
+      ),
     });
     const outgoing = new Headers({
       'Content-Type': 'application/json',

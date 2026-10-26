@@ -17,6 +17,8 @@ model User {
   updatedAt    DateTime  @updatedAt @db.Timestamptz(3)
   sessions     Session[]
   organization Organization?
+  aiPreference AiPreference?
+  aiGenerations AiGeneration[]
 }
 
 model Session {
@@ -88,6 +90,7 @@ model Content {
   updatedAt DateTime      @updatedAt @db.Timestamptz(3)
 
   media ContentMedia[]
+  aiGenerations AiGeneration[]
 
   @@index([brandId, updatedAt(sort: Desc), id(sort: Desc)])
 }
@@ -126,4 +129,47 @@ model ContentMedia {
   @@id([contentId, mediaAssetId])
   @@index([contentId, position, mediaAssetId])
   @@index([mediaAssetId])
+}
+
+model AiPreference {
+  userId String @id @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enabled Boolean @default(false)
+  model String @default("gpt-6-luna") @db.VarChar(80)
+  maxOutputTokens Int @default(512)
+  monthlyBudgetMicros BigInt?
+  confirmPaid Boolean @default(true)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+}
+
+enum AiGenerationStatus {
+  COUNTING
+  RUNNING
+  SUCCEEDED
+  FAILED
+  BLOCKED
+}
+
+model AiGeneration {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  contentId String @db.Uuid
+  content Content @relation(fields: [contentId], references: [id], onDelete: Restrict)
+  requestId String @db.Uuid
+  model String @db.VarChar(80)
+  maxOutputTokens Int
+  status AiGenerationStatus
+  inputTokens Int?
+  outputTokens Int?
+  estimatedCostMicros Int?
+  budgetChargeMicros Int @default(0)
+  costUncertain Boolean @default(false)
+  errorCode String? @db.VarChar(40)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  completedAt DateTime? @db.Timestamptz(3)
+
+  @@unique([userId, requestId])
+  @@index([userId, createdAt])
+  @@index([contentId])
 }

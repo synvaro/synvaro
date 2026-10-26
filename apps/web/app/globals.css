@@ -573,3 +573,38 @@ fieldset .button,
 .media-card p {
   font-size: 0.875rem;
 }
+
+.ai-panel {
+  margin-top: 1.5rem;
+}
+.ai-panel details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+.ai-panel input[type='checkbox'] {
+  width: auto;
+  margin-right: 0.5rem;
+}
+.ai-suggestion {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  padding: 1rem;
+  border: 1px solid #d6e2dd;
+  border-radius: 0.5rem;
+}
+.ai-panel details label {
+  display: block;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+.ai-panel select {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d6e2dd;
+  border-radius: 0.5rem;
+  background: white;
+  font: inherit;
+}
