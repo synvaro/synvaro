@@ -1,3 +1,4 @@
+import { Public } from '../auth/auth.guard.js';
 import { Controller, Get } from '@nestjs/common';
 import { ApiOkResponse, ApiProperty, ApiTags } from '@nestjs/swagger';
 import type { HealthResponse } from '@synvaro/contracts';
@@ -10,6 +11,7 @@ class HealthDto implements HealthResponse {
   service = 'synvaro-api' as const;
 }
 
+@Public()
 @ApiTags('health')
 @Controller('health')
 export class HealthController {

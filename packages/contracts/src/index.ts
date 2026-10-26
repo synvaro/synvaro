@@ -8,3 +8,12 @@ export interface ApiErrorResponse {
   statusCode: number;
   message: string;
 }
+
+/** SYN-002A public auth projection. No password/session fields. */
+export interface AuthUser {
+  id: string;
+  email: string;
+}
+export interface AuthResponse {
+  user: AuthUser;
+}

@@ -264,3 +264,75 @@ footer {
     padding: 20px;
   }
 }
+
+.auth-card {
+  max-width: 440px;
+  margin: 25px auto;
+  background: white;
+  border: 1px solid #e0e8e4;
+  border-radius: 14px;
+  padding: 28px;
+}
+.auth-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 25px;
+}
+.auth-card label {
+  font-size: 14px;
+  font-weight: 600;
+}
+.auth-card input {
+  width: 100%;
+  border: 1px solid #647570;
+  border-radius: 6px;
+  padding: 12px;
+  font: inherit;
+}
+.auth-card input:focus-visible,
+button:focus-visible {
+  outline: 3px solid #176f5e;
+  outline-offset: 3px;
+}
+.auth-card small {
+  color: #53655e;
+}
+button {
+  cursor: pointer;
+  font: inherit;
+}
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+.auth-card .button {
+  justify-content: center;
+  border: 0;
+}
+.auth-card [role='status'] {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.auth-link {
+  text-decoration: underline;
+  color: #176f5e;
+  font-size: 14px;
+}
+.session-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 30px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.logout-button {
+  border: 1px solid #176f5e;
+  background: white;
+  color: #176f5e;
+  padding: 8px 12px;
+  border-radius: 6px;
+}

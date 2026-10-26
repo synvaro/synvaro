@@ -5,14 +5,25 @@
   "type": "module",
   "scripts": {
     "validate": "prisma validate",
-    "build": "tsc --noEmit",
-    "typecheck": "tsc --noEmit",
+    "build": "pnpm generate && tsc -p tsconfig.build.json",
+    "typecheck": "pnpm generate && tsc --noEmit",
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
-    "migrate:status": "prisma migrate status"
+    "migrate:status": "prisma migrate status",
+    "generate": "prisma generate"
   },
   "devDependencies": {
     "prisma": "7.10.1",
     "dotenv": "^17.2.3"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@prisma/client": "7.10.1",
+    "@prisma/adapter-pg": "7.10.1"
   }
 }
