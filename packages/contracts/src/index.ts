@@ -99,3 +99,14 @@ export interface MediaResponse {
 export interface MediaListResponse {
   assets: MediaAsset[];
 }
+
+export interface ContentMedia {
+  contentId: string;
+  mediaAssetId: string;
+  position: number;
+  createdAt: string;
+  asset: MediaAsset;
+}
+export interface ContentMediaResponse {
+  attachments: ContentMedia[];
+}

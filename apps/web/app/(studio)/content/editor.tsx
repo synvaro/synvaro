@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { AttachedMedia } from './attachments';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { Content, ContentResponse } from '@synvaro/contracts';
@@ -172,6 +173,16 @@ export function DraftEditor({
           </div>
         </fieldset>
       </form>
+      {content ? (
+        <AttachedMedia
+          key={content.id}
+          contentId={content.id}
+          brand={brand}
+          disabled={busy || !!leaving}
+        />
+      ) : (
+        <p>Save this draft before attaching existing brand media.</p>
+      )}
       {leaving && (
         <section
           className="discard-prompt"

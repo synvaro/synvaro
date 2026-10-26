@@ -354,6 +354,69 @@ try {
     (await fetch(`${origin}/api/media/${media.id}/file`)).status,
     401,
   );
+  // CMA-001–005: existing media relationships through the real Next proxy.
+  const attachmentPath = `/contents/${draft.id}/media`;
+  assert.deepEqual(await (await product(attachmentPath)).json(), {
+    attachments: [],
+  });
+  assert.equal(
+    (
+      await product(
+        attachmentPath,
+        'POST',
+        { mediaAssetId: media.id },
+        'https://evil.example',
+      )
+    ).status,
+    403,
+  );
+  assert.equal(
+    (await product(attachmentPath, 'POST', { mediaAssetId: media.id })).status,
+    201,
+  );
+  assert.equal(
+    (await product(attachmentPath, 'POST', { mediaAssetId: media.id })).status,
+    409,
+  );
+  const secondUpload = await uploadMedia();
+  assert.equal(secondUpload.status, 201);
+  const secondMedia = (await secondUpload.json()).asset;
+  assert.equal(
+    (await product(attachmentPath, 'POST', { mediaAssetId: secondMedia.id }))
+      .status,
+    201,
+  );
+  assert.equal(
+    (
+      await product(attachmentPath + '/order', 'PUT', {
+        mediaAssetIds: [secondMedia.id, media.id],
+      })
+    ).status,
+    200,
+  );
+  assert.deepEqual(
+    (await (await product(attachmentPath)).json()).attachments.map(
+      (item) => item.mediaAssetId,
+    ),
+    [secondMedia.id, media.id],
+  );
+  assert.equal(
+    (
+      await product(attachmentPath + '/order', 'PUT', {
+        mediaAssetIds: [media.id],
+      })
+    ).status,
+    409,
+  );
+  assert.equal(
+    (await product(attachmentPath + '/' + media.id, 'DELETE', {})).status,
+    200,
+  );
+  assert.equal((await product(`/media/${media.id}`)).status, 200);
+  assert.equal(
+    (await (await product(`/contents/${draft.id}`)).json()).content.body,
+    'Hypothetical revised copy. No release claims.',
+  );
   const mediaPage = await fetch(`${origin}/media?brandId=${brand.id}`, {
     headers: { cookie },
   });
@@ -388,7 +451,7 @@ try {
     307,
   );
   console.info(
-    'SYN-005 + SYN-004 + SYN-003 + SYN-002B + SYN-002A-A11 passed: real PostgreSQL, Next/Nest auth, organization, multiple brands, edit/reload, media upload/stream, CSRF and logout.',
+    'SYN-006 + SYN-005 + SYN-004 + SYN-003 + SYN-002B + SYN-002A-A11 passed: real PostgreSQL, Next/Nest auth, organization, multiple brands, edit/reload, media upload/stream, CSRF and logout.',
   );
 } finally {
   for (const { child, exited } of children) {

@@ -34,7 +34,9 @@ export async function forwardApi(req: NextRequest, path: string) {
         length += chunk.value.byteLength;
         if (
           length >
-          (/^\/contents(?:\/[0-9a-f-]{36})?$/i.test(path)
+          (/^\/contents(?:\/[0-9a-f-]{36}(?:\/media(?:\/order)?)?)?$/i.test(
+            path,
+          )
             ? 131072
             : /^\/brands\/[0-9a-f-]{36}\/profile$/i.test(path)
               ? 65536
