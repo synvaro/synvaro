@@ -8,7 +8,7 @@ Logical modules inside one modular monolith; **not** separate services.
 | Brand Management | Implemented: create/list/update name and description within owner organization. Detailed brand profiles (description, audience, tone, language and guidelines) are implemented. Locations and AI use remain planned. | SYN-003 development; broader MVP planned |
 | Social Channels | OAuth connections, account capabilities | MVP |
 | Content Planning | campaigns, calendar, ideas | MVP |
-| Content Production | content revisions, channel variants | MVP |
+| Content Production | Implemented: owner-scoped manual drafts (create/list/read/update), immutable brand assignment, DRAFT only. Revisions and channel variants remain planned. | SYN-004 development |
 | Media Library | uploads, provenance, reusable assets | MVP |
 | AI Generation | provider jobs, outputs, costs | MVP |
 | Publishing | scheduling, attempts, remote IDs | MVP |
@@ -23,4 +23,5 @@ See [Publishing contract](contracts/publishing.md). Each new domain contract sho
 
 Current behavior contract: [Organization & Brand](contracts/organization-brand.md).
 Brand profile contract: [BRP-001](contracts/brand-profile.md).
-All other domain rows describe planned capabilities, not implemented features.
+Manual draft contract: [CNT-001–004](contracts/content-drafts.md).
+Rows not explicitly marked implemented describe planned capabilities.

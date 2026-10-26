@@ -237,7 +237,72 @@ try {
         html.includes('No invented claims'),
     );
   }
-  for (const section of ['content', 'calendar', 'media']) {
+  // CNT-001–004: manual drafts through Next, scoped brand lists and refreshed editor.
+  assert.equal(
+    (
+      await product(
+        '/contents',
+        'POST',
+        { brandId: brand.id, title: 'Forbidden' },
+        'https://evil.example',
+      )
+    ).status,
+    403,
+  );
+  const createdDraft = await product('/contents', 'POST', {
+    brandId: brand.id,
+    title: 'Hypothetical draft only',
+    body: '文'.repeat(10000),
+  });
+  assert.equal(createdDraft.status, 201);
+  const draft = (await createdDraft.json()).content;
+  assert.equal(draft.status, 'DRAFT');
+  assert.equal(
+    (
+      await product(`/contents/${draft.id}`, 'PATCH', {
+        body: 'Hypothetical revised copy. No release claims.',
+      })
+    ).status,
+    200,
+  );
+  assert.equal(
+    (
+      await product(
+        `/contents/${draft.id}`,
+        'PATCH',
+        { body: 'Forbidden' },
+        'https://evil.example',
+      )
+    ).status,
+    403,
+  );
+  const secondBrand = persisted.brands.find((item) => item.id !== brand.id);
+  assert.deepEqual(
+    await (await product(`/contents?brandId=${secondBrand.id}`)).json(),
+    { contents: [] },
+  );
+  assert.equal(
+    (await (await product(`/contents?brandId=${brand.id}`)).json()).contents[0]
+      .id,
+    draft.id,
+  );
+  for (let i = 0; i < 2; i++) {
+    const page = await fetch(`${origin}/content/${draft.id}`, {
+      headers: { cookie },
+    });
+    assert.equal(page.status, 200);
+    const html = await page.text();
+    assert.ok(
+      html.includes('Hypothetical draft only') &&
+        html.includes('Hypothetical revised copy. No release claims.') &&
+        html.includes('Edited smoke brand'),
+    );
+  }
+  const listing = await fetch(`${origin}/content?brandId=${brand.id}`, {
+    headers: { cookie },
+  });
+  assert.ok((await listing.text()).includes('Hypothetical draft only'));
+  for (const section of ['calendar', 'media']) {
     const response = await fetch(`${origin}/${section}`, {
       headers: { cookie },
     });
@@ -265,7 +330,7 @@ try {
     307,
   );
   console.info(
-    'SYN-003 + SYN-002B + SYN-002A-A11 passed: real PostgreSQL, Next/Nest auth, organization, multiple brands, edit/reload, CSRF and logout.',
+    'SYN-004 + SYN-003 + SYN-002B + SYN-002A-A11 passed: real PostgreSQL, Next/Nest auth, organization, multiple brands, edit/reload, CSRF and logout.',
   );
 } finally {
   for (const { child, exited } of children) {

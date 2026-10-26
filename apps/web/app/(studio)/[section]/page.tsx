@@ -1,13 +1,6 @@
 import { notFound } from 'next/navigation';
 
 const sections = {
-  content: {
-    title: 'Content',
-    empty: 'A fresh page for your ideas.',
-    description:
-      'Drafting, AI assistance and review workflows are planned. Content creation is not available yet.',
-    icon: '▤',
-  },
   calendar: {
     title: 'Calendar',
     empty: 'Room for what comes next.',

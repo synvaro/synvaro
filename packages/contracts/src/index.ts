@@ -60,3 +60,22 @@ export interface BrandProfile {
 export interface BrandProfileResponse {
   profile: BrandProfile | null;
 }
+
+/** CNT-001–004: manual drafts only. */
+export interface ContentSummary {
+  id: string;
+  brandId: string;
+  title: string;
+  status: 'DRAFT';
+  createdAt: string;
+  updatedAt: string;
+}
+export interface Content extends ContentSummary {
+  body: string;
+}
+export interface ContentResponse {
+  content: Content;
+}
+export interface ContentsResponse {
+  contents: ContentSummary[];
+}

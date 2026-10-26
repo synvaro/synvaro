@@ -34,7 +34,11 @@ export async function forwardApi(req: NextRequest, path: string) {
         length += chunk.value.byteLength;
         if (
           length >
-          (/^\/brands\/[0-9a-f-]{36}\/profile$/i.test(path) ? 65536 : 8192)
+          (/^\/contents(?:\/[0-9a-f-]{36})?$/i.test(path)
+            ? 131072
+            : /^\/brands\/[0-9a-f-]{36}\/profile$/i.test(path)
+              ? 65536
+              : 8192)
         ) {
           await reader.cancel();
           return Response.json(

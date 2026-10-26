@@ -19,6 +19,8 @@ SYNVARO is an independent Apache-2.0 open-source AI content studio for preparing
 | SYN-002B | Owner-scoped organization and multiple brands                   | Merged into `main`; local owner walkthrough reported successful | [PR #4](https://github.com/synvaro/synvaro/pull/4) · [Organization & Brand contract](docs/contracts/organization-brand.md)                                                   |
 | SYN-003  | Persistent Brand Profile (five context fields)                  | Merged into `main`; owner acceptance not separately recorded    | [PR #6](https://github.com/synvaro/synvaro/pull/6) · [BRP-001 contract](docs/contracts/brand-profile.md) · [CI](https://github.com/synvaro/synvaro/actions/runs/40295510010) |
 
+SYN-004 manual drafts are implemented on the feature branch, pending PR review and owner acceptance: [CNT-001–004 contract](docs/contracts/content-drafts.md). No AI or publishing capability is included.
+
 **Status vocabulary:** Planned → In development → PR ready → Merged → Owner accepted → Production verified (where applicable). Never infer a later state from an earlier one. GitHub is the authority for current PR/merge/CI state; actual tests and deployment evidence must be checked separately.
 
 ## 3. Architecture and decisions
@@ -38,7 +40,7 @@ SYNVARO is an independent Apache-2.0 open-source AI content studio for preparing
 | Identity & Access                                    | Development implementation (users, sessions)                                                                  | [Auth spike](docs/auth-spike.md) · [ADR-013](docs/decisions.md)                                      |
 | Organization & Brand                                 | Development implementation (single owner, brand CRUD subset)                                                  | [Organization & Brand](docs/contracts/organization-brand.md)                                         |
 | Brand Profile                                        | Development implementation; detailed description, target audience, tone, language, guidelines; no AI behavior | [BRP-001](docs/contracts/brand-profile.md) · [Prisma schema](packages/database/prisma/schema.prisma) |
-| Content Planning / Production                        | Planned                                                                                                       | [Domain map](docs/domains.md)                                                                        |
+| Content Planning / Production                        | Manual drafts implemented on feature branch; other planning/production features planned                       | [CNT-001–004](docs/contracts/content-drafts.md)                                                      |
 | Media Library / AI Generation                        | Planned                                                                                                       | [Domain map](docs/domains.md)                                                                        |
 | Review / Publishing                                  | Planned                                                                                                       | [Publishing draft contract](docs/contracts/publishing.md)                                            |
 | Social channels, Analytics, Engagement, Integrations | Planned                                                                                                       | [Domain map](docs/domains.md)                                                                        |
@@ -69,7 +71,7 @@ Before any new development slice:
 
 ## 7. Pending owner / maintainer items
 
-- Specify and implement SYN-004 manual content drafts as a separate, narrow domain contract; no AI or publishing in that slice.
+- Review SYN-004 manual drafts against its contract and PR evidence; owner acceptance remains separate.
 - Keep authentication production hardening tracked before any public registration.
 - Select job queue only when background generation/publishing requires it; Redis remains an option, not an approved dependency.
 - Confirm vulnerability-reporting and main-branch ruleset settings via GitHub administration.
