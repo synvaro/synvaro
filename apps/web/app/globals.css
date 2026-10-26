@@ -465,3 +465,23 @@ fieldset .button,
     padding: 20px;
   }
 }
+
+.profile-section {
+  max-width: 750px;
+}
+.profile-brand-name {
+  margin-top: 28px;
+  overflow-wrap: anywhere;
+}
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.profile-empty {
+  padding: 16px;
+  background: #eaf4ee;
+  border-radius: 8px;
+  line-height: 1.6;
+}

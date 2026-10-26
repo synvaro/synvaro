@@ -4,7 +4,7 @@
 
 SYNVARO helps teams prepare, review, schedule and publish brand-safe social content across Instagram, Facebook, LinkedIn and YouTube. AI text, image, video and voice generation use configurable providers and user-owned API credentials.
 
-**Status:** development foundation with session authentication and owner-scoped organization/brand management (SYN-002B). Content, AI and publishing capabilities remain planned, not released functionality.
+**Status:** development foundation with session authentication and owner-scoped organization/brand management and persistent brand profiles (SYN-003). Content, AI and publishing capabilities remain planned, not released functionality.
 
 ## Initial use cases
 - International Safety Inspection Services Türkiye (ISIS) corporate communications and delicatessen stores: verified product photos, offers and short videos.

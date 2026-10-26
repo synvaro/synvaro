@@ -1,3 +1,4 @@
+import { BrandProfileController } from './brand-profile.js';
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module.js';
 import { OrganizationController } from './organization.controller.js';
@@ -6,7 +7,11 @@ import { OrganizationBrandService } from './organization-brand.service.js';
 
 @Module({
   imports: [AuthModule],
-  controllers: [OrganizationController, BrandController],
+  controllers: [
+    OrganizationController,
+    BrandController,
+    BrandProfileController,
+  ],
   providers: [OrganizationBrandService],
 })
 export class OrganizationBrandModule {}

@@ -14,6 +14,8 @@ export async function createApp() {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     next();
   });
+  // Only the bounded profile text payload needs more room; auth limits stay unchanged.
+  app.use('/brands/:id/profile', json({ limit: '64kb' }));
   app.use(json({ limit: '8kb' }));
   app.use(
     (

@@ -44,3 +44,19 @@ export interface BrandsResponse {
 export interface BrandResponse {
   brand: Brand;
 }
+
+/** BRP-001: detailed brand context, separate from the Brand card summary. */
+export interface BrandProfile {
+  id: string;
+  brandId: string;
+  description: string;
+  targetAudience: string;
+  toneOfVoice: string;
+  defaultLanguage: string | null;
+  contentGuidelines: string;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface BrandProfileResponse {
+  profile: BrandProfile | null;
+}

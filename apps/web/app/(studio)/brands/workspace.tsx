@@ -181,7 +181,9 @@ export function BrandWorkspace({
                 pattern="[a-z0-9]+(-[a-z0-9]+)*"
                 placeholder="Generated from the name"
               />
-              <label htmlFor="brand-description">Description (optional)</label>
+              <label htmlFor="brand-description">
+                Short summary (optional)
+              </label>
               <textarea
                 id="brand-description"
                 name="description"
@@ -230,7 +232,7 @@ export function BrandWorkspace({
                       defaultValue={brand.name}
                     />
                     <label htmlFor={`description-${brand.id}`}>
-                      Description (optional)
+                      Short summary (optional)
                     </label>
                     <textarea
                       id={`description-${brand.id}`}
@@ -258,6 +260,11 @@ export function BrandWorkspace({
               <>
                 <h2>{brand.name}</h2>
                 <span className="brand-slug">{brand.slug}</span>
+                <p>
+                  <a className="auth-link" href={`/brands/${brand.id}/profile`}>
+                    Brand profile
+                  </a>
+                </p>
                 <p className="brand-description">
                   {brand.description || 'No description yet.'}
                 </p>
