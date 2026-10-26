@@ -4,7 +4,7 @@
 
 SYNVARO helps teams prepare, review, schedule and publish brand-safe social content across Instagram, Facebook, LinkedIn and YouTube. AI text, image, video and voice generation use configurable providers and user-owned API credentials.
 
-**Status:** product specification v0.1; no application implementation yet. Features described here are plans, not released functionality.
+**Status:** SYN-001 technical foundation: web shell, API health/OpenAPI, idle worker and quality gates. Product features described here remain plans, not released functionality.
 
 ## Initial use cases
 - International Safety Inspection Services Türkiye (ISIS) corporate communications and delicatessen stores: verified product photos, offers and short videos.
@@ -18,4 +18,10 @@ SYNVARO helps teams prepare, review, schedule and publish brand-safe social cont
 
 Start with [Product](docs/product.md), [Architecture](docs/architecture.md), [Domains](docs/domains.md), [Data model](docs/data-model.md), [Decisions](docs/decisions.md), [Roadmap](docs/roadmap.md) and [Testing](docs/testing.md).
 
-Contributions welcome after initial governance and CI are established. Intended license: Apache-2.0 (see LICENSE).
+Contributions welcome after initial governance and CI are established. License: [Apache-2.0](LICENSE).
+
+## Development
+
+See [Foundation development](docs/development.md) for setup, environment variables,
+verification commands, behavior IDs and migration conventions. Use Node 22.23.3
+and pnpm 10.34.9. No Docker is required.

@@ -1,0 +1,36 @@
+{
+  "name": "synvaro",
+  "version": "0.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@10.34.9",
+  "engines": {
+    "node": ">=22.23.3 <23",
+    "pnpm": ">=10.34.9 <11"
+  },
+  "scripts": {
+    "dev:web": "pnpm --filter @synvaro/web dev",
+    "dev:api": "pnpm --filter @synvaro/contracts build && pnpm --filter @synvaro/api dev",
+    "dev:worker": "pnpm --filter @synvaro/worker dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm --filter @synvaro/contracts build && pnpm -r typecheck",
+    "lint": "eslint . --max-warnings=0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "pnpm --filter @synvaro/contracts build && pnpm -r --if-present test",
+    "db:validate": "pnpm --filter @synvaro/database validate",
+    "db:migrate": "pnpm --filter @synvaro/database migrate:dev",
+    "db:deploy": "pnpm --filter @synvaro/database migrate:deploy",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "^22.19.0",
+    "eslint": "10.13.0",
+    "prettier": "^3.6.2",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.72.0",
+    "@next/eslint-plugin-next": "16.4.3",
+    "eslint-plugin-react-hooks": "7.1.1"
+  }
+}
