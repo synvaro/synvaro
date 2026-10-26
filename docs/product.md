@@ -6,7 +6,7 @@
 SYNVARO is an open-source, multi-brand content studio: plan → create → review → schedule → publish → measure.
 
 ## Pilot users
-- ISIS corporate brand and delicatessen shops: real product photography, promotions, recipes and reels.
+- International Safety Inspection Services Türkiye (ISIS) corporate brand and delicatessen shops: real product photography, promotions, recipes and reels.
 - Qos Workspace: only verified released product behavior.
 - Spexop-UI: actual OSS changes and releases.
 
