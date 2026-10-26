@@ -336,7 +336,10 @@ export function AiPanel({
               <button
                 type="button"
                 className="button"
-                onClick={() => onApply(suggestion.text)}
+                onClick={() => {
+                  setNotice('');
+                  onApply(suggestion.text);
+                }}
               >
                 Apply suggestion
               </button>
