@@ -1,6 +1,6 @@
 # SYNVARO Engineering Master
 
-**Version:** 0.2 · **Updated:** 2026-10-26 · **Status:** Working engineering index
+**Version:** 0.3 · **Updated:** 2026-10-26 · **Status:** Working engineering index
 
 > **Purpose:** One human-readable entry point for owners, contributors and AI agents. This is an **index, not a second specification**. The linked source documents, code, migrations, CI and PRs remain authoritative for their respective subjects. If sources disagree, raise the conflict; do not silently resolve it here.
 
@@ -26,14 +26,17 @@ SYNVARO is an independent Apache-2.0 open-source AI content studio for preparing
 | SYN-003  | Persistent Brand Profile (five context fields)                  | Merged into `main`; owner acceptance not separately recorded    | [PR #6](https://github.com/synvaro/synvaro/pull/6) · [BRP-001 contract](docs/contracts/brand-profile.md) · [CI](https://github.com/synvaro/synvaro/actions/runs/40295510010)      |
 | SYN-004  | Brand-scoped manual content drafts (create/list/read/edit)      | Merged into `main`; owner acceptance not separately recorded    | [PR #8](https://github.com/synvaro/synvaro/pull/8) · [CNT-001–004 contract](docs/contracts/content-drafts.md) · [CI](https://github.com/synvaro/synvaro/actions/runs/40301531909) |
 
+**SYN-005 — Private Brand Media Library:** Merged into `main` ([PR #11](https://github.com/synvaro/synvaro/pull/11), [MED-001–004 contract](docs/contracts/media-library.md), [CI](https://github.com/synvaro/synvaro/actions/runs/40311904288)). Private local filesystem uploads, owner-scoped browsing and preview are implemented; no public release or production security acceptance is implied.
+
 **Status vocabulary:** Planned → In development → PR ready → Merged → Owner accepted → Production verified (where applicable). Never infer a later state from an earlier one. GitHub is the authority for current PR/merge/CI state; actual tests and deployment evidence must be checked separately.
 
 ## 3. Architecture and decisions
 
-- **Architecture:** TypeScript + pnpm, Next.js/React Studio, NestJS modular monolith API, Prisma/PostgreSQL, independently runnable worker; future S3-compatible media and FFmpeg. No Docker requirement, microservices or Kubernetes in MVP.
+- **Architecture:** TypeScript + pnpm, Next.js/React Studio, NestJS modular monolith API, Prisma/PostgreSQL, independently runnable worker; private local filesystem media; future S3-compatible storage (Cloudflare R2 first cloud candidate) and FFmpeg. No Docker requirement, microservices or Kubernetes in MVP.
 - **Current authentication:** NestJS-owned database sessions; one owner per organization and at most one organization per user, with multiple brands. No membership table or RBAC engine at this stage.
 - **Security limit:** Process-local rate limiting is accepted **only for development**; production registration is disabled pending hardening. No production launch approval.
 - **Still open:** Background queue technology (PostgreSQL vs Redis/BullMQ), brand location scope, infrastructure/secrets/observability vendors, future commercial modules.
+- **Storage direction:** Local storage remains the self-host baseline; Cloudflare R2 is the preferred future cloud adapter, not implemented. Google Drive is a planned optional one-way import source; OneDrive/Dropbox are later options, not storage backends. No synchronization is committed.
 - **Publishing invariant:** No publication without approval of the exact immutable content revision; never fabricate real-world product facts or deployed feature claims.
 
 **Source of truth:** [ADR register](docs/decisions.md) (decision statuses) · [Architecture](docs/architecture.md) · [Security](SECURITY.md). **Do not record a new architectural decision by editing this index alone.**
@@ -46,7 +49,7 @@ SYNVARO is an independent Apache-2.0 open-source AI content studio for preparing
 | Organization & Brand                                 | Development implementation (single owner, brand CRUD subset)                                                  | [Organization & Brand](docs/contracts/organization-brand.md)                                         |
 | Brand Profile                                        | Development implementation; detailed description, target audience, tone, language, guidelines; no AI behavior | [BRP-001](docs/contracts/brand-profile.md) · [Prisma schema](packages/database/prisma/schema.prisma) |
 | Content Planning / Production                        | Manual drafts merged into `main`; other planning/production features planned                                  | [CNT-001–004](docs/contracts/content-drafts.md)                                                      |
-| Media Library / AI Generation                        | Planned                                                                                                       | [Domain map](docs/domains.md)                                                                        |
+| Media Library / AI Generation                        | Private local Media Library implemented; AI Generation planned                                                | [MED-001–004](docs/contracts/media-library.md) · [Domain map](docs/domains.md)                       |
 | Review / Publishing                                  | Planned                                                                                                       | [Publishing draft contract](docs/contracts/publishing.md)                                            |
 | Social channels, Analytics, Engagement, Integrations | Planned                                                                                                       | [Domain map](docs/domains.md)                                                                        |
 
@@ -60,11 +63,12 @@ SYNVARO is an independent Apache-2.0 open-source AI content studio for preparing
 - **SYN-002B:** [PR #4](https://github.com/synvaro/synvaro/pull/4) / [CI](https://github.com/synvaro/synvaro/actions/runs/40291538045). Owner reported a successful local UI edit/persist walkthrough on 2026-10-26.
 - **SYN-003:** [PR #6](https://github.com/synvaro/synvaro/pull/6) / [CI](https://github.com/synvaro/synvaro/actions/runs/40295510010). 34 API + 1 worker tests and desktop/390px browser checks reported in PR; separate production acceptance not recorded.
 - **SYN-004:** [PR #8](https://github.com/synvaro/synvaro/pull/8) / [CI](https://github.com/synvaro/synvaro/actions/runs/40301531909). PR reports 43 API + 1 worker tests, clean migrations and desktop/390px browser checks; separate production acceptance not recorded.
+- **SYN-005:** [PR #11](https://github.com/synvaro/synvaro/pull/11) / [CI](https://github.com/synvaro/synvaro/actions/runs/40311904288). PR reports 58 API + 1 worker tests, five clean PostgreSQL migrations and desktop/390px media tests. The 20 MiB limit, preserved EXIF/container metadata and crash-orphan cleanup limitation remain documented.
 - CI success means checks ran successfully, **not** live provider integration, production readiness or deployment acceptance.
 
 ## 6. Roadmap and next decision gate
 
-[Roadmap](docs/roadmap.md) governs milestone scope. Candidate progression: Media Library (SYN-005) → AI providers → channel publishing. This is sequencing guidance, **not** evidence of implementation or a committed deadline.
+[Roadmap](docs/roadmap.md) governs milestone scope. Candidate progression: content–media attachments (SYN-006) → AI providers → channel publishing. This is sequencing guidance, **not** evidence of implementation or a committed deadline.
 
 Before any new development slice:
 
@@ -77,7 +81,7 @@ Before any new development slice:
 
 ## 7. Pending owner / maintainer items
 
-- Define SYN-005 Media Library contract, storage safety and self-hosted storage boundary before implementation; do not treat a storage adapter selection as an accepted ADR until reviewed.
+- Define SYN-006 draft–media attachment contract (same-brand ownership, ordering, detach without deleting media) before implementation. No AI or publishing in this slice.
 - Keep authentication production hardening tracked before any public registration.
 - Select job queue only when background generation/publishing requires it; Redis remains an option, not an approved dependency.
 - Confirm vulnerability-reporting and main-branch ruleset settings via GitHub administration.
