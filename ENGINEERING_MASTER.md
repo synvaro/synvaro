@@ -10,6 +10,12 @@ SYNVARO is an independent Apache-2.0 open-source AI content studio for preparing
 
 **Authoritative references:** [Product](docs/product.md) · [OSS governance](docs/oss-governance.md) · [README](README.md) · [License](LICENSE) · [NOTICE](NOTICE).
 
+## Visual design source
+
+- **Canonical design reference:** [SYNVARO — Design System (Figma)](https://www.figma.com/design/Ft685RzJAeyWKcWkaozawE/SYNVARO-%E2%80%94-Design-System?node-id=0-1). The approved **Chorus / Commons** visual direction and its assets are maintained in Figma.
+- **Approved palette:** primary dark `#203D32`, primary light `#C7EE93`, neutral background `#F5F7F2`, main text `#182720`, secondary text `#526158`. Logo wordmark: Outfit Medium 500; exported paths are the implementation source.
+- **Implementation boundary:** Do not redraw the logo from generic icons or silently redesign the application. Production assets must be explicitly added to the repository and reviewed in a separate brand-implementation PR; a Figma reference alone does not mean the UI has been updated.
+
 ## 2. Development snapshot
 
 | ID       | Scope                                                           | Development state                                               | Evidence and boundary                                                                                                                                                        |
