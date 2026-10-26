@@ -8,6 +8,7 @@ import { AUTH_CONFIG } from './auth.config.js';
 import type { AuthConfig } from './auth.config.js';
 import { requireSameOrigin, sessionToken } from './auth-security.js';
 
+export const MultipartUpload = () => SetMetadata('synvaro:multipart', true);
 const PUBLIC = 'synvaro:public';
 export const Public = () => SetMetadata(PUBLIC, true);
 export type AuthRequest = Request & { user?: AuthUser };
@@ -22,7 +23,14 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext) {
     const req = context.switchToHttp().getRequest<AuthRequest>();
     if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method))
-      requireSameOrigin(req, this.config);
+      requireSameOrigin(
+        req,
+        this.config,
+        this.reflector.get<boolean>(
+          'synvaro:multipart',
+          context.getHandler(),
+        ) === true,
+      );
     if (
       this.reflector.getAllAndOverride<boolean>(PUBLIC, [
         context.getHandler(),

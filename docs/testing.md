@@ -46,3 +46,20 @@ cover create/save, selected-brand isolation and refreshed SSR. Desktop and 390px
 acceptance uses hypothetical copy for Qos Workspace and ISIS Türkiye. CI replays
 all migrations on clean PostgreSQL. Actual outcomes and limitations are recorded
 in the PR; no mocked persistence or production acceptance is inferred.
+
+## SYN-005 Brand Media Library
+
+[MED-001–004](contracts/media-library.md) maps real PostgreSQL, temporary private
+filesystem and HTTP tests to uploads of synthetic JPEG/PNG/WebP/H.264 MP4, binary
+integrity, metadata, per-brand lists, range streaming, malformed signatures,
+20 MiB boundaries, traversal, interrupted uploads, database rejection cleanup,
+owner isolation, expired/revoked sessions and Origin/CSRF regression.
+Small generated fixtures under `apps/api/src/test/fixtures/media` contain no customer
+media. `ffprobe` must be installed; integration tests never substitute SQLite or
+mock persistence. Test storage uses a dedicated `mkdtemp` directory, removed after
+execution; that convention is not a production storage default.
+
+`pnpm smoke` exercises the built Next → Nest streaming path, protected original
+retrieval and logout. CI installs ffprobe and replays migrations on clean PostgreSQL.
+Desktop/390px real browser results and exact command/CI outcomes are recorded in
+the SYN-005 PR, separately from production or owner acceptance.

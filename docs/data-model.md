@@ -1,8 +1,8 @@
 # Data model v0.1
 
-## Implemented development schema (SYN-004)
+## Implemented development schema (SYN-005)
 
-The Prisma schema and migrations implement only these six models. UUID keys and
+The Prisma schema and migrations implement only these seven models. UUID keys and
 UTC timestamps are used; authentication secrets are hashes, not plaintext.
 
 | Model | Fields and constraints |
@@ -14,13 +14,16 @@ UTC timestamps are used; authentication secrets are hashes, not plaintext.
 | BrandProfile | id, unique brandId FK, description, targetAudience, toneOfVoice, nullable defaultLanguage, contentGuidelines, createdAt, updatedAt |
 | Content | id, brandId FK, title (200), body text (empty allowed), status DRAFT, createdAt, updatedAt; index (brandId, updatedAt DESC, id DESC) |
 
+| MediaAsset | id, brandId FK (RESTRICT delete), originalFilename (255), unique opaque UUID storageKey, mimeType, sizeBytes Int (20 MiB max), nullable width/height/durationMs, origin UPLOADED, createdAt; index (brandId, createdAt DESC, id DESC) |
+
+Brand 1:N MediaAsset. Original bytes live in private configured filesystem storage, not PostgreSQL. No owner/organization FK duplication.
+
 Brand 1:N Content. Content brand is immutable through the API; no duplicate owner/organization FKs.
 
 Brand 1:0..1 BrandProfile. Profile text is detailed context; Brand.description remains a separate short summary.
 
 User 1:0..1 Organization; Organization 1:N Brand. There are no membership,
-role or permission tables. Foreign keys cascade on parent removal to avoid
-orphans; no user/organization/brand deletion API is exposed in this slice.
+role or permission tables. Other foreign keys cascade on parent removal; MediaAsset restricts brand removal to prevent orphaned files; no user/organization/brand deletion API is exposed in this slice.
 
 ## Remaining design draft (not migrated)
 
@@ -43,7 +46,7 @@ otherwise noted.
 | contents | Implemented as Content above; idea/type and non-draft states remain outside this slice |
 | content_revisions | content_id, revision_no, body, created_by, immutable_snapshot |
 | content_variants | content_revision_id, platform, caption, status |
-| assets | brand_id, storage_key, mime_type, origin, metadata |
+| assets | Uploaded originals implemented as MediaAsset above; generated assets and other origins remain planned |
 | content_assets | content_variant_id, asset_id, position, purpose |
 | generation_jobs | brand_id, content_id?, type, provider, model, status, cost_usd |
 | generation_outputs | generation_job_id, asset_id?, text_output?, metadata |

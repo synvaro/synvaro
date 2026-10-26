@@ -33,15 +33,21 @@ export function sessionCookie(
     }),
   );
 }
-export function requireSameOrigin(req: Request, config: AuthConfig) {
+export function requireSameOrigin(
+  req: Request,
+  config: AuthConfig,
+  multipart = false,
+) {
   if (
     req.headers.origin !== config.origin ||
     req.headers['sec-fetch-site'] === 'cross-site'
   ) {
     throw new ForbiddenException('Request origin rejected');
   }
-  if (!req.is('application/json'))
-    throw new BadRequestException('JSON body required');
+  if (multipart ? !req.is('multipart/form-data') : !req.is('application/json'))
+    throw new BadRequestException(
+      multipart ? 'Multipart body required' : 'JSON body required',
+    );
 }
 const credentials = z
   .object({

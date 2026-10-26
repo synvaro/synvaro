@@ -1,6 +1,6 @@
-# Foundation development (SYN-001)
+# Local development
 
-This development build includes session authentication and the SYN-002B owner-scoped Organization & Brand slice. Other product capabilities remain planned.
+This development build includes session authentication, owner-scoped organizations and brands, brand profiles, manual content drafts and the SYN-005 private Media Library. AI generation and publishing remain planned.
 For current authentication setup and security boundaries, read [Authentication spike](auth-spike.md).
 Existing specifications and ADR statuses remain authoritative.
 
@@ -60,8 +60,7 @@ createdb --owner=synvaro synvaro
 pnpm db:validate
 ```
 
-The Prisma 7 schema contains User, Session, Organization and Brand. The latter two
-are the owner-approved SYN-002B scope; no membership/role tables exist. The [auth spike](auth-spike.md) documents migration setup and limitations.
+The Prisma 7 schema contains User, Session, Organization, Brand, BrandProfile, Content and MediaAsset. Ownership follows the approved single-owner scope; no membership/role tables exist. The [auth spike](auth-spike.md) documents migration setup and limitations.
 The API and auth integration tests require PostgreSQL; mocks are not substituted.
 
 Generate subsequent migrations only for explicitly scoped schema changes:
@@ -120,4 +119,45 @@ commercial modules (ADR-015) and vendors (ADR-016) remain unresolved or proposed
 Auth (ADR-013) is accepted for current development. One owner per organization
 and one organization per user are enforced; no membership or RBAC engine exists.
 See the [Organization & Brand contract](contracts/organization-brand.md) for current
-behaviors. No Spexop-UI, provider adapters or content/AI capabilities were added.
+behaviors. No Spexop-UI, provider adapters or AI generation capabilities are included.
+
+## Private media storage (SYN-005)
+
+Set `MEDIA_STORAGE_ROOT` in the API environment to an **absolute, persistent**
+directory outside the repository and every publicly served directory. There is no
+fallback. Provision it for the API service account with mode `0700`; files are
+created `0600` with opaque UUID names. Root symlinks and group/world access are
+rejected. The API account needs read/write access; the web server must never serve
+this directory directly. For example, an operator can provision `/var/lib/synvaro/media`
+with the correct service-account ownership and set that exact path. Do not put it
+in `/tmp`, the checkout or a web public folder for permanent use.
+
+Install a maintained FFmpeg package providing `ffprobe` (e.g. `brew install ffmpeg`
+on macOS, `apt-get install ffmpeg` on Ubuntu). `FFPROBE_PATH` can override its executable
+path. This is used only for MP4 metadata/packet inspection; uploads are never
+transcoded. JPEG/PNG/static WebP are fully decoded for validation by sharp. Limits:
+20 MiB per original file (keeps the initial single-host library conservative),
+16 million image/video pixels, two active uploads per API process, 120-second upload
+and 10-second MP4 probe deadlines. MP4 preview supports H.264 with optional AAC.
+The API and the narrow Next media proxy enforce streamed byte limits; configure any
+front proxy to allow the same 20 MiB plus 64 KiB multipart envelope, without raising
+JSON/auth body limits. Missing storage or ffprobe fails media operations closed;
+other Studio features remain usable. User-facing failures do not include server paths.
+
+Back up **both PostgreSQL metadata and the entire media directory**, preserving
+ownership/permissions. Pause uploads and stop the API while taking a coordinated
+backup; restore the matching pair before restarting. Test restores separately.
+Monitor disk capacity and keep the storage filesystem persistent across releases.
+Do not prune files based only on age. Normal failed uploads remove staged/published
+bytes; a process/host crash can leave an unreferenced UUID or `.part` object between
+filesystem publication and DB commit. Reconcile such objects offline against
+`MediaAsset.storageKey` after backup, with uploads stopped. No automatic orphan
+sweeper or distributed transaction is claimed. Brand deletion is restricted while
+media metadata exists. No deletion endpoint is provided in this slice.
+
+Authenticated `/api/media/:id/file` streams originals with private/no-store headers
+and byte-range support; there are no public media URLs. Preserve cookies and same-origin
+routing through Next. Originals may retain EXIF/location metadata: this is intentional
+provenance preservation, not metadata stripping. Authentication hardening, quotas,
+antivirus scanning and isolated hostile-file inspection are future production work;
+keep public production registration closed as already decided.
