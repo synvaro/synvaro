@@ -10,18 +10,19 @@
   },
   "scripts": {
     "dev:web": "pnpm --filter @synvaro/web dev",
-    "dev:api": "pnpm --filter @synvaro/contracts build && pnpm --filter @synvaro/api dev",
+    "dev:api": "pnpm --filter @synvaro/contracts build && pnpm --filter @synvaro/database build && pnpm --filter @synvaro/api dev",
     "dev:worker": "pnpm --filter @synvaro/worker dev",
     "build": "pnpm -r build",
-    "typecheck": "pnpm --filter @synvaro/contracts build && pnpm -r typecheck",
+    "typecheck": "pnpm --filter @synvaro/contracts build && pnpm --filter @synvaro/database build && pnpm -r typecheck",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "pnpm --filter @synvaro/contracts build && pnpm -r --if-present test",
+    "test": "pnpm --filter @synvaro/contracts build && pnpm --filter @synvaro/database build && pnpm -r --if-present test",
     "db:validate": "pnpm --filter @synvaro/database validate",
     "db:migrate": "pnpm --filter @synvaro/database migrate:dev",
     "db:deploy": "pnpm --filter @synvaro/database migrate:deploy",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "db:generate": "pnpm --filter @synvaro/database generate"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

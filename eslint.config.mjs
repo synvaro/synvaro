@@ -10,6 +10,7 @@ export default [
       '**/.next/**',
       '**/node_modules/**',
       '**/next-env.d.ts',
+      'packages/database/src/generated/**',
     ],
   },
   js.configs.recommended,

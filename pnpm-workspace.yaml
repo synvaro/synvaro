@@ -8,6 +8,7 @@ onlyBuiltDependencies:
   - prisma
   - esbuild
   - sharp
+  - argon2
 
 ignoredBuiltDependencies:
   - '@scarf/scarf'
