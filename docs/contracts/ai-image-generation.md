@@ -54,6 +54,43 @@ fail-closed behavior with zero provider calls, concurrent preference/generation
 locking. Live verification requires separate owner spending permission; a selected
 local budget is not disabled for testing.
 
+### PR #17 budget review — 2026-10-26
+
+**Finding: a trustworthy pre-request total reservation was not established from
+current official documentation. Retain the existing fail-closed rule.** This is
+a documented usability limitation, not evidence that budgeted images are impossible
+in a future provider contract.
+
+- The [Flare model page](https://developers.openai.com/api/docs/models/gpt-image-2.5-flare)
+  publishes token rates; it also warns against transferring GPT Image 2 calculator
+  consumption to GPT Image 2.5. Older-model per-image tables are not Flare bounds.
+- The [current cost guide](https://developers.openai.com/api/docs/guides/image-generation#cost-and-latency)
+  labels its size/quality calculator as an estimate and excludes input tokens from
+  image-output cost. It recommends measuring actual response usage. It does not
+  establish a guaranteed maximum billable token count for our nine combinations.
+- The [Images generation request schema](https://developers.openai.com/api/reference/resources/images/methods/generate)
+  exposes size, quality and image count, but no maximum output-token or request-cost
+  control. Our fixed n=1, no partial images, bounded prompt and timeout constrain
+  requests; they do not independently prove a monetary ceiling.
+
+| Supported size | low | medium | high |
+|---|---|---|---|
+| 1024x1024 | No verified total bound | No verified total bound | No verified total bound |
+| 1536x1024 | No verified total bound | No verified total bound | No verified total bound |
+| 1024x1536 | No verified total bound | No verified total bound | No verified total bound |
+
+Engineering conclusion: a guessed multiplier or a few live samples cannot prove
+coverage of future requests. Do not reserve an arbitrary value, silently remove
+a USD 1 text budget, or treat explicit confirmation as permission to bypass it.
+No paid research requests were made. Model, prices and runtime behavior are unchanged.
+
+Reopening criterion: verified model-specific bounds for the complete input and
+output cost, including failure/uncertain-charge handling. Only then reserve against
+shared text/image spending under the existing user-row lock before dispatch,
+settle from returned usage, and test concurrency at the selected budget boundary.
+The current regression covers all nine settings with concurrent requests, zero
+provider calls, an unchanged USD 1 preference and unchanged existing usage ledger.
+
 ## IMG-003 — Preview and accept
 
 POST `/contents/:id/image-generations` takes requestId, instruction and confirmed.

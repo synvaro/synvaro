@@ -198,3 +198,22 @@ path. Real OpenAI image availability, visual quality and actual usage remain for
 a separately authorized limited live acceptance. Mock token/cost values are not
 provider billing evidence. Screenshots and local test logs remain outside source;
 CI result is recorded against the PR commit. No owner/product acceptance is implied.
+
+### SYN-008 PR #17 review follow-up — 2026-10-26
+
+Rechecked official Flare model, pricing, Images API schema and the current image
+cost guide. The [reservation research](contracts/ai-image-generation.md#pr-17-budget-review--2026-10-26)
+distinguishes output-cost estimates from a verified total request upper bound.
+No reliable bound was established; existing selected-budget blocking and runtime
+model/pricing are unchanged. No paid requests or owner preference changes.
+
+Added a real PostgreSQL regression for IMG-002/006: each of the nine supported
+size/quality combinations receives two concurrent confirmed requests with a USD 1
+monthly preference, prior settled text usage, and text paid-confirmation disabled.
+All 18 requests return the documented 409 cost-bound explanation. Provider call
+count, the complete preference row and existing shared usage ledger remain
+unchanged. API preferences expose the limitation and retain the USD 1 value.
+
+Local suite: 85 API tests and 1 worker test passed. Browser runtime/UI is unchanged;
+no new browser or live-provider acceptance is claimed. Current-head CI is linked
+from PR #17; earlier screenshots/CI remain evidence for their recorded commit.

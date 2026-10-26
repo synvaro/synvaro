@@ -15,6 +15,9 @@ import { ImageService } from '../ai/image.service.js';
 import {
   OpenAIImageProvider,
   IMAGE_MODEL,
+  IMAGE_SIZES,
+  IMAGE_QUALITIES,
+  IMAGE_COST_NOTICE,
   type ImageRequest,
   type ImageResult,
 } from '../ai/image-provider.js';
@@ -197,6 +200,84 @@ test(
               .imageEnabled,
             true,
           );
+        },
+      );
+      await t.test(
+        'IMG-002/006 PR #17: all nine settings preserve shared USD 1 budget under concurrent requests',
+        async () => {
+          // A prior settled text charge is a fixture, not paid provider evidence.
+          await db.aiGeneration.create({
+            data: {
+              userId: users[0]!.id,
+              contentId,
+              requestId: randomUUID(),
+              kind: 'TEXT',
+              model: DEFAULTS.model,
+              maxOutputTokens: 512,
+              status: 'SUCCEEDED',
+              inputTokens: 100,
+              outputTokens: 50,
+              estimatedCostMicros: 38,
+              budgetChargeMicros: 38,
+              createdAt: now,
+              completedAt: now,
+            },
+          });
+          const ledger = await db.aiGeneration.findMany({
+            where: { userId: users[0]!.id },
+            orderBy: { id: 'asc' },
+          });
+          const callsBefore = calls;
+          for (const imageSize of IMAGE_SIZES)
+            for (const imageQuality of IMAGE_QUALITIES) {
+              assert.equal(
+                (
+                  await prefs({
+                    monthlyBudgetUsd: 1,
+                    imageSize,
+                    imageQuality,
+                    confirmPaid: false,
+                  })
+                ).status,
+                200,
+              );
+              const before = await db.aiPreference.findUniqueOrThrow({
+                where: { userId: users[0]!.id },
+              });
+              const responses = await Promise.all([generate(), generate()]);
+              for (const response of responses) {
+                assert.equal(
+                  response.status,
+                  409,
+                  `${imageSize}/${imageQuality}`,
+                );
+                assert.equal(
+                  (await response.json()).message,
+                  IMAGE_COST_NOTICE,
+                );
+              }
+              assert.deepEqual(
+                await db.aiPreference.findUnique({
+                  where: { userId: users[0]!.id },
+                }),
+                before,
+              );
+              assert.equal(before.monthlyBudgetMicros, 1000000n);
+            }
+          assert.equal(calls, callsBefore);
+          assert.deepEqual(
+            await db.aiGeneration.findMany({
+              where: { userId: users[0]!.id },
+              orderBy: { id: 'asc' },
+            }),
+            ledger,
+          );
+          const settings = await (await call('/ai/preferences')).json();
+          assert.equal(settings.preferences.monthlyBudgetUsd, 1);
+          assert.equal(settings.usage.chargedOrReservedUsd, 0.000038);
+          assert.equal(settings.image.costBoundAvailable, false);
+          assert.equal(settings.image.costNotice, IMAGE_COST_NOTICE);
+          await prefs();
         },
       );
       let savedId = '';
