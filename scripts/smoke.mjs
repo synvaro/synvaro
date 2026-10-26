@@ -1,4 +1,4 @@
-// SYN-002B + SYN-002A-A11: real PostgreSQL + built Next.js proxy + NestJS API, without mocks.
+// Real PostgreSQL + built Next/Nest; only the SYN-007 external AI provider is mocked.
 import { Buffer, Blob } from 'node:buffer';
 const { FormData } = globalThis;
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
@@ -67,7 +67,7 @@ async function auth(action, body, cookie = '', requestOrigin = origin) {
   });
 }
 try {
-  const api = start(['dist/main.js'], 'apps/api', {
+  const api = start(['dist/test/ai-preview.js'], 'apps/api', {
     MEDIA_STORAGE_ROOT: mediaRoot,
     API_PORT: '43101',
     API_HOST: '127.0.0.1',
@@ -426,6 +426,47 @@ try {
     (await fetch(`${origin}/unknown-section`, { headers: { cookie } })).status,
     404,
   );
+  // AIG-001–005: deterministic provider, real persistence and Next/Nest boundary.
+  const initialAI = await (await product('/ai/preferences')).json();
+  assert.equal(initialAI.preferences.enabled, false);
+  assert.equal(
+    (
+      await product('/ai/preferences', 'PUT', {
+        ...initialAI.preferences,
+        enabled: true,
+        monthlyBudgetUsd: 0.01,
+      })
+    ).status,
+    200,
+  );
+  const beforeAI = (await (await product(`/contents/${draft.id}`)).json())
+    .content;
+  const generated = await product(
+    `/contents/${draft.id}/ai-generations`,
+    'POST',
+    {
+      requestId: randomUUID(),
+      confirmed: true,
+      instruction: 'Hypothetical copy only',
+    },
+  );
+  assert.equal(generated.status, 201);
+  const suggestion = await generated.json();
+  assert.ok(suggestion.text.includes('test-provider suggestion'));
+  assert.equal(suggestion.usage.outputTokens, 50);
+  assert.deepEqual(
+    (await (await product(`/contents/${draft.id}`)).json()).content,
+    beforeAI,
+  );
+  assert.equal(
+    (await product(`/contents/${draft.id}`, 'PATCH', { body: suggestion.text }))
+      .status,
+    200,
+  );
+  const refreshedAI = await fetch(`${origin}/content/${draft.id}`, {
+    headers: { cookie },
+  });
+  assert.ok((await refreshedAI.text()).includes(suggestion.text));
   assert.equal(
     (await auth('logout', {}, cookie, 'https://evil.example')).status,
     403,
@@ -451,7 +492,7 @@ try {
     307,
   );
   console.info(
-    'SYN-006 + SYN-005 + SYN-004 + SYN-003 + SYN-002B + SYN-002A-A11 passed: real PostgreSQL, Next/Nest auth, organization, multiple brands, edit/reload, media upload/stream, CSRF and logout.',
+    'SYN-007 (mock provider) + SYN-006 + SYN-005 + SYN-004 + SYN-003 + SYN-002B + SYN-002A-A11 passed: real PostgreSQL, Next/Nest auth, organization, multiple brands, edit/reload, media upload/stream, CSRF and logout.',
   );
 } finally {
   for (const { child, exited } of children) {
@@ -462,6 +503,7 @@ try {
       clearTimeout(timer);
     }
   }
+  await db.aiGeneration.deleteMany({ where: { user: { email } } });
   await db.mediaAsset.deleteMany({
     where: { brand: { organization: { owner: { email } } } },
   });

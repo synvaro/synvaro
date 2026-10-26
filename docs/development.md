@@ -161,3 +161,37 @@ routing through Next. Originals may retain EXIF/location metadata: this is inten
 provenance preservation, not metadata stripping. Authentication hardening, quotas,
 antivirus scanning and isolated hostile-file inspection are future production work;
 keep public production registration closed as already decided.
+
+## AI text drafts (SYN-007)
+
+Set `OPENAI_API_KEY` in the private server environment (or ignored root `.env`).
+Leave it empty to disable generation gracefully. Restart the API after changing
+configuration. There is no browser credential entry, database key storage or
+`NEXT_PUBLIC_` setting. Use an OpenAI project with its own provider spending
+controls; never share production keys with tests.
+
+The supported model is `gpt-6-luna` via official `openai` SDK 7.43.0 / Responses
+API, standard service tier, reasoning disabled, no tools, no automatic retries,
+30-second timeout per token-count/generation call and `store: false`. Saved draft,
+brand/profile text and attached metadata are sent to OpenAI only after an explicit
+request. No media bytes are sent. `store: false` is not a promise of zero provider
+retention; assess provider data policies for your deployment.
+
+Each user starts with AI disabled, 512 output tokens, paid confirmation enabled
+and no selected monthly budget. The Studio displays these defaults. The optional
+budget is a conservative **estimated** UTC monthly spending ceiling for this user
+in this application, not a provider invoice cap. See the [contract](contracts/ai-draft-generation.md)
+for exact rates, input counting, reservation, concurrent request and error rules.
+Rates were verified on 2026-10-26 and generation fails closed on 2026-11-25 until
+maintainers reverify the official model pricing and update the reviewed code.
+Account-specific pricing, taxes, key usage outside SYNVARO and future changes are
+not covered. Budget input accepts cents up to USD 1,000,000 (representation guard,
+not a product usage quota).
+
+A crashed COUNTING/RUNNING record blocks further requests for that user. Failed
+paid requests retain their full reservation; missing or anomalous usage is marked
+uncertain and blocks further budgeted requests. An operator must reconcile these
+records against provider usage before changing their status/charge; never blindly
+clear an active record while a request could still complete. This slice has no
+automatic recovery or billing administration UI. Back up generation records with
+PostgreSQL; no separate file storage is added.

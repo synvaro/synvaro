@@ -1,3 +1,4 @@
+import { AiModule } from './ai/ai.module.js';
 import { MediaModule } from './media/media.module.js';
 import { ContentModule } from './content/content.module.js';
 import { OrganizationBrandModule } from './organization-brand/organization-brand.module.js';
@@ -14,6 +15,7 @@ import { HttpExceptionFilter } from './common/http-exception.filter.js';
     OrganizationBrandModule,
     ContentModule,
     MediaModule,
+    AiModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: HttpExceptionFilter }],
 })

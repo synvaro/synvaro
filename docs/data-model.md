@@ -1,8 +1,8 @@
 # Data model v0.1
 
-## Implemented development schema (SYN-006)
+## Implemented development schema (SYN-007)
 
-The Prisma schema and migrations implement only these eight models. UUID keys and
+The Prisma schema and migrations implement only these ten models. UUID keys and
 UTC timestamps are used; authentication secrets are hashes, not plaintext.
 
 | Model | Fields and constraints |
@@ -27,6 +27,13 @@ Brand 1:0..1 BrandProfile. Profile text is detailed context; Brand.description r
 
 User 1:0..1 Organization; Organization 1:N Brand. There are no membership,
 role or permission tables. Other foreign keys cascade on parent removal; MediaAsset restricts brand removal to prevent orphaned files; no user/organization/brand deletion API is exposed in this slice.
+
+
+User 1:0..1 AiPreference: enabled (false), supported model, maxOutputTokens (512), optional monthlyBudgetMicros (BigInt), confirmPaid (true), updatedAt. No provider credentials.
+
+AiGeneration: UUID, userId and contentId (RESTRICT foreign keys for attributable usage), unique (userId, requestId), model, maxOutputTokens, COUNTING/RUNNING/SUCCEEDED/FAILED/BLOCKED status, optional input/output tokens and estimatedCostMicros, budgetChargeMicros, costUncertain, sanitized errorCode, createdAt/completedAt. Indexes (userId, createdAt) and contentId. No prompt, instruction, suggestion text or media bytes are persisted. The explicit owner reference supports per-user preferences and budget locking; authorization still follows Content → Brand → Organization → User.
+
+See [AIG-001–005](contracts/ai-draft-generation.md) for reservation and uncertainty semantics. Generation never updates Content; explicit application uses the existing draft PATCH.
 
 ## Remaining design draft (not migrated)
 

@@ -80,3 +80,32 @@ text. Browser acceptance on desktop and 390px covers two attachments, reorder,
 refresh, detach/library retention, Qos/ISIS picker isolation and dirty text across
 attachment changes. All migrations are replayed on clean PostgreSQL. Exact results
 and CI/browser evidence belong in the SYN-006 PR; production acceptance is separate.
+
+## SYN-007 AI draft generation
+
+[AIG-001–005](contracts/ai-draft-generation.md) is tested against real PostgreSQL
+and HTTP with deterministic **mocked external provider** responses. Tests cover
+configuration/defaults, strict preferences, profile language/tone, ownership,
+CSRF, no automatic Content write, explicit PATCH application, usage persistence,
+zero/exhausted budgets, concurrent admission and preference locking, duplicate
+request IDs, UTC month rollover, stale pricing, provider failure/timeout and
+uncertain reservations. Test time is fixed only on the injected service instance;
+production has no clock or mock-provider environment switch.
+
+`pnpm smoke` uses the dedicated `dist/test/ai-preview.js` test executable (guarded
+by NODE_ENV=test and a database name ending in `_test`). Only OpenAI is replaced;
+Next/Nest/session/PostgreSQL remain real. The normal `dist/main.js` never imports
+this executable. CI requires no paid API key and replays all migrations on clean
+PostgreSQL. Live provider evidence, if available, must be reported separately from
+these tests. Browser desktop/390px review/discard/apply and dirty-edit evidence is
+recorded in the SYN-007 PR. No live provider or owner acceptance is inferred.
+
+2026-10-26 local evidence: 76 API tests and 1 worker test passed; format, lint,
+typecheck, build, Prisma validation and built Next/Nest smoke passed. All seven
+migrations applied to a newly created PostgreSQL 16 test database. Chrome desktop
+and 390px covered login, Qos preferences/model/budget, discard first suggestion,
+generate again, dirty-body cancel/confirm, preservation of unsaved title, explicit
+apply, refresh persistence, ISIS isolation and logout/protected-route redirect.
+Mobile document width equalled the 390px viewport. Browser AI responses used the
+test provider, not OpenAI. No local OpenAI key was available, so live paid API
+verification remains unperformed. CI result is recorded against the PR commit.

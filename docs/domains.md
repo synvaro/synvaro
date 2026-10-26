@@ -5,12 +5,12 @@ Logical modules inside one modular monolith; **not** separate services.
 | Domain | Responsibility | Target |
 |---|---|---|
 | Organization & Access | Implemented: session auth, create/read own organization; single owner, one organization per user. No membership or roles. | SYN-002B development |
-| Brand Management | Implemented: create/list/update name and description within owner organization. Detailed brand profiles (description, audience, tone, language and guidelines) are implemented. Locations and AI use remain planned. | SYN-003 development; broader MVP planned |
+| Brand Management | Implemented: create/list/update name and description within owner organization. Detailed brand profiles (description, audience, tone, language and guidelines) are implemented. Brand context is used by explicit text generation; locations remain planned. | SYN-003 development; broader MVP planned |
 | Social Channels | OAuth connections, account capabilities | MVP |
 | Content Planning | campaigns, calendar, ideas | MVP |
 | Content Production | Implemented: owner-scoped manual drafts (create/list/read/update), immutable brand assignment, DRAFT only; same-brand media attach/list/reorder/detach. Revisions and channel variants remain planned. | SYN-006 development |
 | Media Library | Implemented: private original uploads, per-brand lists, authenticated image/video previews and UPLOADED provenance. Draft attachment reuse is implemented; no editing or generation. | SYN-005 development |
-| AI Generation | provider jobs, outputs, costs | MVP |
+| AI Generation | Implemented: explicit OpenAI text suggestions from saved draft/brand context, review/apply, user preferences and conservative usage estimates. No autonomous jobs, media generation or publishing. | SYN-007 development |
 | Publishing | scheduling, attempts, remote IDs | MVP |
 | Review & Approval | revision-bound approvals | MVP |
 | Product Catalog | verified products, facts, offers | Pilot/MVP decision |
@@ -27,3 +27,5 @@ Manual draft contract: [CNT-001–004](contracts/content-drafts.md).
 Media library contract: [MED-001–004](contracts/media-library.md).
 Content media contract: [CMA-001–005](contracts/content-media.md).
 Rows not explicitly marked implemented describe planned capabilities.
+
+AI draft contract: [AIG-001–005](contracts/ai-draft-generation.md).
