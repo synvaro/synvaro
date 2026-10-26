@@ -8,13 +8,6 @@ const sections = {
       'Content planning and scheduling are planned. No publications can be scheduled in this preview.',
     icon: '▦',
   },
-  media: {
-    title: 'Media',
-    empty: 'A place for your visual stories.',
-    description:
-      'A media library is planned. Uploads and asset management are not available yet.',
-    icon: '▧',
-  },
 };
 
 export const dynamicParams = false;

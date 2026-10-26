@@ -1,3 +1,4 @@
+import { MediaModule } from './media/media.module.js';
 import { ContentModule } from './content/content.module.js';
 import { OrganizationBrandModule } from './organization-brand/organization-brand.module.js';
 import { AuthModule } from './auth/auth.module.js';
@@ -7,7 +8,13 @@ import { HealthModule } from './health/health.module.js';
 import { HttpExceptionFilter } from './common/http-exception.filter.js';
 
 @Module({
-  imports: [HealthModule, AuthModule, OrganizationBrandModule, ContentModule],
+  imports: [
+    HealthModule,
+    AuthModule,
+    OrganizationBrandModule,
+    ContentModule,
+    MediaModule,
+  ],
   providers: [{ provide: APP_FILTER, useClass: HttpExceptionFilter }],
 })
 export class AppModule {}

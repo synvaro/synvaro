@@ -1,4 +1,9 @@
 // SYN-002B + SYN-002A-A11: real PostgreSQL + built Next.js proxy + NestJS API, without mocks.
+import { Buffer, Blob } from 'node:buffer';
+const { FormData } = globalThis;
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { createDatabase } from '../packages/database/dist/index.js';
 import { spawn } from 'node:child_process';
@@ -6,6 +11,7 @@ import { once } from 'node:events';
 import assert from 'node:assert/strict';
 import { setTimeout as delay } from 'node:timers/promises';
 
+const mediaRoot = await mkdtemp(join(tmpdir(), 'synvaro-media-smoke-'));
 const children = [];
 function start(args, cwd, env = {}) {
   const child = spawn(process.execPath, args, {
@@ -62,6 +68,7 @@ async function auth(action, body, cookie = '', requestOrigin = origin) {
 }
 try {
   const api = start(['dist/main.js'], 'apps/api', {
+    MEDIA_STORAGE_ROOT: mediaRoot,
     API_PORT: '43101',
     API_HOST: '127.0.0.1',
     NODE_ENV: 'test',
@@ -302,13 +309,56 @@ try {
     headers: { cookie },
   });
   assert.ok((await listing.text()).includes('Hypothetical draft only'));
-  for (const section of ['calendar', 'media']) {
+  for (const section of ['calendar']) {
     const response = await fetch(`${origin}/${section}`, {
       headers: { cookie },
     });
     assert.equal(response.status, 200);
     assert.match(await response.text(), /Coming later/);
   }
+  // MED-001–004: streaming multipart through Next, original bytes and brand isolation.
+  const png = await readFile('apps/api/src/test/fixtures/media/sample.png');
+  async function uploadMedia(requestOrigin = origin) {
+    const data = new FormData();
+    data.append('file', new Blob([png], { type: 'image/png' }), 'smoke.png');
+    return fetch(`${origin}/api/brands/${brand.id}/media`, {
+      method: 'POST',
+      headers: { cookie, origin: requestOrigin },
+      body: data,
+    });
+  }
+  assert.equal((await uploadMedia('https://evil.example')).status, 403);
+  const uploaded = await uploadMedia();
+  assert.equal(uploaded.status, 201, await uploaded.clone().text());
+  const media = (await uploaded.json()).asset;
+  assert.equal(
+    (await (await product(`/brands/${brand.id}/media`)).json()).assets[0].id,
+    media.id,
+  );
+  assert.deepEqual(
+    await (await product(`/brands/${secondBrand.id}/media`)).json(),
+    { assets: [] },
+  );
+  const original = await fetch(`${origin}/api/media/${media.id}/file`, {
+    headers: { cookie },
+  });
+  assert.equal(original.status, 200);
+  assert.deepEqual(Buffer.from(await original.arrayBuffer()), png);
+  assert.equal(original.headers.get('cache-control'), 'private, no-store');
+  const range = await fetch(`${origin}/api/media/${media.id}/file`, {
+    headers: { cookie, range: 'bytes=0-7' },
+  });
+  assert.equal(range.status, 206);
+  assert.deepEqual(Buffer.from(await range.arrayBuffer()), png.subarray(0, 8));
+  assert.equal(
+    (await fetch(`${origin}/api/media/${media.id}/file`)).status,
+    401,
+  );
+  const mediaPage = await fetch(`${origin}/media?brandId=${brand.id}`, {
+    headers: { cookie },
+  });
+  assert.equal(mediaPage.status, 200);
+  assert.match(await mediaPage.text(), /Original images and videos/);
   assert.equal(
     (await fetch(`${origin}/unknown-section`, { headers: { cookie } })).status,
     404,
@@ -322,6 +372,14 @@ try {
   assert.equal((await auth('me', undefined, cookie)).status, 401);
   assert.equal(
     (
+      await fetch(`${origin}/api/media/${media.id}/file`, {
+        headers: { cookie },
+      })
+    ).status,
+    401,
+  );
+  assert.equal(
+    (
       await fetch(`${origin}/brands`, {
         headers: { cookie },
         redirect: 'manual',
@@ -330,7 +388,7 @@ try {
     307,
   );
   console.info(
-    'SYN-004 + SYN-003 + SYN-002B + SYN-002A-A11 passed: real PostgreSQL, Next/Nest auth, organization, multiple brands, edit/reload, CSRF and logout.',
+    'SYN-005 + SYN-004 + SYN-003 + SYN-002B + SYN-002A-A11 passed: real PostgreSQL, Next/Nest auth, organization, multiple brands, edit/reload, media upload/stream, CSRF and logout.',
   );
 } finally {
   for (const { child, exited } of children) {
@@ -341,6 +399,10 @@ try {
       clearTimeout(timer);
     }
   }
+  await db.mediaAsset.deleteMany({
+    where: { brand: { organization: { owner: { email } } } },
+  });
   await db.user.deleteMany({ where: { email } });
+  await rm(mediaRoot, { recursive: true, force: true });
   await db.$disconnect();
 }

@@ -79,3 +79,23 @@ export interface ContentResponse {
 export interface ContentsResponse {
   contents: ContentSummary[];
 }
+
+/** MED-001–004: public metadata; storage keys and server paths are private. */
+export interface MediaAsset {
+  id: string;
+  brandId: string;
+  originalFilename: string;
+  mimeType: string;
+  sizeBytes: number;
+  width: number | null;
+  height: number | null;
+  durationMs: number | null;
+  origin: 'UPLOADED';
+  createdAt: string;
+}
+export interface MediaResponse {
+  asset: MediaAsset;
+}
+export interface MediaListResponse {
+  assets: MediaAsset[];
+}

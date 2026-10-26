@@ -55,6 +55,7 @@ model Brand {
 
   profile        BrandProfile?
   contents       Content[]
+  mediaAssets    MediaAsset[]
 
   @@unique([organizationId, slug])
 }
@@ -87,4 +88,25 @@ model Content {
   updatedAt DateTime      @updatedAt @db.Timestamptz(3)
 
   @@index([brandId, updatedAt(sort: Desc), id(sort: Desc)])
+}
+
+enum MediaOrigin {
+  UPLOADED
+}
+
+model MediaAsset {
+  id               String      @id @default(uuid()) @db.Uuid
+  brandId          String      @db.Uuid
+  brand            Brand       @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  originalFilename String      @db.VarChar(255)
+  storageKey       String      @unique @db.Uuid
+  mimeType         String      @db.VarChar(40)
+  sizeBytes        Int
+  width            Int?
+  height           Int?
+  durationMs       Int?
+  origin           MediaOrigin @default(UPLOADED)
+  createdAt        DateTime    @default(now()) @db.Timestamptz(3)
+
+  @@index([brandId, createdAt(sort: Desc), id(sort: Desc)])
 }
