@@ -485,3 +485,61 @@ fieldset .button,
   border-radius: 8px;
   line-height: 1.6;
 }
+
+.brand-selector {
+  max-width: 450px;
+  margin: 24px 0;
+}
+.brand-selector label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+.brand-selector select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #647570;
+  border-radius: 6px;
+  background: white;
+  font: inherit;
+}
+.brand-selector select:focus-visible {
+  outline: 3px solid #176f5e;
+  outline-offset: 3px;
+}
+.draft-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+}
+.draft-list h2 {
+  margin-top: 16px;
+}
+.draft-date {
+  color: #53655e;
+  font-size: 13px;
+}
+.content-brand-name {
+  overflow-wrap: anywhere;
+}
+.draft-editor {
+  max-width: 750px;
+}
+.discard-prompt {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(500px, calc(100vw - 40px));
+  background: white;
+  border: 2px solid #176f5e;
+  border-radius: 12px;
+  padding: 20px;
+  z-index: 20;
+  box-shadow: 0 8px 30px #192c2930;
+}
+.discard-prompt h2 {
+  margin-top: 0;
+}

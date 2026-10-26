@@ -54,6 +54,7 @@ model Brand {
   updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
 
   profile        BrandProfile?
+  contents       Content[]
 
   @@unique([organizationId, slug])
 }
@@ -69,4 +70,21 @@ model BrandProfile {
   contentGuidelines String   @default("") @db.Text
   createdAt         DateTime @default(now()) @db.Timestamptz(3)
   updatedAt         DateTime @updatedAt @db.Timestamptz(3)
+}
+
+enum ContentStatus {
+  DRAFT
+}
+
+model Content {
+  id        String        @id @default(uuid()) @db.Uuid
+  brandId   String        @db.Uuid
+  brand     Brand         @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  title     String        @db.VarChar(200)
+  body      String        @default("") @db.Text
+  status    ContentStatus @default(DRAFT)
+  createdAt DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime      @updatedAt @db.Timestamptz(3)
+
+  @@index([brandId, updatedAt(sort: Desc), id(sort: Desc)])
 }

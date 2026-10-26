@@ -1,8 +1,8 @@
 # Data model v0.1
 
-## Implemented development schema (SYN-003)
+## Implemented development schema (SYN-004)
 
-The Prisma schema and migrations implement only these five models. UUID keys and
+The Prisma schema and migrations implement only these six models. UUID keys and
 UTC timestamps are used; authentication secrets are hashes, not plaintext.
 
 | Model | Fields and constraints |
@@ -12,6 +12,9 @@ UTC timestamps are used; authentication secrets are hashes, not plaintext.
 | Organization | id, unique ownerUserId FK to User, name, globally unique slug, createdAt, updatedAt |
 | Brand | id, organizationId FK, name, slug, nullable description, createdAt, updatedAt; unique (organizationId, slug) |
 | BrandProfile | id, unique brandId FK, description, targetAudience, toneOfVoice, nullable defaultLanguage, contentGuidelines, createdAt, updatedAt |
+| Content | id, brandId FK, title (200), body text (empty allowed), status DRAFT, createdAt, updatedAt; index (brandId, updatedAt DESC, id DESC) |
+
+Brand 1:N Content. Content brand is immutable through the API; no duplicate owner/organization FKs.
 
 Brand 1:0..1 BrandProfile. Profile text is detailed context; Brand.description remains a separate short summary.
 
@@ -37,7 +40,7 @@ otherwise noted.
 | social_credentials | social_account_id, encrypted_token_ref, scopes, expires_at |
 | campaigns | brand_id, title, dates, objective |
 | content_ideas | brand_id, campaign_id?, brief, status |
-| contents | brand_id, idea_id?, title, type, status |
+| contents | Implemented as Content above; idea/type and non-draft states remain outside this slice |
 | content_revisions | content_id, revision_no, body, created_by, immutable_snapshot |
 | content_variants | content_revision_id, platform, caption, status |
 | assets | brand_id, storage_key, mime_type, origin, metadata |

@@ -36,3 +36,13 @@ updates, isolation, validation and migration checks to real PostgreSQL tests. Th
 built Next/Nest smoke covers profile persistence across refreshed SSR. Desktop and
 390px browser checks cover form feedback and unsaved-change handling. Command and
 CI outcomes are recorded in the PR; no mocked database substitutes are used.
+
+## SYN-004 Manual Content Drafts
+
+[CNT-001–004](contracts/content-drafts.md) maps creation, per-brand lists, retrieval,
+partial saves, immutable brand/status, invalid fields, ownership isolation and
+session/CSRF regression to real PostgreSQL HTTP tests. Built Next/Nest smoke tests
+cover create/save, selected-brand isolation and refreshed SSR. Desktop and 390px
+acceptance uses hypothetical copy for Qos Workspace and ISIS Türkiye. CI replays
+all migrations on clean PostgreSQL. Actual outcomes and limitations are recorded
+in the PR; no mocked persistence or production acceptance is inferred.

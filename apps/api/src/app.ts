@@ -16,6 +16,7 @@ export async function createApp() {
   });
   // Only the bounded profile text payload needs more room; auth limits stay unchanged.
   app.use('/brands/:id/profile', json({ limit: '64kb' }));
+  app.use('/contents', json({ limit: '128kb' }));
   app.use(json({ limit: '8kb' }));
   app.use(
     (
