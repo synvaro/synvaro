@@ -28,3 +28,11 @@ service. The built Next/Nest smoke verifies organization and multi-brand creatio
 editing, reload persistence and logout. Desktop and 390px browser evidence and
 actual command results are recorded in the SYN-002B PR, separately from owner
 acceptance and production readiness. No mocked database evidence is substituted.
+
+## SYN-003 Brand Profile verification
+
+[BRP-001](contracts/brand-profile.md) maps profile creation, reads, independent
+updates, isolation, validation and migration checks to real PostgreSQL tests. The
+built Next/Nest smoke covers profile persistence across refreshed SSR. Desktop and
+390px browser checks cover form feedback and unsaved-change handling. Command and
+CI outcomes are recorded in the PR; no mocked database substitutes are used.

@@ -1,8 +1,8 @@
 # Data model v0.1
 
-## Implemented development schema (SYN-002B)
+## Implemented development schema (SYN-003)
 
-The Prisma schema and migrations implement only these four models. UUID keys and
+The Prisma schema and migrations implement only these five models. UUID keys and
 UTC timestamps are used; authentication secrets are hashes, not plaintext.
 
 | Model | Fields and constraints |
@@ -11,6 +11,9 @@ UTC timestamps are used; authentication secrets are hashes, not plaintext.
 | Session | id, unique tokenHash (SHA-256), userId FK, createdAt, expiresAt, revokedAt |
 | Organization | id, unique ownerUserId FK to User, name, globally unique slug, createdAt, updatedAt |
 | Brand | id, organizationId FK, name, slug, nullable description, createdAt, updatedAt; unique (organizationId, slug) |
+| BrandProfile | id, unique brandId FK, description, targetAudience, toneOfVoice, nullable defaultLanguage, contentGuidelines, createdAt, updatedAt |
+
+Brand 1:0..1 BrandProfile. Profile text is detailed context; Brand.description remains a separate short summary.
 
 User 1:0..1 Organization; Organization 1:N Brand. There are no membership,
 role or permission tables. Foreign keys cascade on parent removal to avoid
@@ -28,7 +31,7 @@ otherwise noted.
 | organizations | Implemented as Organization above; status remains outside current scope |
 | users | Implemented as User above; profile name/status remain outside current scope |
 | brands | Implemented as Brand above; status remains outside current scope |
-| brand_profiles | brand_id, tone, languages, audience, guidelines |
+| brand_profiles | Implemented as BrandProfile above; future AI use remains planned |
 | brand_locations | brand_id, name, address, status |
 | social_accounts | brand_id, platform, external_account_id, status |
 | social_credentials | social_account_id, encrypted_token_ref, scopes, expires_at |

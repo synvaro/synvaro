@@ -32,7 +32,10 @@ export async function forwardApi(req: NextRequest, path: string) {
         const chunk = await reader.read();
         if (chunk.done) break;
         length += chunk.value.byteLength;
-        if (length > 8192) {
+        if (
+          length >
+          (/^\/brands\/[0-9a-f-]{36}\/profile$/i.test(path) ? 65536 : 8192)
+        ) {
           await reader.cancel();
           return Response.json(
             { message: 'Request too large' },

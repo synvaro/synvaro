@@ -53,5 +53,20 @@ model Brand {
   createdAt      DateTime     @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
 
+  profile        BrandProfile?
+
   @@unique([organizationId, slug])
+}
+
+model BrandProfile {
+  id                String   @id @default(uuid()) @db.Uuid
+  brandId           String   @unique @db.Uuid
+  brand             Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  description       String   @default("") @db.Text
+  targetAudience    String   @default("") @db.Text
+  toneOfVoice       String   @default("") @db.Text
+  defaultLanguage   String?  @db.VarChar(100)
+  contentGuidelines String   @default("") @db.Text
+  createdAt         DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime @updatedAt @db.Timestamptz(3)
 }

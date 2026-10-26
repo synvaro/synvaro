@@ -187,6 +187,56 @@ try {
     persisted.brands.find((item) => item.id === brand.id).description,
     'Persisted edit',
   );
+  // BRP-001-A1/A3/A8: profile through the actual Next proxy and refreshed SSR.
+  const profilePath = `/brands/${brand.id}/profile`;
+  assert.deepEqual(await (await product(profilePath)).json(), {
+    profile: null,
+  });
+  assert.equal(
+    (
+      await product(
+        profilePath,
+        'PUT',
+        { description: 'Forbidden' },
+        'https://evil.example',
+      )
+    ).status,
+    403,
+  );
+  const detail = '文'.repeat(3000);
+  assert.equal(
+    (
+      await product(profilePath, 'PUT', {
+        description: detail,
+        targetAudience: 'Local business owners',
+        toneOfVoice: 'Warm and factual',
+        defaultLanguage: 'tr-tr',
+        contentGuidelines: 'No invented claims',
+      })
+    ).status,
+    200,
+  );
+  assert.equal(
+    (await product(profilePath, 'PUT', { toneOfVoice: 'Clear and helpful' }))
+      .status,
+    200,
+  );
+  const profile = (await (await product(profilePath)).json()).profile;
+  assert.equal(profile.description, detail);
+  assert.equal(profile.targetAudience, 'Local business owners');
+  assert.equal(profile.defaultLanguage, 'tr-TR');
+  for (let i = 0; i < 2; i++) {
+    const page = await fetch(`${origin}${profilePath}`, {
+      headers: { cookie },
+    });
+    assert.equal(page.status, 200);
+    const html = await page.text();
+    assert.ok(
+      html.includes('Clear and helpful') &&
+        html.includes('Local business owners') &&
+        html.includes('No invented claims'),
+    );
+  }
   for (const section of ['content', 'calendar', 'media']) {
     const response = await fetch(`${origin}/${section}`, {
       headers: { cookie },
@@ -215,7 +265,7 @@ try {
     307,
   );
   console.info(
-    'SYN-002B + SYN-002A-A11 passed: real PostgreSQL, Next/Nest auth, organization, multiple brands, edit/reload, CSRF and logout.',
+    'SYN-003 + SYN-002B + SYN-002A-A11 passed: real PostgreSQL, Next/Nest auth, organization, multiple brands, edit/reload, CSRF and logout.',
   );
 } finally {
   for (const { child, exited } of children) {
