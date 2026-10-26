@@ -87,6 +87,8 @@ model Content {
   createdAt DateTime      @default(now()) @db.Timestamptz(3)
   updatedAt DateTime      @updatedAt @db.Timestamptz(3)
 
+  media ContentMedia[]
+
   @@index([brandId, updatedAt(sort: Desc), id(sort: Desc)])
 }
 
@@ -108,5 +110,20 @@ model MediaAsset {
   origin           MediaOrigin @default(UPLOADED)
   createdAt        DateTime    @default(now()) @db.Timestamptz(3)
 
+  contents ContentMedia[]
+
   @@index([brandId, createdAt(sort: Desc), id(sort: Desc)])
+}
+
+model ContentMedia {
+  contentId String @db.Uuid
+  mediaAssetId String @db.Uuid
+  position Int
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  asset MediaAsset @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+
+  @@id([contentId, mediaAssetId])
+  @@index([contentId, position, mediaAssetId])
+  @@index([mediaAssetId])
 }

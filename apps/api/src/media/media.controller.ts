@@ -34,7 +34,7 @@ function id(value: string) {
     throw new BadRequestException('ID must be a UUID');
   return value;
 }
-class AssetDto {
+export class AssetDto {
   @ApiProperty({ type: String, format: 'uuid' }) id!: string;
   @ApiProperty({ type: String, format: 'uuid' }) brandId!: string;
   @ApiProperty({ type: String, maxLength: 255 }) originalFilename!: string;

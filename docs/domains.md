@@ -8,8 +8,8 @@ Logical modules inside one modular monolith; **not** separate services.
 | Brand Management | Implemented: create/list/update name and description within owner organization. Detailed brand profiles (description, audience, tone, language and guidelines) are implemented. Locations and AI use remain planned. | SYN-003 development; broader MVP planned |
 | Social Channels | OAuth connections, account capabilities | MVP |
 | Content Planning | campaigns, calendar, ideas | MVP |
-| Content Production | Implemented: owner-scoped manual drafts (create/list/read/update), immutable brand assignment, DRAFT only. Revisions and channel variants remain planned. | SYN-004 development |
-| Media Library | Implemented: private original uploads, per-brand lists, authenticated image/video previews and UPLOADED provenance. No editing, generation or content attachment. | SYN-005 development |
+| Content Production | Implemented: owner-scoped manual drafts (create/list/read/update), immutable brand assignment, DRAFT only; same-brand media attach/list/reorder/detach. Revisions and channel variants remain planned. | SYN-006 development |
+| Media Library | Implemented: private original uploads, per-brand lists, authenticated image/video previews and UPLOADED provenance. Draft attachment reuse is implemented; no editing or generation. | SYN-005 development |
 | AI Generation | provider jobs, outputs, costs | MVP |
 | Publishing | scheduling, attempts, remote IDs | MVP |
 | Review & Approval | revision-bound approvals | MVP |
@@ -25,4 +25,5 @@ Current behavior contract: [Organization & Brand](contracts/organization-brand.m
 Brand profile contract: [BRP-001](contracts/brand-profile.md).
 Manual draft contract: [CNT-001–004](contracts/content-drafts.md).
 Media library contract: [MED-001–004](contracts/media-library.md).
+Content media contract: [CMA-001–005](contracts/content-media.md).
 Rows not explicitly marked implemented describe planned capabilities.

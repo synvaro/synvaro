@@ -63,3 +63,20 @@ execution; that convention is not a production storage default.
 retrieval and logout. CI installs ffprobe and replays migrations on clean PostgreSQL.
 Desktop/390px real browser results and exact command/CI outcomes are recorded in
 the SYN-005 PR, separately from production or owner acceptance.
+
+## SYN-006 Content Media Attachments
+
+[CMA-001–005](contracts/content-media.md) maps real HTTP/PostgreSQL tests to image
+and video attachments, shared originals, duplicate prevention, ordered retrieval,
+atomic reorder validation, detach without deleting bytes, same-brand isolation,
+unknown/foreign resources, session/CSRF protection and parent FK cascades.
+Concurrent attach/reorder/detach requests exercise the per-content row lock and
+stale-membership policy. Existing media/draft regression suites remain enabled.
+Tests upload tiny synthetic fixtures into dedicated temporary storage and compare
+file inventories and retrieved bytes; no mocked persistence is used.
+
+Built Next/Nest smoke covers all four attachment operations and preserves draft
+text. Browser acceptance on desktop and 390px covers two attachments, reorder,
+refresh, detach/library retention, Qos/ISIS picker isolation and dirty text across
+attachment changes. All migrations are replayed on clean PostgreSQL. Exact results
+and CI/browser evidence belong in the SYN-006 PR; production acceptance is separate.
