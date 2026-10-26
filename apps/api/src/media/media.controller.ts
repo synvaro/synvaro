@@ -34,7 +34,21 @@ function id(value: string) {
     throw new BadRequestException('ID must be a UUID');
   return value;
 }
+class GenerationProvenanceDto {
+  @ApiProperty({ type: String, format: 'uuid' }) id!: string;
+  @ApiProperty({ type: String }) provider!: string;
+  @ApiProperty({ type: String }) model!: string;
+  @ApiProperty({ type: String, nullable: true }) imageSize!: string | null;
+  @ApiProperty({ type: String, nullable: true }) imageQuality!: string | null;
+  @ApiProperty({ type: String, format: 'date-time' }) createdAt!: string;
+}
 export class AssetDto {
+  @ApiProperty({
+    type: GenerationProvenanceDto,
+    nullable: true,
+    description: 'AI generation provenance; null for uploaded originals',
+  })
+  generation!: GenerationProvenanceDto | null;
   @ApiProperty({ type: String, format: 'uuid' }) id!: string;
   @ApiProperty({ type: String, format: 'uuid' }) brandId!: string;
   @ApiProperty({ type: String, maxLength: 255 }) originalFilename!: string;
@@ -47,7 +61,7 @@ export class AssetDto {
   @ApiProperty({ type: Number, nullable: true }) width!: number | null;
   @ApiProperty({ type: Number, nullable: true }) height!: number | null;
   @ApiProperty({ type: Number, nullable: true }) durationMs!: number | null;
-  @ApiProperty({ enum: ['UPLOADED'] }) origin!: string;
+  @ApiProperty({ enum: ['UPLOADED', 'AI_GENERATED'] }) origin!: string;
   @ApiProperty({ type: String, format: 'date-time' }) createdAt!: string;
 }
 class AssetResponse {

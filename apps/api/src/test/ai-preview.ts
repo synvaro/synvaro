@@ -18,5 +18,33 @@ provider.generate = async (request) => ({
   inputTokens: 100,
   outputTokens: 50,
 });
+const { ImageService } = await import('../ai/image.service.js');
+const { OpenAIImageProvider } = await import('../ai/image-provider.js');
+const { default: sharp } = await import('sharp');
+const imageClockStart = Date.now();
+app.get(ImageService).now = () =>
+  new Date(
+    new Date('2026-10-26T16:00:00Z').getTime() + Date.now() - imageClockStart,
+  );
+const imageProvider = app.get(OpenAIImageProvider);
+imageProvider.configured = () => true;
+imageProvider.generate = async (request) => {
+  const [width, height] = request.size.split('x').map(Number);
+  return {
+    bytes: await sharp({
+      create: {
+        width: width!,
+        height: height!,
+        channels: 3,
+        background: '#225588',
+      },
+    })
+      .png()
+      .toBuffer(),
+    inputTextTokens: 100,
+    inputImageTokens: 0,
+    outputTokens: 200,
+  };
+};
 const config = loadConfig();
 await app.listen(config.port, config.host);

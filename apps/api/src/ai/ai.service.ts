@@ -8,7 +8,18 @@ import {
 import type { Prisma } from '@synvaro/database';
 import { DatabaseService } from '../auth/database.service.js';
 import { MODEL, OpenAITextProvider } from './text-provider.js';
+import {
+  IMAGE_MODEL,
+  IMAGE_SIZES,
+  IMAGE_QUALITIES,
+  IMAGE_COST_NOTICE,
+  IMAGE_PRICING_EXPIRES,
+} from './image-provider.js';
 export interface Preferences {
+  imageEnabled?: boolean;
+  imageModel?: string;
+  imageSize?: string;
+  imageQuality?: string;
   enabled: boolean;
   model: string;
   maxOutputTokens: number;
@@ -16,6 +27,10 @@ export interface Preferences {
   confirmPaid: boolean;
 }
 export const DEFAULTS: Preferences = {
+  imageEnabled: false,
+  imageModel: IMAGE_MODEL,
+  imageSize: IMAGE_SIZES[0],
+  imageQuality: IMAGE_QUALITIES[0],
   enabled: false,
   model: MODEL,
   maxOutputTokens: 512,
@@ -71,6 +86,10 @@ export class AiService {
     return {
       preferences: p
         ? {
+            imageEnabled: p.imageEnabled,
+            imageModel: p.imageModel,
+            imageSize: p.imageSize,
+            imageQuality: p.imageQuality,
             enabled: p.enabled,
             model: p.model,
             maxOutputTokens: p.maxOutputTokens,
@@ -87,6 +106,17 @@ export class AiService {
         : this.now() >= PRICING_EXPIRES
           ? 'AI is unavailable: model pricing needs maintenance review.'
           : null,
+      image: {
+        models: [IMAGE_MODEL],
+        sizes: IMAGE_SIZES,
+        qualities: IMAGE_QUALITIES,
+        available:
+          this.provider.configured() &&
+          !!process.env.MEDIA_STORAGE_ROOT &&
+          this.now() < IMAGE_PRICING_EXPIRES,
+        costBoundAvailable: false,
+        costNotice: IMAGE_COST_NOTICE,
+      },
       models: [MODEL],
       pricing: {
         version: '2026-10-26',

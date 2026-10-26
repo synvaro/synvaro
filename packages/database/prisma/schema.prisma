@@ -96,6 +96,7 @@ model Content {
 }
 
 enum MediaOrigin {
+  AI_GENERATED
   UPLOADED
 }
 
@@ -113,6 +114,7 @@ model MediaAsset {
   origin           MediaOrigin @default(UPLOADED)
   createdAt        DateTime    @default(now()) @db.Timestamptz(3)
 
+  generation AiGeneration?
   contents ContentMedia[]
 
   @@index([brandId, createdAt(sort: Desc), id(sort: Desc)])
@@ -132,6 +134,10 @@ model ContentMedia {
 }
 
 model AiPreference {
+  imageEnabled Boolean @default(false)
+  imageModel String @default("gpt-image-2.5-flare") @db.VarChar(80)
+  imageSize String @default("1024x1024") @db.VarChar(20)
+  imageQuality String @default("low") @db.VarChar(20)
   userId String @id @db.Uuid
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   enabled Boolean @default(false)
@@ -150,7 +156,21 @@ enum AiGenerationStatus {
   BLOCKED
 }
 
+enum AiGenerationKind {
+  TEXT
+  IMAGE
+}
+
 model AiGeneration {
+  kind AiGenerationKind @default(TEXT)
+  provider String @default("openai") @db.VarChar(40)
+  imageSize String? @db.VarChar(20)
+  imageQuality String? @db.VarChar(20)
+  inputImageTokens Int?
+  previewKey String? @unique @db.Uuid
+  previewExpiresAt DateTime? @db.Timestamptz(3)
+  mediaAssetId String? @unique @db.Uuid
+  mediaAsset MediaAsset? @relation(fields: [mediaAssetId], references: [id], onDelete: Restrict)
   id String @id @default(uuid()) @db.Uuid
   userId String @db.Uuid
   user User @relation(fields: [userId], references: [id], onDelete: Restrict)
@@ -172,4 +192,5 @@ model AiGeneration {
   @@unique([userId, requestId])
   @@index([userId, createdAt])
   @@index([contentId])
+  @@index([previewExpiresAt])
 }

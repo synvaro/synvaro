@@ -26,8 +26,13 @@ import { z } from 'zod';
 import type { AuthRequest } from '../auth/auth.guard.js';
 import { AiService } from './ai.service.js';
 import { MODEL } from './text-provider.js';
+import { IMAGE_MODEL, IMAGE_SIZES, IMAGE_QUALITIES } from './image-provider.js';
 const preference = z
   .object({
+    imageEnabled: z.boolean().optional(),
+    imageModel: z.literal(IMAGE_MODEL).optional(),
+    imageSize: z.enum(IMAGE_SIZES).optional(),
+    imageQuality: z.enum(IMAGE_QUALITIES).optional(),
     enabled: z.boolean(),
     model: z.literal(MODEL),
     maxOutputTokens: z.number().int().min(128).max(2048),
@@ -98,6 +103,10 @@ export class AiController {
         'confirmPaid',
       ],
       properties: {
+        imageEnabled: { type: 'boolean' },
+        imageModel: { type: 'string', enum: [IMAGE_MODEL] },
+        imageSize: { type: 'string', enum: [...IMAGE_SIZES] },
+        imageQuality: { type: 'string', enum: [...IMAGE_QUALITIES] },
         enabled: { type: 'boolean' },
         model: { type: 'string', enum: [MODEL] },
         maxOutputTokens: { type: 'integer', minimum: 128, maximum: 2048 },

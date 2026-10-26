@@ -20,6 +20,16 @@ export const mediaSelect = {
   durationMs: true,
   origin: true,
   createdAt: true,
+  generation: {
+    select: {
+      id: true,
+      provider: true,
+      model: true,
+      imageSize: true,
+      imageQuality: true,
+      createdAt: true,
+    },
+  },
 } as const;
 @Injectable()
 export class MediaService {
@@ -91,8 +101,10 @@ export class MediaService {
     return asset;
   }
   async metadata(ownerUserId: string, id: string) {
-    const { storageKey: _, ...asset } = await this.asset(ownerUserId, id);
-    void _;
-    return asset;
+    await this.asset(ownerUserId, id);
+    return this.db.client.mediaAsset.findUniqueOrThrow({
+      where: { id },
+      select: mediaSelect,
+    });
   }
 }

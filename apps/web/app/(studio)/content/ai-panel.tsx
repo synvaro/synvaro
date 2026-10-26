@@ -60,8 +60,19 @@ export function AiPanel({
         if (active)
           setError('Unable to load AI preferences. Refresh to try again.');
       });
+    const refreshUsage = () => {
+      void fetch('/api/ai/preferences')
+        .then(async (response) => {
+          if (response.ok && active) setSettings(await response.json());
+        })
+        .catch(() => {
+          /* Preserve last known usage; never retry generation. */
+        });
+    };
+    window.addEventListener('ai-usage-changed', refreshUsage);
     return () => {
       active = false;
+      window.removeEventListener('ai-usage-changed', refreshUsage);
     };
   }, []);
   async function savePreferences() {
@@ -72,7 +83,15 @@ export function AiPanel({
       const response = await fetch('/api/ai/preferences', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(prefs),
+        body: JSON.stringify(
+          prefs && {
+            enabled: prefs.enabled,
+            model: prefs.model,
+            maxOutputTokens: prefs.maxOutputTokens,
+            monthlyBudgetUsd: prefs.monthlyBudgetUsd,
+            confirmPaid: prefs.confirmPaid,
+          },
+        ),
       });
       const data = await response.json();
       if (!response.ok)
@@ -80,6 +99,7 @@ export function AiPanel({
       setSettings(data);
       setPrefs(data.preferences);
       setNotice('AI preferences saved.');
+      window.dispatchEvent(new Event('ai-preferences-saved'));
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Unable to connect.');
     } finally {
@@ -137,7 +157,15 @@ export function AiPanel({
   const preferencesDirty =
     prefs &&
     settings &&
-    JSON.stringify(prefs) !== JSON.stringify(settings.preferences);
+    (
+      [
+        'enabled',
+        'model',
+        'maxOutputTokens',
+        'monthlyBudgetUsd',
+        'confirmPaid',
+      ] as const
+    ).some((key) => prefs[key] !== settings.preferences[key]);
   return (
     <section className="brand-form-card ai-panel" aria-labelledby="ai-title">
       <h2 id="ai-title">Generate with AI</h2>

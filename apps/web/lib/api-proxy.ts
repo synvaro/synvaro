@@ -65,9 +65,11 @@ export async function forwardApi(req: NextRequest, path: string) {
       cache: 'no-store',
       redirect: 'error',
       signal: AbortSignal.timeout(
-        /^\/contents\/[0-9a-f-]{36}\/ai-generations$/i.test(path)
-          ? 70_000
-          : 10_000,
+        /^\/contents\/[0-9a-f-]{36}\/image-generations$/i.test(path)
+          ? 150_000
+          : /^\/contents\/[0-9a-f-]{36}\/ai-generations$/i.test(path)
+            ? 70_000
+            : 10_000,
       ),
     });
     const outgoing = new Headers({

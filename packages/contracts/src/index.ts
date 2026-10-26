@@ -90,7 +90,15 @@ export interface MediaAsset {
   width: number | null;
   height: number | null;
   durationMs: number | null;
-  origin: 'UPLOADED';
+  origin: 'UPLOADED' | 'AI_GENERATED';
+  generation?: {
+    id: string;
+    provider: string;
+    model: string;
+    imageSize: string | null;
+    imageQuality: string | null;
+    createdAt: string;
+  } | null;
   createdAt: string;
 }
 export interface MediaResponse {

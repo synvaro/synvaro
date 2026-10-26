@@ -128,6 +128,7 @@ export function AttachedMedia({
             <option value="">Select existing media</option>
             {available.map((asset) => (
               <option key={asset.id} value={asset.id}>
+                {asset.origin === 'AI_GENERATED' ? 'AI generated · ' : ''}
                 {asset.originalFilename} ({asset.mimeType})
               </option>
             ))}
@@ -193,6 +194,12 @@ export function AttachedMedia({
                 {index + 1}. {item.asset.originalFilename}
               </h3>
               <p>{item.asset.mimeType}</p>
+              {item.asset.origin === 'AI_GENERATED' && (
+                <p>
+                  <span className="badge">AI GENERATED</span> Conceptual visual,
+                  not authentic product photography.
+                </p>
+              )}
               <div className="form-actions">
                 <button
                   type="button"
