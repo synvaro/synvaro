@@ -41,3 +41,9 @@ production authentication release or overwrite unrelated decisions.
   is supplied by SYN-002B.
 - Team management, invitations, organization settings and social/AI domains are
   outside SYN-002B. Ownership and brand slugs cannot be edited in this slice.
+
+## SYN-007 AI usage direction (2026-10-26)
+
+- **Accepted product principle:** Generation frequency and optional spending limits belong to user preferences. Do not impose an arbitrary fixed product-wide monthly generation quota on self-hosted Community users.
+- **Accepted boundary:** User controls do not replace mandatory security safeguards, provider restrictions, request validation, or protection from runaway retries and unexpectedly costly single requests.
+- **Still open for SYN-007 design:** First provider/model, credential storage scope, availability of trustworthy usage/pricing data, and behavior when a user-configured spending limit is reached. Do not mark implementation choices accepted without review.

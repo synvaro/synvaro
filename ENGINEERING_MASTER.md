@@ -1,6 +1,6 @@
 # SYNVARO Engineering Master
 
-**Version:** 0.3 · **Updated:** 2026-10-26 · **Status:** Working engineering index
+**Version:** 0.4 · **Updated:** 2026-10-26 · **Status:** Working engineering index
 
 > **Purpose:** One human-readable entry point for owners, contributors and AI agents. This is an **index, not a second specification**. The linked source documents, code, migrations, CI and PRs remain authoritative for their respective subjects. If sources disagree, raise the conflict; do not silently resolve it here.
 
@@ -28,6 +28,8 @@ SYNVARO is an independent Apache-2.0 open-source AI content studio for preparing
 
 **SYN-005 — Private Brand Media Library:** Merged into `main` ([PR #11](https://github.com/synvaro/synvaro/pull/11), [MED-001–004 contract](docs/contracts/media-library.md), [CI](https://github.com/synvaro/synvaro/actions/runs/40311904288)). Private local filesystem uploads, owner-scoped browsing and preview are implemented; no public release or production security acceptance is implied.
 
+**SYN-006 — Content Media Attachments:** Merged into `main` ([PR #13](https://github.com/synvaro/synvaro/pull/13), [CMA-001–005 contract](docs/contracts/content-media.md), [CI](https://github.com/synvaro/synvaro/actions/runs/40318392921)). Same-brand media linking, ordering and detaching are implemented; no AI or publishing features are claimed.
+
 **Status vocabulary:** Planned → In development → PR ready → Merged → Owner accepted → Production verified (where applicable). Never infer a later state from an earlier one. GitHub is the authority for current PR/merge/CI state; actual tests and deployment evidence must be checked separately.
 
 ## 3. Architecture and decisions
@@ -37,6 +39,7 @@ SYNVARO is an independent Apache-2.0 open-source AI content studio for preparing
 - **Security limit:** Process-local rate limiting is accepted **only for development**; production registration is disabled pending hardening. No production launch approval.
 - **Still open:** Background queue technology (PostgreSQL vs Redis/BullMQ), brand location scope, infrastructure/secrets/observability vendors, future commercial modules.
 - **Storage direction:** Local storage remains the self-host baseline; Cloudflare R2 is the preferred future cloud adapter, not implemented. Google Drive is a planned optional one-way import source; OneDrive/Dropbox are later options, not storage backends. No synchronization is committed.
+- **AI usage preference:** The owner has chosen user-controlled generation limits rather than a fixed product-wide content quota. Future AI UI must allow user-configured spending/generation preferences, show estimated and observed usage when available, and require explicit intent for paid requests. Operational security protections remain mandatory and separate from user preferences. Detailed provider/key implementation is scoped to SYN-007.
 - **Publishing invariant:** No publication without approval of the exact immutable content revision; never fabricate real-world product facts or deployed feature claims.
 
 **Source of truth:** [ADR register](docs/decisions.md) (decision statuses) · [Architecture](docs/architecture.md) · [Security](SECURITY.md). **Do not record a new architectural decision by editing this index alone.**
@@ -48,7 +51,7 @@ SYNVARO is an independent Apache-2.0 open-source AI content studio for preparing
 | Identity & Access                                    | Development implementation (users, sessions)                                                                  | [Auth spike](docs/auth-spike.md) · [ADR-013](docs/decisions.md)                                      |
 | Organization & Brand                                 | Development implementation (single owner, brand CRUD subset)                                                  | [Organization & Brand](docs/contracts/organization-brand.md)                                         |
 | Brand Profile                                        | Development implementation; detailed description, target audience, tone, language, guidelines; no AI behavior | [BRP-001](docs/contracts/brand-profile.md) · [Prisma schema](packages/database/prisma/schema.prisma) |
-| Content Planning / Production                        | Manual drafts merged into `main`; other planning/production features planned                                  | [CNT-001–004](docs/contracts/content-drafts.md)                                                      |
+| Content Planning / Production                        | Manual drafts and brand-scoped content–media attachments merged; other features planned                      | [CNT-001–004](docs/contracts/content-drafts.md) · [CMA-001–005](docs/contracts/content-media.md)    |
 | Media Library / AI Generation                        | Private local Media Library implemented; AI Generation planned                                                | [MED-001–004](docs/contracts/media-library.md) · [Domain map](docs/domains.md)                       |
 | Review / Publishing                                  | Planned                                                                                                       | [Publishing draft contract](docs/contracts/publishing.md)                                            |
 | Social channels, Analytics, Engagement, Integrations | Planned                                                                                                       | [Domain map](docs/domains.md)                                                                        |
@@ -64,11 +67,12 @@ SYNVARO is an independent Apache-2.0 open-source AI content studio for preparing
 - **SYN-003:** [PR #6](https://github.com/synvaro/synvaro/pull/6) / [CI](https://github.com/synvaro/synvaro/actions/runs/40295510010). 34 API + 1 worker tests and desktop/390px browser checks reported in PR; separate production acceptance not recorded.
 - **SYN-004:** [PR #8](https://github.com/synvaro/synvaro/pull/8) / [CI](https://github.com/synvaro/synvaro/actions/runs/40301531909). PR reports 43 API + 1 worker tests, clean migrations and desktop/390px browser checks; separate production acceptance not recorded.
 - **SYN-005:** [PR #11](https://github.com/synvaro/synvaro/pull/11) / [CI](https://github.com/synvaro/synvaro/actions/runs/40311904288). PR reports 58 API + 1 worker tests, five clean PostgreSQL migrations and desktop/390px media tests. The 20 MiB limit, preserved EXIF/container metadata and crash-orphan cleanup limitation remain documented.
+- **SYN-006:** [PR #13](https://github.com/synvaro/synvaro/pull/13) / [CI](https://github.com/synvaro/synvaro/actions/runs/40318392921). PR reports 68 API + 1 worker tests, six clean migrations and desktop/390px attachment and isolation checks.
 - CI success means checks ran successfully, **not** live provider integration, production readiness or deployment acceptance.
 
 ## 6. Roadmap and next decision gate
 
-[Roadmap](docs/roadmap.md) governs milestone scope. Candidate progression: content–media attachments (SYN-006) → AI providers → channel publishing. This is sequencing guidance, **not** evidence of implementation or a committed deadline.
+[Roadmap](docs/roadmap.md) governs milestone scope. Candidate progression: SYN-007 opt-in AI draft text generation → later AI media creation → social channels and publishing. This is sequencing guidance, **not** evidence of implementation or a committed deadline.
 
 Before any new development slice:
 
@@ -81,7 +85,7 @@ Before any new development slice:
 
 ## 7. Pending owner / maintainer items
 
-- Define SYN-006 draft–media attachment contract (same-brand ownership, ordering, detach without deleting media) before implementation. No AI or publishing in this slice.
+- Define SYN-007 AI text-draft contract: explicit user action, user-configurable generation/spending preferences, bring-your-own-key, safe provider failure handling and no automatic publishing.
 - Keep authentication production hardening tracked before any public registration.
 - Select job queue only when background generation/publishing requires it; Redis remains an option, not an approved dependency.
 - Confirm vulnerability-reporting and main-branch ruleset settings via GitHub administration.
