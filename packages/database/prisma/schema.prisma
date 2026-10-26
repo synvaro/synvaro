@@ -1,0 +1,5 @@
+// SYN-001: no domain tables until a scoped domain contract is approved.
+// Add a Prisma client generator with the first approved model.
+datasource db {
+  provider = "postgresql"
+}
