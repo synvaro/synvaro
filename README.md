@@ -4,7 +4,7 @@
 
 SYNVARO helps teams prepare, review, schedule and publish brand-safe social content across Instagram, Facebook, LinkedIn and YouTube. AI text, image, video and voice generation use configurable providers and user-owned API credentials.
 
-**Status:** SYN-001 foundation plus the SYN-002A authentication spike; ADR-013 remains open. Product features described here remain plans, not released functionality.
+**Status:** development foundation with session authentication and owner-scoped organization/brand management (SYN-002B). Content, AI and publishing capabilities remain planned, not released functionality.
 
 ## Initial use cases
 - International Safety Inspection Services Türkiye (ISIS) corporate communications and delicatessen stores: verified product photos, offers and short videos.
@@ -26,6 +26,6 @@ See [Foundation development](docs/development.md) for setup, environment variabl
 verification commands, behavior IDs and migration conventions. Use Node 22.23.3
 and pnpm 10.34.9. No Docker is required.
 
-SYN-002A adds an experimental NestJS-owned authentication slice. See the
-[authentication spike](docs/auth-spike.md) for setup, security limits and real
-PostgreSQL test requirements. ADR-013 remains open.
+NestJS-owned authentication is accepted for the current development stage. See
+[authentication setup](docs/auth-spike.md) and the [Organization & Brand contract](docs/contracts/organization-brand.md). Production registration is closed until
+security hardening; the existing rate limiter is development-only.

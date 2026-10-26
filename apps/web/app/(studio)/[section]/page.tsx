@@ -1,13 +1,6 @@
 import { notFound } from 'next/navigation';
 
 const sections = {
-  brands: {
-    title: 'Brands',
-    empty: 'Your brands will find a home here.',
-    description:
-      'Brand profiles and guidelines are planned. Brand creation is not available in this foundation preview.',
-    icon: '◈',
-  },
   content: {
     title: 'Content',
     empty: 'A fresh page for your ideas.',

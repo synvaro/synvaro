@@ -9,6 +9,7 @@ import { DatabaseService } from './database.service.js';
 
 @Module({
   controllers: [AuthController],
+  exports: [DatabaseService],
   providers: [
     { provide: AUTH_CONFIG, useFactory: () => loadAuthConfig() },
     DatabaseService,

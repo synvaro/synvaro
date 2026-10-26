@@ -1,6 +1,6 @@
 # SYN-002A — authentication spike
 
-**Technical experiment, not acceptance of ADR-013.** NestJS owns authentication;
+**Historical SYN-002A spike record.** The owner subsequently accepted this approach for current development in SYN-002B (see ADR-013); production hardening remains pending. NestJS owns authentication;
 Next.js is a web client with a narrow same-origin transport. No organization,
 role, invitation, recovery, OAuth or external identity service is implemented.
 
@@ -15,7 +15,7 @@ cookie and `cache: no-store`; unauthenticated users are redirected to `/login`.
 The API global guard is deny-by-default. Health and the three public auth
 mutations are explicit exceptions; Origin checks still apply to public mutations.
 
-Registration responds with the same 201/message for new and duplicate normalized
+Development/test registration responds with the same 201/message for new and duplicate normalized
 emails, without signing in or overwriting an existing password. Users then log
 in explicitly. Login always performs an Argon2 verification (a dummy hash for
 unknown emails) and returns the same 401 for invalid credentials. The public
@@ -152,7 +152,7 @@ the spike PR, separate from owner acceptance.
   conservative spike can deny legitimate users; restart resets buckets and
   replicas do not coordinate. Resolve durable/shared limiting and trusted ingress
   before production or horizontal scaling; no Redis choice is made here.
-- Public registration is for the experiment. No email ownership verification,
+- Public registration is available only in development/test; production registration is rejected. No email ownership verification,
   recovery or abuse operations are implemented. Do not treat an email as verified.
 - Revoked/expired rows remain for inspection; a retention/cleanup policy is not
   selected. No queue, background cleanup, sliding sessions or device management.
@@ -162,4 +162,4 @@ the spike PR, separate from owner acceptance.
 - A browser/session compromise can still use a live cookie; hashing at rest does
   not prevent XSS from making requests or an attacker modifying database records.
 
-Recommendation is based on the PR evidence; this file does not change ADR-013.
+SYN-002A findings remain relevant. Current owner decisions are recorded in ADR-013 and the SYN-002B decision addendum.

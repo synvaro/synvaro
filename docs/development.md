@@ -1,6 +1,6 @@
 # Foundation development (SYN-001)
 
-This is a technical foundation with a SYN-002A authentication spike, not an implementation of the planned product.
+This development build includes session authentication and the SYN-002B owner-scoped Organization & Brand slice. Other product capabilities remain planned.
 For current authentication setup and security boundaries, read [Authentication spike](auth-spike.md).
 Existing specifications and ADR statuses remain authoritative.
 
@@ -60,8 +60,8 @@ createdb --owner=synvaro synvaro
 pnpm db:validate
 ```
 
-The Prisma 7 schema now contains only the User and Session models authorized for
-SYN-002A. The [auth spike](auth-spike.md) documents migration setup and limitations.
+The Prisma 7 schema contains User, Session, Organization and Brand. The latter two
+are the owner-approved SYN-002B scope; no membership/role tables exist. The [auth spike](auth-spike.md) documents migration setup and limitations.
 The API and auth integration tests require PostgreSQL; mocks are not substituted.
 
 Generate subsequent migrations only for explicitly scoped schema changes:
@@ -115,8 +115,9 @@ match the requested structure. Contracts currently hold health/error and public 
 the API owns their OpenAPI representation. A shared strict TypeScript baseline
 uses NodeNext for server packages and Next's bundler mode for the web.
 
-Queue choice (ADR-012), authentication (ADR-013), location semantics (ADR-014),
+Queue choice (ADR-012), location semantics (ADR-014),
 commercial modules (ADR-015) and vendors (ADR-016) remain unresolved or proposed.
-No Spexop-UI dependency, organization/domain features or provider adapters were
-added. User/Session tables are limited to SYN-002A. Resolve ADR-013 using the spike
-evidence before moving on to an Organization & Access contract.
+Auth (ADR-013) is accepted for current development. One owner per organization
+and one organization per user are enforced; no membership or RBAC engine exists.
+See the [Organization & Brand contract](contracts/organization-brand.md) for current
+behaviors. No Spexop-UI, provider adapters or content/AI capabilities were added.

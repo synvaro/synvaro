@@ -1,7 +1,7 @@
 ---
 name: Feature request
 about: Propose a focused product improvement
-title: "[Feature] "
+title: '[Feature] '
 labels: enhancement
 assignees: []
 ---

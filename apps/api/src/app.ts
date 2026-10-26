@@ -31,7 +31,9 @@ export async function createApp() {
   );
   const config = new DocumentBuilder()
     .setTitle('SYNVARO API')
-    .setDescription('SYN-002A authentication spike. ADR-013 remains open.')
+    .setDescription(
+      'SYNVARO development API: owner-scoped organizations and brands.',
+    )
     .addCookieAuth(
       loadAuthConfig().cookieName,
       { type: 'apiKey', in: 'cookie' },

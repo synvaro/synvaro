@@ -16,9 +16,28 @@ These are **working decisions from product discussion**, pending consolidated ow
 | ADR-010 | Instagram, Facebook, LinkedIn, YouTube as initial channels | Accepted |
 | ADR-011 | S3-compatible media storage and FFmpeg processing | Accepted |
 | ADR-012 | PostgreSQL-backed job queue instead of Redis/BullMQ | Proposed |
-| ADR-013 | Auth.js vs NestJS auth | Open |
+| ADR-013 | NestJS-owned authentication with Prisma/PostgreSQL sessions | Accepted for current development stage by owner in SYN-002B; production hardening pending |
 | ADR-014 | Brand locations in MVP or R1.1 | Open |
 | ADR-015 | Future Open Core commercial modules | Proposed; not implemented |
 | ADR-016 | Hosting, secrets and observability vendors | Open |
 
 To change an accepted decision: add rationale, alternatives, consequences and owner decision. Never silently overwrite history.
+
+## SYN-002B owner decisions (2026-10-26)
+
+These explicit owner decisions refine the current scope; they do not approve a
+production authentication release or overwrite unrelated decisions.
+
+- ADR-013 was Open during SYN-002A. Its NestJS + Prisma + PostgreSQL session
+  approach is now accepted for the current development stage.
+- ADR-006 remains the multi-organization/multi-brand direction across the system.
+  Current scope: one owner per organization, at most one organization per user,
+  many brands per organization. No membership table, roles or RBAC engine.
+- The existing process-local rate limiter is accepted for development only.
+  Redis/distributed limiting, email verification and session cleanup are deferred;
+  this does not promote the separate queue proposal ADR-012.
+- Unrestricted public production registration is prohibited until security
+  hardening. The API rejects registration in production; no runtime opt-in switch
+  is supplied by SYN-002B.
+- Team management, invitations, organization settings and social/AI domains are
+  outside SYN-002B. Ownership and brand slugs cannot be edited in this slice.
