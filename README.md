@@ -7,7 +7,7 @@ SYNVARO helps teams prepare, review, schedule and publish brand-safe social cont
 **Status:** product specification v0.1; no application implementation yet. Features described here are plans, not released functionality.
 
 ## Initial use cases
-- ISIS corporate communications and delicatessen stores: verified product photos, offers and short videos.
+- International Safety Inspection Services Türkiye (ISIS) corporate communications and delicatessen stores: verified product photos, offers and short videos.
 - Qos Workspace and Spexop-UI: factual product announcements grounded in approved releases.
 
 ## Principles
