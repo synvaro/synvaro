@@ -1,4 +1,4 @@
-// SYN-002A-A11: real PostgreSQL + built Next.js proxy + NestJS API, without mocks.
+// SYN-002B + SYN-002A-A11: real PostgreSQL + built Next.js proxy + NestJS API, without mocks.
 import { randomUUID } from 'node:crypto';
 import { createDatabase } from '../packages/database/dist/index.js';
 import { spawn } from 'node:child_process';
@@ -85,7 +85,7 @@ try {
     service: 'synvaro-api',
   });
   await ready(`${origin}/login`, web);
-  const anonymous = await fetch(origin, { redirect: 'manual' });
+  const anonymous = await fetch(`${origin}/brands`, { redirect: 'manual' });
   assert.equal(anonymous.status, 307);
   assert.equal(anonymous.headers.get('location'), '/login');
   assert.equal(
@@ -106,10 +106,88 @@ try {
     const home = await fetch(origin, { headers: { cookie } });
     assert.equal(home.status, 200);
     const html = await home.text();
-    assert.match(html, /The foundation is here/);
+    assert.match(html, /Create your organization/);
     assert.ok(html.includes(email));
   }
-  for (const section of ['brands', 'content', 'calendar', 'media']) {
+  async function product(path, method = 'GET', data, requestOrigin = origin) {
+    return fetch(`${origin}/api${path}`, {
+      method,
+      headers: {
+        cookie,
+        origin: requestOrigin,
+        'content-type': 'application/json',
+      },
+      body: data === undefined ? undefined : JSON.stringify(data),
+    });
+  }
+  assert.deepEqual(await (await product('/organizations/me')).json(), {
+    organization: null,
+  });
+  assert.equal(
+    (
+      await product(
+        '/organizations',
+        'POST',
+        { name: 'Forbidden' },
+        'https://evil.example',
+      )
+    ).status,
+    403,
+  );
+  const organizationName = `Smoke organization ${randomUUID()}`;
+  assert.equal(
+    (await product('/organizations', 'POST', { name: organizationName }))
+      .status,
+    201,
+  );
+  const created = await product('/brands', 'POST', {
+    name: 'First smoke brand',
+    description: 'Initial description',
+  });
+  assert.equal(created.status, 201);
+  const { brand } = await created.json();
+  assert.equal(
+    (await product('/brands', 'POST', { name: 'Second smoke brand' })).status,
+    201,
+  );
+  assert.equal(
+    (
+      await product(
+        `/brands/${brand.id}`,
+        'PATCH',
+        { name: 'Forbidden' },
+        'https://evil.example',
+      )
+    ).status,
+    403,
+  );
+  assert.equal(
+    (
+      await product(`/brands/${brand.id}`, 'PATCH', {
+        name: 'Edited smoke brand',
+        description: 'Persisted edit',
+      })
+    ).status,
+    200,
+  );
+  for (let i = 0; i < 2; i++) {
+    const page = await fetch(`${origin}/brands`, { headers: { cookie } });
+    assert.equal(page.status, 200);
+    const html = await page.text();
+    assert.ok(
+      html.includes(organizationName) &&
+        html.includes('Edited smoke brand') &&
+        html.includes('Persisted edit') &&
+        html.includes('Second smoke brand'),
+    );
+  }
+  const persisted = await (await product('/brands')).json();
+  assert.equal(persisted.brands.length, 2);
+  assert.equal(
+    persisted.brands.find((item) => item.id === brand.id).description,
+    'Persisted edit',
+  );
+  for (const section of ['content', 'calendar', 'media']) {
     const response = await fetch(`${origin}/${section}`, {
       headers: { cookie },
     });
@@ -128,11 +206,16 @@ try {
   assert.equal((await auth('logout', {}, cookie)).status, 200);
   assert.equal((await auth('me', undefined, cookie)).status, 401);
   assert.equal(
-    (await fetch(origin, { headers: { cookie }, redirect: 'manual' })).status,
+    (
+      await fetch(`${origin}/brands`, {
+        headers: { cookie },
+        redirect: 'manual',
+      })
+    ).status,
     307,
   );
   console.info(
-    'SYN-002A-A11 passed: PostgreSQL + Next.js proxy + NestJS register/login/refresh/logout and protected studio.',
+    'SYN-002B + SYN-002A-A11 passed: real PostgreSQL, Next/Nest auth, organization, multiple brands, edit/reload, CSRF and logout.',
   );
 } finally {
   for (const { child, exited } of children) {

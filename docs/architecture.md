@@ -20,7 +20,7 @@ TypeScript, pnpm, NestJS, Next.js/React, PostgreSQL, Prisma, S3-compatible stora
 
 ## Decisions requiring confirmation
 - Background jobs: PostgreSQL-backed queue versus BullMQ/Redis. No selection finalized.
-- Auth implementation: Auth.js versus NestJS-owned authentication.
+- Auth: NestJS-owned Prisma/PostgreSQL sessions accepted for current development in SYN-002B; production hardening remains pending.
 - Hosting and storage vendor, observability stack, secrets service, AI model defaults.
 - Exact social channel scopes, review status and permitted media types per API.
 

@@ -336,3 +336,132 @@ button:disabled {
   padding: 8px 12px;
   border-radius: 6px;
 }
+
+.organization-card,
+.brand-form-card,
+.brand-card {
+  background: #fff;
+  border: 1px solid #e0e8e4;
+  border-radius: 14px;
+  padding: 24px;
+  min-width: 0;
+}
+.organization-card {
+  max-width: 620px;
+  margin: 20px auto;
+}
+.organization-card p,
+.brands-heading p {
+  color: #53655e;
+  line-height: 1.6;
+}
+.brands-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.brands-heading .button {
+  margin-top: 0;
+}
+.brand-form-card {
+  max-width: 650px;
+  margin: 20px 0;
+}
+.brand-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 20px;
+}
+.brand-card h2 {
+  margin-top: 0;
+  overflow-wrap: anywhere;
+}
+.brand-slug {
+  display: inline-block;
+  color: #53655e;
+  font-size: 12px;
+  margin-top: 10px;
+  overflow-wrap: anywhere;
+}
+.brand-description {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+  font-size: 14px;
+}
+fieldset {
+  border: 0;
+  padding: 0;
+  margin: 20px 0 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+fieldset label {
+  font-size: 14px;
+  font-weight: 600;
+}
+fieldset input,
+fieldset textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #647570;
+  border-radius: 6px;
+  font: inherit;
+}
+fieldset textarea {
+  resize: vertical;
+}
+fieldset input:focus-visible,
+fieldset textarea:focus-visible {
+  outline: 3px solid #176f5e;
+  outline-offset: 3px;
+}
+fieldset small {
+  color: #53655e;
+  line-height: 1.5;
+}
+.form-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.form-actions .button {
+  margin-top: 0;
+}
+fieldset .button,
+.brands-heading .button {
+  border: 0;
+}
+.secondary-button {
+  background: #fff;
+  border: 1px solid #176f5e;
+  border-radius: 6px;
+  padding: 11px 16px;
+  color: #176f5e;
+}
+.form-error {
+  color: #a62828;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.form-notice {
+  color: #176f5e;
+  line-height: 1.6;
+}
+.form-error:empty,
+.form-notice:empty {
+  display: none;
+}
+@media (max-width: 760px) {
+  .organization-card,
+  .brand-card,
+  .brand-form-card {
+    padding: 20px;
+  }
+}

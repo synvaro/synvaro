@@ -17,3 +17,30 @@ export interface AuthUser {
 export interface AuthResponse {
   user: AuthUser;
 }
+
+/** ORG-001/002 and BRD-001/002: public response shapes, ISO timestamps. */
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface Brand {
+  id: string;
+  organizationId: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface OrganizationResponse {
+  organization: Organization | null;
+}
+export interface BrandsResponse {
+  brands: Brand[];
+}
+export interface BrandResponse {
+  brand: Brand;
+}

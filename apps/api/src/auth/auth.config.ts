@@ -35,6 +35,7 @@ export function loadAuthConfig(env: NodeJS.ProcessEnv = process.env) {
   }
   return {
     origin,
+    registrationEnabled: !production,
     databaseUrl: databaseUrl!,
     secure: production || url.protocol === 'https:',
     cookieName:

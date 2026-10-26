@@ -17,3 +17,14 @@
 | SEC-T01 | Token confidentiality | secrets handling test |
 
 Every test must cite behavior/acceptance IDs, expected result, actual result, environment and evidence. A mocked integration test is **not** proof of successful production publishing.
+
+## Implemented SYN-002B verification
+
+The [Organization & Brand contract](contracts/organization-brand.md) defines
+ORG-001/002 and BRD-001/002 acceptance IDs. Real PostgreSQL HTTP tests cover owner
+uniqueness (including concurrent writes), slug uniqueness, isolation, invalid
+inputs, session protection and CSRF. CI replays migrations into a clean PostgreSQL
+service. The built Next/Nest smoke verifies organization and multi-brand creation,
+editing, reload persistence and logout. Desktop and 390px browser evidence and
+actual command results are recorded in the SYN-002B PR, separately from owner
+acceptance and production readiness. No mocked database evidence is substituted.

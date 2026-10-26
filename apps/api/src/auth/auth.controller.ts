@@ -1,5 +1,6 @@
 import {
   Body,
+  ForbiddenException,
   Controller,
   Get,
   HttpCode,
@@ -54,6 +55,8 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
+    if (!this.config.registrationEnabled)
+      throw new ForbiddenException('Registration is unavailable in production');
     this.limiter.ip(req, res);
     const { email, password } = parseCredentials(body);
     this.limiter.account(email, res);
