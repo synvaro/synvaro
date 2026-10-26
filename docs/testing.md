@@ -109,3 +109,47 @@ apply, refresh persistence, ISIS isolation and logout/protected-route redirect.
 Mobile document width equalled the 390px viewport. Browser AI responses used the
 test provider, not OpenAI. No local OpenAI key was available, so live paid API
 verification remains unperformed. CI result is recorded against the PR commit.
+
+### SYN-007A live acceptance — 2026-10-26
+
+PASS for the real Next.js → NestJS → PostgreSQL → OpenAI workflow on merged
+SYN-007 (`97baa62`). A dedicated hypothetical brand/draft in the existing local
+organization was used; existing business drafts were not modified. Only synthetic
+brand context was sent, with Turkish language, a natural tone and restrictions on
+invented commercial claims. No media bytes or personal/customer data were sent.
+
+Provider: OpenAI Responses API, official SDK 7.43.0, model `gpt-6-luna`, standard
+tier, reasoning none. Official model/pricing and input-token-count documentation
+were rechecked; implementation assumptions were unchanged. No pre-existing AI
+preference row existed. The UI saved AI enabled, 512 maximum output tokens,
+USD 1.00 monthly estimated budget and confirmation before each paid generation.
+
+| Live suggestion | Input tokens | Output tokens | Estimated USD | State |
+|---|---:|---:|---:|---|
+| First, discarded | 344 | 44 | 0.000065 | SUCCEEDED |
+| Second, explicitly applied | 344 | 41 | 0.000064 | SUCCEEDED |
+| Total | 688 | 85 | 0.000129 | No uncertain reservation |
+
+Exactly two generation requests were made, each after the UI confirmation; no
+retries or deliberately induced paid failures. The token-count step reserved
+USD 0.000299 before each request, then settled to the observed-token estimate.
+These are SYNVARO estimates, not provider billed costs or an OpenAI hard cap.
+
+Desktop: preview and discard left the original persisted body unchanged. A second
+explicit request on the 390px viewport produced another Turkish suggestion;
+Apply saved it through the draft API, and refresh preserved it. The draft remained
+DRAFT and no publishing occurred. Mobile document width was 390px. Browser
+warning/error logs were empty; visible UI had no credential-like text. Generation
+records contain usage/metadata, not keys or complete prompts. Server error handling
+was inspected: count failures have no generation reservation; paid failures retain
+it; missing usage marks uncertainty; interrupted active requests require operator
+reconciliation. No active or uncertain record was cleared. Failure paths were not
+provoked live. The existing server terminal does not retain an acceptance log file,
+so server-log non-disclosure evidence is limited to the inspected logging code and
+previous deterministic security tests, not a captured live terminal transcript.
+
+A minor UI defect was found: Brand Profile still claimed AI was unavailable.
+The scoped follow-up replaces that stale sentence with the implemented draft
+context behavior. No model, pricing, provider, authentication or generation logic
+changes are included. Local browser evidence is kept outside the repository;
+no credentials, complete prompts or confidential context are in this report.

@@ -134,8 +134,8 @@ export function ProfileEditor({
       <p className="eyebrow profile-brand-name">{brandName}</p>
       <h1>Brand profile</h1>
       <p className="intro">
-        Your reference for how this brand communicates. AI generation is not
-        available yet.
+        Your reference for how this brand communicates. Saved profile details
+        provide context when you request an AI suggestion from a content draft.
       </p>
       {!exists && (
         <p className="profile-empty">
