@@ -82,3 +82,10 @@ Organization 1:N Brands; User 1:0..1 Organization; Brand 1:N Accounts, Contents,
 Implemented: unique organization owner and global slug; unique brand slug within organization. Planned: unique (platform, external_account_id) pending shared-account policy; unique (social_account_id, external_post_id) when present; unique idempotency_key scoped to publication intent. Reviews reference immutable revisions. OAuth secrets never stored in plaintext.
 
 **Open questions:** shared social accounts across brands; whether shops are locations or independent brands; multi-product offers; how generated media is linked to source facts.
+
+### SYN-AI-001 compatibility
+
+The provider catalog is typed backend configuration, not a new database entity.
+Existing AiPreference model strings and AiGeneration provider/kind/usage/reservation
+records are retained without migration or backfill. Planned provider references
+create no records and cannot execute. See [provider foundation](contracts/ai-provider-foundation.md).

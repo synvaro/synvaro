@@ -121,6 +121,60 @@ test(
       });
       contentId = content.id;
       await t.test(
+        'AIP-001/003/004: authenticated catalog, strict model selection and persisted compatibility',
+        async () => {
+          assert.equal(
+            (await call('/ai/models', 'GET', undefined, '')).status,
+            401,
+          );
+          const response = await call('/ai/models');
+          assert.equal(response.status, 200);
+          assert.equal(
+            response.headers.get('cache-control'),
+            'private, no-store',
+          );
+          const catalog = await response.json();
+          assert.equal(
+            catalog.models.filter(
+              (m: { implemented: boolean }) => m.implemented,
+            ).length,
+            2,
+          );
+          assert.ok(!JSON.stringify(catalog).includes('API_KEY'));
+          const before = await db.aiPreference.findUnique({
+            where: { userId: users[0]!.id },
+          });
+          const records = await db.aiGeneration.count({
+            where: { userId: users[0]!.id },
+          });
+          for (const change of [
+            { model: 'gemini-3.8-flash' },
+            { model: 'gpt-image-2.5-flare' },
+            { imageModel: MODEL },
+            { imageModel: 'gemini-nano-banana-2.1' },
+            { provider: 'google' },
+            { capability: 'VIDEO_GENERATION' },
+          ])
+            assert.equal((await preferences(change)).status, 400);
+          assert.equal(
+            (await generate({ model: 'gemini-3.8-flash' })).status,
+            400,
+          );
+          assert.equal((await generate({ provider: 'google' })).status, 400);
+          assert.deepEqual(
+            await db.aiPreference.findUnique({
+              where: { userId: users[0]!.id },
+            }),
+            before,
+          );
+          assert.equal(
+            await db.aiGeneration.count({ where: { userId: users[0]!.id } }),
+            records,
+          );
+          assert.equal(calls, 0);
+        },
+      );
+      await t.test(
         'AIG-001-A1 / AIG-004-A1: conservative defaults, disabled, missing key, confirmation and strict preferences',
         async () => {
           const initial = await (await call('/ai/preferences')).json();
@@ -365,10 +419,36 @@ test(
           await db.aiGeneration.delete({ where: { id: record.id } });
         },
       );
+      await t.test(
+        'AIP-004: catalog leaves existing preferences and uncertain spending untouched',
+        async () => {
+          const where = { userId: users[0]!.id };
+          const prefsBefore = await db.aiPreference.findUnique({ where });
+          const ledgerBefore = await db.aiGeneration.findMany({
+            where,
+            orderBy: { id: 'asc' },
+          });
+          assert.ok(
+            ledgerBefore.some(
+              (r) => r.costUncertain && r.budgetChargeMicros > 0,
+            ),
+          );
+          await call('/ai/models');
+          assert.deepEqual(
+            await db.aiPreference.findUnique({ where }),
+            prefsBefore,
+          );
+          assert.deepEqual(
+            await db.aiGeneration.findMany({ where, orderBy: { id: 'asc' } }),
+            ledgerBefore,
+          );
+        },
+      );
       await t.test('AIG-001–005: OpenAPI protected routes', async () => {
         const doc = await (await call('/openapi.json')).json();
         for (const [path, method] of [
           ['/ai/preferences', 'get'],
+          ['/ai/models', 'get'],
           ['/ai/preferences', 'put'],
           ['/contents/{id}/ai-generations', 'post'],
         ])

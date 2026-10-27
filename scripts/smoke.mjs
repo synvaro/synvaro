@@ -109,6 +109,22 @@ try {
   const body = await login.text();
   assert.ok(!body.includes(password) && !body.includes(cookie.split('=')[1]));
   assert.equal((await auth('me', undefined, cookie)).status, 200);
+  assert.equal((await fetch(`${origin}/api/ai/models`)).status, 401);
+  const catalogResponse = await fetch(`${origin}/api/ai/models`, {
+    headers: { cookie },
+  });
+  assert.equal(catalogResponse.status, 200);
+  const catalog = await catalogResponse.json();
+  assert.equal(
+    catalog.models.filter((m) => m.status === 'AVAILABLE').length,
+    2,
+  );
+  assert.ok(
+    catalog.models
+      .filter((m) => !m.implemented)
+      .every((m) => m.status === 'PLANNED'),
+  );
+
   for (let i = 0; i < 2; i++) {
     const home = await fetch(origin, { headers: { cookie } });
     assert.equal(home.status, 200);
@@ -531,6 +547,7 @@ try {
     403,
   );
   assert.equal((await auth('me', undefined, cookie)).status, 200);
+
   assert.equal((await auth('logout', {}, cookie)).status, 200);
   assert.equal((await auth('me', undefined, cookie)).status, 401);
   assert.equal(
