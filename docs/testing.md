@@ -367,10 +367,16 @@ USD 1.00 monthly preference was not changed.
 
 The owner confirmed the local Google credential is a test key and chose to
 retain it for this acceptance. Its full value is not included in this
-evidence or PR. The separate authorization to temporarily remove the USD
-1.00 SYNVARO preference and send one real generation request remains open;
-no request was sent.
+evidence or PR. The owner subsequently authorized temporarily removing the
+USD 1.00 preference, keeping paid confirmation enabled, sending at most one
+real Gemini generation request, and restoring the original preference.
 
-The separate owner authorization for a live request and temporary budget
-change has **not** been given. No input/output/thinking usage, cost, preview,
-Apply or persisted Gemini result is claimed.
+Before any preference save or generation, Safari computer use was stopped by
+an automatic approval review usage-limit error while opening the model menu.
+The review could not complete; it did not judge the action unsafe. No alternate
+control path was used. Read-only PostgreSQL verification afterward showed
+`gpt-6-luna`, 512 output tokens, `monthlyBudgetMicros=1000000`, paid
+confirmation enabled and two existing AI generation records. API health
+remained 200. **Zero live Gemini generation requests** were sent; no usage,
+cost, preview, Apply or persisted Gemini result is claimed. Resume the
+approved one-request flow only after the computer-use approval limit clears.
