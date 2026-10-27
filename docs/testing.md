@@ -273,3 +273,110 @@ Discard → Generate Again → Apply and refresh persistence. The mobile documen
 was 390px. Browser test data and processes were removed afterward. Only mock output
 was used; the local Google key was not configured and no paid or live Gemini test
 was attempted. [Contract](contracts/google-gemini-text.md) records the open bound.
+
+## SYN-AI-002A live Google acceptance — preflight 2026-10-27
+
+**Result: PARTIAL — live execution blocked; no real Gemini request was made.**
+PR [#19](https://github.com/synvaro/synvaro/pull/19) merged at
+`febc64bcc099537e7e5bf837976cab12da9ad44f`; its [CI](https://github.com/synvaro/synvaro/actions/runs/40471372079)
+passed. Model `gemini-3.8-flash`, `@google/genai` 2.31.0, LOW thinking,
+30-second timeout and no retries remain unchanged. Current official
+[model](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash),
+[pricing](https://ai.google.dev/gemini-api/docs/pricing) and
+[thinking](https://ai.google.dev/gemini-api/docs/generate-content/thinking)
+documentation were checked; no provider configuration was changed.
+
+- The repository-root launch environment contains `GOOGLE_API_KEY`; its value was
+  not read out, logged or transmitted. Availability to the running API process and
+  authenticated `/ai/models` status were not verified. Studio displayed login.
+- Read-only PostgreSQL inspection found one AI preference: OpenAI `gpt-6-luna`,
+  enabled, 512 output tokens, USD 1.00 monthly estimate and confirmation enabled.
+  No preference was changed. Only seven migrations are applied locally; the
+  `20261026161445_ai_image_generation` migration is absent. A current Prisma read
+  including image preference fields failed because those columns are absent. No
+  migration, restart or database repair was performed.
+- Google AI Studio showed the Synvaro project on Free tier and its spend view
+  said billing is not set up. The local key's association with that project was
+  not verified, and applicable project-level spending controls were not established. Do not infer the configured key's tier
+  from that display. No billing or project settings were modified.
+- There was no authorization in this preflight to unset the spending preference or
+  send a paid request. There are no live input/output/thinking counts, estimated
+  costs, provider responses, Apply/persistence, desktop/mobile live acceptance or
+  budget restoration results to report. A separate owner decision and verified
+  project controls are required before proceeding.
+- Existing [SYN-AI-002 mock and real-PostgreSQL evidence](#syn-ai-002-google-gemini-text)
+  remains regression evidence only, not proof of live Gemini or current local setup.
+  The current usage record combines candidate and thinking tokens as `outputTokens`;
+  it does not independently persist the thinking-token breakdown.
+
+### Infrastructure continuation — 2026-10-27
+
+**Result: PARTIAL; zero generation requests.** The repository remained on the
+documentation-only SYN-AI-002A branch. The owner authorized local backup,
+forward-only migration, API restart and non-generating provider checks; the
+USD 1.00 monthly preference was not changed.
+
+- PostgreSQL 16 source `synvaro` had seven of eight committed migrations.
+  Before migration, a mode-0600 custom-format backup was written to
+  `/private/tmp/synvaro-2026-10-27T08-59-30-606Z.dump` (SHA-256
+  `e8fb766d317f0b266e615772eb05a3303fb18435aa25ffc056fecad30499ef3b`).
+  A full `pg_restore` into a disposable database succeeded; counts matched
+  across User 1, Session 3, Organization 1, Brand 3, BrandProfile 1,
+  Content 1, ContentMedia 0, MediaAsset 0, AiPreference 1, AiGeneration 2
+  and migration history 7. The disposable database was removed. A verified
+  SHA-identical, mode-0600 copy is retained outside the repository at
+  `~/Library/Application Support/Synvaro/backups/synvaro-2026-10-27-pre-image-migration.dump`
+  in a mode-0700 directory; it was not committed.
+- `pnpm db:deploy` applied only `20261026161445_ai_image_generation`;
+  `prisma migrate status` now reports eight migrations and an up-to-date
+  schema. Post-migration Prisma reads succeeded. Existing record counts were
+  unchanged; AI preference remained `gpt-6-luna`, 512 output tokens,
+  `monthlyBudgetMicros=1000000`, confirmation enabled, image generation
+  disabled. No database reset or preference edit occurred.
+- The local `GOOGLE_API_KEY` matched the **masked suffix** of the Synvaro
+  project key shown in Google AI Studio, and did not match the other listed
+  project key. The key value was not printed or copied. With that key, the
+  non-generating Gemini `ListModels` call returned HTTP 200 and listed
+  `gemini-3.8-flash` with `generateContent` support. This establishes
+  key/model listing access, not a successful generation response.
+- Google AI Studio showed this Synvaro project on **Free tier**, with no
+  billing set up. Its model-specific rate-limit table showed Gemini 3.8 Flash
+  at 5 RPM, 250K input TPM and 20 RPD, with zero peak use in the displayed
+  28-day period. Google's [billing](https://ai.google.dev/gemini-api/docs/billing),
+  [pricing](https://ai.google.dev/gemini-api/docs/pricing) and
+  [rate-limit](https://ai.google.dev/gemini-api/docs/rate-limits) docs confirm
+  Free-tier input/output for this model, per-project quotas, and that
+  billing setup is required to enter a paid tier. Free-tier content may be
+  used to improve Google products. These observations are time-sensitive;
+  Free tier is not a SYNVARO budget guarantee and project spend caps are
+  not a billing hard cap.
+- The API was rebuilt and restarted from the repository-root `.env`;
+  `GET /health` returned 200 and the Nest startup log mapped
+  `GET /ai/models`. An unauthenticated request through NestJS and Next.js
+  returned 401. The Chrome session was at `/login`; the owner then signed
+  in normally through Safari. The authenticated Safari session loaded
+  `/api/ai/models` and the existing hypothetical test draft. The Studio
+  model selector showed OpenAI and selectable
+  `google · gemini-3.8-flash` (its UI only enables `AVAILABLE` entries
+  from the backend catalog). Model selection was reverted before saving.
+  The USD 1.00 preference, paid confirmation, draft title and body remained
+  unchanged. Safari Responsive Design Mode at 390×874 showed the AI controls
+  in a single-column layout; no visible horizontal overflow was observed.
+  The desktop view was also usable. No database session token was extracted
+  or substituted.
+
+The owner confirmed the local Google credential is a test key and chose to
+retain it for this acceptance. Its full value is not included in this
+evidence or PR. The owner subsequently authorized temporarily removing the
+USD 1.00 preference, keeping paid confirmation enabled, sending at most one
+real Gemini generation request, and restoring the original preference.
+
+Before any preference save or generation, Safari computer use was stopped by
+an automatic approval review usage-limit error while opening the model menu.
+The review could not complete; it did not judge the action unsafe. No alternate
+control path was used. Read-only PostgreSQL verification afterward showed
+`gpt-6-luna`, 512 output tokens, `monthlyBudgetMicros=1000000`, paid
+confirmation enabled and two existing AI generation records. API health
+remained 200. **Zero live Gemini generation requests** were sent; no usage,
+cost, preview, Apply or persisted Gemini result is claimed. Resume the
+approved one-request flow only after the computer-use approval limit clears.
