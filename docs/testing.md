@@ -273,3 +273,38 @@ Discard → Generate Again → Apply and refresh persistence. The mobile documen
 was 390px. Browser test data and processes were removed afterward. Only mock output
 was used; the local Google key was not configured and no paid or live Gemini test
 was attempted. [Contract](contracts/google-gemini-text.md) records the open bound.
+
+## SYN-AI-002A live Google acceptance — preflight 2026-10-27
+
+**Result: PARTIAL — live execution blocked; no real Gemini request was made.**
+PR [#19](https://github.com/synvaro/synvaro/pull/19) merged at
+`febc64bcc099537e7e5bf837976cab12da9ad44f`; its [CI](https://github.com/synvaro/synvaro/actions/runs/40471372079)
+passed. Model `gemini-3.8-flash`, `@google/genai` 2.31.0, LOW thinking,
+30-second timeout and no retries remain unchanged. Current official
+[model](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash),
+[pricing](https://ai.google.dev/gemini-api/docs/pricing) and
+[thinking](https://ai.google.dev/gemini-api/docs/generate-content/thinking)
+documentation were checked; no provider configuration was changed.
+
+- The repository-root launch environment contains `GOOGLE_API_KEY`; its value was
+  not read out, logged or transmitted. Availability to the running API process and
+  authenticated `/ai/models` status were not verified. Studio displayed login.
+- Read-only PostgreSQL inspection found one AI preference: OpenAI `gpt-6-luna`,
+  enabled, 512 output tokens, USD 1.00 monthly estimate and confirmation enabled.
+  No preference was changed. Only seven migrations are applied locally; the
+  `20261026161445_ai_image_generation` migration is absent. A current Prisma read
+  including image preference fields failed because those columns are absent. No
+  migration, restart or database repair was performed.
+- A project named Synvaro appeared in Google AI Studio as Free tier. The local
+  key's association with that project was not verified, and applicable project-level
+  spending controls were not established. Do not infer the configured key's tier
+  from that display. No billing or project settings were modified.
+- There was no authorization in this preflight to unset the spending preference or
+  send a paid request. There are no live input/output/thinking counts, estimated
+  costs, provider responses, Apply/persistence, desktop/mobile live acceptance or
+  budget restoration results to report. A separate owner decision and verified
+  project controls are required before proceeding.
+- Existing [SYN-AI-002 mock and real-PostgreSQL evidence](#syn-ai-002-google-gemini-text)
+  remains regression evidence only, not proof of live Gemini or current local setup.
+  The current usage record combines candidate and thinking tokens as `outputTokens`;
+  it does not independently persist the thinking-token breakdown.
