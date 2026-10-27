@@ -153,7 +153,7 @@ test(
             catalog.models.filter(
               (m: { implemented: boolean }) => m.implemented,
             ).length,
-            3,
+            5,
           );
           assert.ok(!JSON.stringify(catalog).includes('API_KEY'));
           const before = await db.aiPreference.findUnique({
@@ -166,7 +166,7 @@ test(
             { model: 'gemini-unknown' },
             { model: 'gpt-image-2.5-flare' },
             { imageModel: MODEL },
-            { imageModel: 'gemini-nano-banana-2.1' },
+            { imageModel: 'gemini-unknown-image' },
             { provider: 'google' },
             { capability: 'VIDEO_GENERATION' },
           ])

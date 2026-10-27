@@ -22,6 +22,8 @@ import {
   type ImageResult,
 } from '../ai/image-provider.js';
 import { OpenAITextProvider } from '../ai/text-provider.js';
+import { GoogleImageProvider } from '../ai/google-image-provider.js';
+import { GOOGLE_IMAGE_MODEL } from '../ai/providers/models.js';
 
 test(
   'IMG-001–007: real PostgreSQL, private files, deterministic image provider',
@@ -554,6 +556,159 @@ test(
         },
       );
       await t.test(
+        'IMG-G001/002: Google generation and same-brand edit use private previews, preserve source and share spending controls',
+        async () => {
+          const google = app.get(GoogleImageProvider);
+          google.configured = () => true;
+          let generationCalls = 0;
+          let editCalls = 0;
+          google.generate = async (request) => {
+            generationCalls++;
+            assert.equal(request.model, GOOGLE_IMAGE_MODEL);
+            assert.equal(request.aspectRatio, '1:1');
+            assert.ok(request.prompt.includes('tr-TR'));
+            return {
+              bytes: png,
+              inputTextTokens: 100,
+              inputImageTokens: 0,
+              outputTokens: 1130,
+              imageOutputTokens: 1120,
+              providerGenerationId: 'test-interaction-g',
+            };
+          };
+          google.edit = async (request) => {
+            editCalls++;
+            assert.equal(request.mimeType, 'image/png');
+            assert.deepEqual(Buffer.from(request.source), png);
+            assert.ok(request.prompt.includes('preserving the actual product'));
+            return {
+              bytes: png,
+              inputTextTokens: 100,
+              inputImageTokens: 80,
+              outputTokens: 1130,
+              imageOutputTokens: 1120,
+              providerGenerationId: 'test-interaction-e',
+            };
+          };
+          assert.equal(
+            (
+              await prefs({
+                imageModel: GOOGLE_IMAGE_MODEL,
+                imageSize: '1K',
+                imageQuality: 'default',
+                imageAspectRatio: '1:1',
+                monthlyBudgetUsd: 1,
+              })
+            ).status,
+            200,
+          );
+          assert.equal((await generate()).status, 409);
+          assert.equal(generationCalls, 0);
+          await prefs({
+            imageModel: GOOGLE_IMAGE_MODEL,
+            imageSize: '1K',
+            imageQuality: 'default',
+            imageAspectRatio: '1:1',
+          });
+          const generated = await generate();
+          assert.equal(generated.status, 201);
+          const result = await generated.json();
+          assert.equal(result.provider, 'google');
+          assert.equal(result.estimatedCostUsd, 0.033825);
+          assert.equal(generationCalls, 1);
+          assert.equal(
+            (
+              await call(`/contents/${contentId}/image-generations`, 'POST', {
+                requestId: (
+                  await db.aiGeneration.findUniqueOrThrow({
+                    where: { id: result.id },
+                  })
+                ).requestId,
+                instruction: 'same',
+                confirmed: true,
+              })
+            ).status,
+            409,
+          );
+          const generatedAsset = await (
+            await call(`/image-generations/${result.id}/accept`, 'POST', {})
+          ).json();
+          assert.equal(generatedAsset.origin, 'AI_GENERATED');
+          assert.equal(
+            generatedAsset.generation.providerGenerationId,
+            'test-interaction-g',
+          );
+          const sourceBefore = Buffer.from(
+            await (await call(`/media/${savedId}/file`)).arrayBuffer(),
+          );
+          const edit = (
+            sourceMediaAssetId: string,
+            cookie?: string,
+            id = contentId,
+          ) =>
+            call(
+              `/contents/${id}/image-edits`,
+              'POST',
+              {
+                requestId: randomUUID(),
+                sourceMediaAssetId,
+                instruction: 'Improve lighting',
+                confirmed: true,
+              },
+              cookie,
+            );
+          assert.equal((await edit(savedId, '')).status, 401);
+          assert.equal((await edit(savedId, users[1]!.cookie)).status, 404);
+          assert.equal((await edit(randomUUID())).status, 404);
+          assert.equal(
+            (await edit(savedId, undefined, otherContent)).status,
+            404,
+          );
+          const edited = await edit(savedId);
+          assert.equal(edited.status, 201);
+          const editResult = await edited.json();
+          assert.equal(editResult.sourceMediaAssetId, savedId);
+          assert.equal(editCalls, 1);
+          assert.equal(
+            (await call(`/image-generations/${editResult.id}/file`)).status,
+            200,
+          );
+          const editedAsset = await (
+            await call(`/image-generations/${editResult.id}/accept`, 'POST', {})
+          ).json();
+          assert.equal(editedAsset.origin, 'AI_EDITED');
+          assert.notEqual(editedAsset.id, savedId);
+          assert.equal(editedAsset.generation.sourceMediaAssetId, savedId);
+          assert.equal(
+            editedAsset.generation.providerGenerationId,
+            'test-interaction-e',
+          );
+          assert.deepEqual(
+            Buffer.from(
+              await (await call(`/media/${savedId}/file`)).arrayBuffer(),
+            ),
+            sourceBefore,
+          );
+          assert.equal(
+            (
+              await call(`/contents/${contentId}/media`, 'POST', {
+                mediaAssetId: editedAsset.id,
+              })
+            ).status,
+            201,
+          );
+          assert.equal(
+            (
+              await call(`/contents/${otherContent}/media`, 'POST', {
+                mediaAssetId: editedAsset.id,
+              })
+            ).status,
+            404,
+          );
+          await prefs();
+        },
+      );
+      await t.test(
         'IMG-003/007: expiry blocks access and acceptance; cleanup preserves accepted files and charge evidence',
         async () => {
           const r = await (await generate()).json();
@@ -568,7 +723,7 @@ test(
             404,
           );
           await service.sweep();
-          assert.equal((await readdir(root)).length, 1);
+          assert.equal((await readdir(root)).length, 3);
           const record = await db.aiGeneration.findUniqueOrThrow({
             where: { id: r.id },
           });
@@ -614,7 +769,7 @@ test(
           assert.equal(retained.status, 'RUNNING');
           assert.equal(retained.costUncertain, true);
           assert.equal((await generate()).status, 409);
-          assert.equal((await readdir(root)).length, 1);
+          assert.equal((await readdir(root)).length, 3);
 
           const doc = await (await call('/openapi.json')).json();
           for (const path of [

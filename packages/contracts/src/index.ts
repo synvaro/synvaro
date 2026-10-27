@@ -90,13 +90,16 @@ export interface MediaAsset {
   width: number | null;
   height: number | null;
   durationMs: number | null;
-  origin: 'UPLOADED' | 'AI_GENERATED';
+  origin: 'UPLOADED' | 'AI_GENERATED' | 'AI_EDITED';
   generation?: {
     id: string;
     provider: string;
     model: string;
     imageSize: string | null;
     imageQuality: string | null;
+    imageAspectRatio: string | null;
+    sourceMediaAssetId: string | null;
+    providerGenerationId: string | null;
     createdAt: string;
   } | null;
   createdAt: string;
@@ -155,6 +158,18 @@ export type AiModelDefinition = AiModelBase &
           outputFormats: readonly string[];
           sizes: readonly string[];
           qualities: readonly string[];
+          aspectRatios?: readonly string[];
+        };
+      }
+    | {
+        implemented: true;
+        capability: 'IMAGE_EDITING';
+        settings: {
+          inputFormats: readonly string[];
+          outputFormats: readonly string[];
+          sizes: readonly string[];
+          qualities: readonly string[];
+          aspectRatios: readonly string[];
         };
       }
     | { implemented: false; capability: AiCapability }

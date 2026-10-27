@@ -117,7 +117,15 @@ try {
   const catalog = await catalogResponse.json();
   assert.equal(
     catalog.models.filter((m) => m.status === 'AVAILABLE').length,
-    3,
+    5,
+  );
+  assert.ok(
+    catalog.models.some(
+      (m) =>
+        m.provider === 'google' &&
+        m.capability === 'IMAGE_EDITING' &&
+        m.status === 'AVAILABLE',
+    ),
   );
   assert.ok(
     catalog.models

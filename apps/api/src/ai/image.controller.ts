@@ -36,6 +36,7 @@ const schema = z
     confirmed: z.boolean(),
   })
   .strict();
+const editSchema = schema.extend({ sourceMediaAssetId: z.uuid() });
 function uuid(value: string) {
   const r = z.uuid().safeParse(value);
   if (!r.success) throw new BadRequestException('Invalid identifier');
@@ -90,6 +91,37 @@ export class ImageController {
       throw new BadRequestException('Invalid image generation request');
     return this.service.generate(req.user!.id, uuid(id), r.data);
   }
+  @Post('contents/:id/image-edits')
+  @ApiOperation({
+    summary:
+      'Edit an existing image from the owned draft brand with Google; source remains unchanged and result is a private preview',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['requestId', 'instruction', 'confirmed', 'sourceMediaAssetId'],
+      properties: {
+        requestId: { type: 'string', format: 'uuid' },
+        instruction: { type: 'string', minLength: 1, maxLength: 1000 },
+        confirmed: { type: 'boolean' },
+        sourceMediaAssetId: { type: 'string', format: 'uuid' },
+      },
+    },
+  })
+  @ApiCreatedResponse({
+    description:
+      'Protected edited-image preview, source asset reference and estimated usage; no automatic save or attachment',
+  })
+  edit(
+    @Req() req: AuthRequest,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    const r = editSchema.safeParse(body);
+    if (!r.success) throw new BadRequestException('Invalid image edit request');
+    return this.service.generate(req.user!.id, uuid(id), r.data);
+  }
   @Get('contents/:id/image-generations/latest')
   @ApiOperation({
     summary: 'Recover latest owned image result without another paid request',
@@ -138,7 +170,7 @@ export class ImageController {
   @ApiCreatedResponse({
     type: AssetDto,
     description:
-      'MediaAsset with AI_GENERATED origin and generation provenance',
+      'MediaAsset with AI_GENERATED or AI_EDITED origin and generation provenance',
   })
   accept(
     @Req() req: AuthRequest,

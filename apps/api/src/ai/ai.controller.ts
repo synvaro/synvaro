@@ -28,12 +28,21 @@ import type { AuthRequest } from '../auth/auth.guard.js';
 import { AiService } from './ai.service.js';
 import { MODEL } from './text-provider.js';
 import { IMAGE_MODEL, IMAGE_SIZES, IMAGE_QUALITIES } from './image-provider.js';
+import {
+  GOOGLE_IMAGE_MODEL,
+  GOOGLE_IMAGE_SIZES,
+  GOOGLE_IMAGE_QUALITIES,
+  GOOGLE_IMAGE_ASPECT_RATIOS,
+} from './providers/models.js';
 const preference = z
   .object({
     imageEnabled: z.boolean().optional(),
-    imageModel: z.literal(IMAGE_MODEL).optional(),
-    imageSize: z.enum(IMAGE_SIZES).optional(),
-    imageQuality: z.enum(IMAGE_QUALITIES).optional(),
+    imageModel: z.enum([IMAGE_MODEL, GOOGLE_IMAGE_MODEL]).optional(),
+    imageSize: z.enum([...IMAGE_SIZES, ...GOOGLE_IMAGE_SIZES]).optional(),
+    imageQuality: z
+      .enum([...IMAGE_QUALITIES, ...GOOGLE_IMAGE_QUALITIES])
+      .optional(),
+    imageAspectRatio: z.enum(GOOGLE_IMAGE_ASPECT_RATIOS).optional(),
     enabled: z.boolean(),
     model: z.enum([MODEL, GOOGLE_TEXT_MODEL.model]),
     maxOutputTokens: z.number().int().min(128).max(2048),
@@ -105,9 +114,19 @@ export class AiController {
       ],
       properties: {
         imageEnabled: { type: 'boolean' },
-        imageModel: { type: 'string', enum: [IMAGE_MODEL] },
-        imageSize: { type: 'string', enum: [...IMAGE_SIZES] },
-        imageQuality: { type: 'string', enum: [...IMAGE_QUALITIES] },
+        imageModel: { type: 'string', enum: [IMAGE_MODEL, GOOGLE_IMAGE_MODEL] },
+        imageSize: {
+          type: 'string',
+          enum: [...IMAGE_SIZES, ...GOOGLE_IMAGE_SIZES],
+        },
+        imageQuality: {
+          type: 'string',
+          enum: [...IMAGE_QUALITIES, ...GOOGLE_IMAGE_QUALITIES],
+        },
+        imageAspectRatio: {
+          type: 'string',
+          enum: [...GOOGLE_IMAGE_ASPECT_RATIOS],
+        },
         enabled: { type: 'boolean' },
         model: { type: 'string', enum: [MODEL, GOOGLE_TEXT_MODEL.model] },
         maxOutputTokens: { type: 'integer', minimum: 128, maximum: 2048 },

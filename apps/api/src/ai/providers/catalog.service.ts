@@ -1,4 +1,5 @@
 import { GoogleTextProvider } from '../google-text-provider.js';
+import { GoogleImageProvider } from '../google-image-provider.js';
 import { GOOGLE_TEXT_MODEL } from './models.js';
 import { Inject, Injectable } from '@nestjs/common';
 import type { AiModelCatalog } from '@synvaro/contracts';
@@ -8,7 +9,12 @@ import {
   type TextProvider,
   type ImageProvider,
 } from './contracts.js';
-import { MODEL_DEFINITIONS, PRICING_EXPIRES } from './models.js';
+import {
+  GOOGLE_IMAGE_MODEL,
+  GOOGLE_IMAGE_PRICING_EXPIRES,
+  MODEL_DEFINITIONS,
+  PRICING_EXPIRES,
+} from './models.js';
 @Injectable()
 export class ModelCatalogService {
   now = () => new Date();
@@ -16,6 +22,7 @@ export class ModelCatalogService {
     @Inject(TEXT_PROVIDER) private readonly text: TextProvider,
     @Inject(IMAGE_PROVIDER) private readonly image: ImageProvider,
     private readonly google: GoogleTextProvider,
+    private readonly googleImage: GoogleImageProvider,
   ) {}
   read(): AiModelCatalog {
     return {
@@ -33,13 +40,21 @@ export class ModelCatalogService {
             ? model.model === GOOGLE_TEXT_MODEL.model
               ? this.google
               : this.text
-            : this.image;
+            : model.model === GOOGLE_IMAGE_MODEL
+              ? this.googleImage
+              : this.image;
         const reason = !adapter.configured()
-          ? 'Server API key is not configured.'
-          : model.capability === 'IMAGE_GENERATION' &&
+          ? model.model === GOOGLE_IMAGE_MODEL
+            ? 'Google image access requires a server key and confirmed paid-tier model access.'
+            : 'Server API key is not configured.'
+          : (model.capability === 'IMAGE_GENERATION' ||
+                model.capability === 'IMAGE_EDITING') &&
               !process.env.MEDIA_STORAGE_ROOT?.trim()
             ? 'Private media storage is not configured.'
-            : this.now() >= PRICING_EXPIRES
+            : this.now() >=
+                (model.model === GOOGLE_IMAGE_MODEL
+                  ? GOOGLE_IMAGE_PRICING_EXPIRES
+                  : PRICING_EXPIRES)
               ? 'Model pricing needs maintenance review.'
               : null;
         return {

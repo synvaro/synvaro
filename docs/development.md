@@ -256,4 +256,26 @@ Set server-only `GOOGLE_API_KEY` to enable the implemented Gemini text adapter.
 Configuration does not establish account/model access. Never put a key in browser
 variables. Google free-tier data terms and the selected-budget block are described in
 [the Google contract](contracts/google-gemini-text.md); live acceptance requires
-separate authorization. Image/video and ElevenLabs placeholders remain planned.
+separate authorization. Google image is a separate integration; video and
+ElevenLabs remain planned.
+
+### Google image generation and editing (SYN-AI-003)
+
+`gemini-nano-banana-2.1` uses the existing server-only `GOOGLE_API_KEY`. Google's
+API pricing shows no free tier for this model. Confirm paid-tier model access in
+the exact Google project and set `GOOGLE_IMAGE_PAID_TIER_CONFIRMED=true` on the
+NestJS server only after that review. The flag makes the adapter locally
+selectable; it does not make a paid probe or guarantee account entitlement.
+Private `MEDIA_STORAGE_ROOT` is still required. Leave the flag false for the
+current Free-tier Synvaro project. No browser API key is used.
+
+The Studio supports one 1K PNG preview from Google or one edit of an existing
+same-brand JPEG/PNG/WebP under 10 MiB. Generated previews expire after one hour
+and reuse the existing storage cleanup. Accepting an edit creates a new private
+MediaAsset; backup the database and private media root together to preserve the
+source/output relationship. Existing OpenAI image settings and objects remain
+valid. A selected monthly spending ceiling blocks both Google image actions
+before dispatch; the application never clears the owner's USD 1 limit. See
+[IMG-G001/002](contracts/google-image-generation-editing.md) for the verified
+settings, pricing and review limitations. A real paid request needs separate
+authorization.

@@ -97,6 +97,7 @@ model Content {
 
 enum MediaOrigin {
   AI_GENERATED
+  AI_EDITED
   UPLOADED
 }
 
@@ -115,6 +116,7 @@ model MediaAsset {
   createdAt        DateTime    @default(now()) @db.Timestamptz(3)
 
   generation AiGeneration?
+  sourceForGenerations AiGeneration[] @relation("ImageEditSource")
   contents ContentMedia[]
 
   @@index([brandId, createdAt(sort: Desc), id(sort: Desc)])
@@ -138,6 +140,7 @@ model AiPreference {
   imageModel String @default("gpt-image-2.5-flare") @db.VarChar(80)
   imageSize String @default("1024x1024") @db.VarChar(20)
   imageQuality String @default("low") @db.VarChar(20)
+  imageAspectRatio String @default("1:1") @db.VarChar(10)
   userId String @id @db.Uuid
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   enabled Boolean @default(false)
@@ -167,6 +170,10 @@ model AiGeneration {
   provider String @default("openai") @db.VarChar(40)
   imageSize String? @db.VarChar(20)
   imageQuality String? @db.VarChar(20)
+  imageAspectRatio String? @db.VarChar(10)
+  sourceMediaAssetId String? @db.Uuid
+  sourceMediaAsset MediaAsset? @relation("ImageEditSource", fields: [sourceMediaAssetId], references: [id], onDelete: Restrict)
+  providerGenerationId String? @db.VarChar(160)
   inputImageTokens Int?
   previewKey String? @unique @db.Uuid
   previewExpiresAt DateTime? @db.Timestamptz(3)
@@ -194,6 +201,7 @@ model AiGeneration {
   @@index([userId, createdAt])
   @@index([contentId])
   @@index([previewExpiresAt])
+  @@index([sourceMediaAssetId])
 }
 
 // Operator-only audit record. Provider usage evidence is required before changing
