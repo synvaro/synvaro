@@ -31,6 +31,7 @@ Rows not explicitly marked implemented describe planned capabilities.
 AI draft contract: [AIG-001–005](contracts/ai-draft-generation.md).
 
 AI image contract: [IMG-001–007](contracts/ai-image-generation.md).
+Google image generation and editing: [IMG-G001/002](contracts/google-image-generation-editing.md) (implementation pending PR review; paid live access unverified).
 
 ### AI provider foundation — implemented, PR pending review
 

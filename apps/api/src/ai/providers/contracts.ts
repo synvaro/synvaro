@@ -22,12 +22,15 @@ export interface ImageRequest {
   size: string;
   quality: string;
   prompt: string;
+  aspectRatio?: string;
 }
 export interface ImageResult {
   bytes: Buffer;
   inputTextTokens?: number;
   inputImageTokens?: number;
   outputTokens?: number;
+  imageOutputTokens?: number;
+  providerGenerationId?: string;
 }
 export interface ImageProvider {
   configured(): boolean;
@@ -36,8 +39,13 @@ export interface ImageProvider {
 
 // Future contracts: intentionally no implementations or runtime registrations.
 export interface ImageEditProvider {
+  configured(): boolean;
   edit(
-    request: ImageRequest & { source: Uint8Array; mimeType: string },
+    request: ImageRequest & {
+      aspectRatio: string;
+      source: Uint8Array;
+      mimeType: string;
+    },
   ): Promise<ImageResult>;
 }
 export interface SpeechProvider {

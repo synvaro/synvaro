@@ -128,7 +128,11 @@ export function AttachedMedia({
             <option value="">Select existing media</option>
             {available.map((asset) => (
               <option key={asset.id} value={asset.id}>
-                {asset.origin === 'AI_GENERATED' ? 'AI generated · ' : ''}
+                {asset.origin === 'AI_GENERATED'
+                  ? 'AI generated · '
+                  : asset.origin === 'AI_EDITED'
+                    ? 'AI edited · '
+                    : ''}
                 {asset.originalFilename} ({asset.mimeType})
               </option>
             ))}
@@ -194,10 +198,17 @@ export function AttachedMedia({
                 {index + 1}. {item.asset.originalFilename}
               </h3>
               <p>{item.asset.mimeType}</p>
-              {item.asset.origin === 'AI_GENERATED' && (
+              {(item.asset.origin === 'AI_GENERATED' ||
+                item.asset.origin === 'AI_EDITED') && (
                 <p>
-                  <span className="badge">AI GENERATED</span> Conceptual visual,
-                  not authentic product photography.
+                  <span className="badge">
+                    {item.asset.origin === 'AI_EDITED'
+                      ? 'AI EDITED'
+                      : 'AI GENERATED'}
+                  </span>{' '}
+                  {item.asset.origin === 'AI_EDITED'
+                    ? 'Review against the original image before use.'
+                    : 'Conceptual visual, not authentic product photography.'}
                 </p>
               )}
               <div className="form-actions">

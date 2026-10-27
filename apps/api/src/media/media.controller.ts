@@ -40,6 +40,12 @@ class GenerationProvenanceDto {
   @ApiProperty({ type: String }) model!: string;
   @ApiProperty({ type: String, nullable: true }) imageSize!: string | null;
   @ApiProperty({ type: String, nullable: true }) imageQuality!: string | null;
+  @ApiProperty({ type: String, nullable: true }) imageAspectRatio!:
+    string | null;
+  @ApiProperty({ type: String, format: 'uuid', nullable: true })
+  sourceMediaAssetId!: string | null;
+  @ApiProperty({ type: String, nullable: true }) providerGenerationId!:
+    string | null;
   @ApiProperty({ type: String, format: 'date-time' }) createdAt!: string;
 }
 export class AssetDto {
@@ -61,7 +67,8 @@ export class AssetDto {
   @ApiProperty({ type: Number, nullable: true }) width!: number | null;
   @ApiProperty({ type: Number, nullable: true }) height!: number | null;
   @ApiProperty({ type: Number, nullable: true }) durationMs!: number | null;
-  @ApiProperty({ enum: ['UPLOADED', 'AI_GENERATED'] }) origin!: string;
+  @ApiProperty({ enum: ['UPLOADED', 'AI_GENERATED', 'AI_EDITED'] })
+  origin!: string;
   @ApiProperty({ type: String, format: 'date-time' }) createdAt!: string;
 }
 class AssetResponse {

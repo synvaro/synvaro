@@ -481,3 +481,54 @@ hypothesis but is not request-level usage/billing evidence; the owner described
 the conclusion as tentative. The historical reservation remains unchanged.
 The corrective PR's [CI](https://github.com/synvaro/synvaro/actions/runs/40508766641)
 passed with nine clean PostgreSQL migrations and all quality gates.
+
+## SYN-AI-003 Google image generation and editing — 2026-10-27
+
+**Scope and provider evidence:** The official Google Gen AI SDK 2.31.0 adapter
+uses the `gemini-nano-banana-2.1` Interactions image API for generation and
+image-plus-text editing. The implemented subset is PNG at 1K with 1:1, 4:5 or
+9:16 aspect ratio. Model, request and Standard pricing were checked against
+the [model reference](https://ai.google.dev/gemini-api/docs/models/gemini-nano-banana-2.1),
+[image guide](https://ai.google.dev/gemini-api/docs/image-generation) and
+[pricing](https://ai.google.dev/gemini-api/docs/pricing) on 2026-10-27.
+The local project has no confirmed paid-tier model access; no Google image
+request was made. SDK wire and application acceptance use deterministic mocks,
+not live provider evidence.
+
+**Database and tests:** All ten forward-only migrations applied to a fresh,
+isolated PostgreSQL database `synvaro_google_image_test`. The same new migration
+was also applied to the existing isolated `synvaro_auth_test` without resetting
+its data. The full suite passed with **96 API + 1 worker tests** on real
+PostgreSQL. Google image SDK tests check request settings, inline image input,
+response/usage extraction, malformed responses and one-call rate-limit failure.
+Integration tests check brand context, Google generation and editing, preserved
+source bytes, new `AI_EDITED` asset provenance, private preview/save/attach,
+same-brand authorization and shared-budget blocking. Existing OpenAI image,
+OpenAI/Gemini text, Media Library, auth and CSRF regressions also passed.
+Format, lint, typecheck, Prisma validation and production build passed. Built
+Next/Nest smoke passed against the isolated database; it exercises the existing
+auth, organization, content and media path with mocked AI providers. PR CI is
+tracked separately.
+
+**Browser check:** A dedicated hypothetical account, organization, brand,
+profile and draft were created through local Next.js/NestJS on the isolated
+test database. On desktop, the Studio displayed the backend-supplied OpenAI
+and Google image models, saved the Google model and 1K/aspect preference, and
+showed the editing source selector with the correct empty state. At 390px,
+model/settings, generation action and cost notice remained visible and usable
+without horizontal overflow. The browser automation's automatic approval
+review rejected clicking Generate because it could not establish from the
+page that the action was mock-only. The backing API was the test-only
+`ai-preview` executable with both Google image methods replaced by deterministic
+PNG mocks, but this did not establish approval for that browser action. Thus
+browser preview/Save/Attach was **not** verified in this walkthrough; API and
+real-PostgreSQL integration tests provide separate mock-flow evidence. The
+test servers were stopped afterward.
+
+**Spending and acceptance boundary:** The existing USD 1 monthly preference
+was not changed. Image requests remain blocked while any monthly budget is
+selected because a conservative total pre-request bound is not established.
+Missing or ambiguous usage is recorded as uncertain; it is not claimed as a
+zero provider charge. No paid Google image calls, live model acceptance or
+production verification occurred. Desktop and 390px browser verification is
+reported separately from the mocked API tests.

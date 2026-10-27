@@ -12,6 +12,7 @@ interface Prefs {
   imageModel: string;
   imageSize: string;
   imageQuality: string;
+  imageAspectRatio: string;
 }
 interface Settings {
   preferences: Prefs;
@@ -20,6 +21,7 @@ interface Settings {
     models: string[];
     sizes: string[];
     qualities: string[];
+    aspectRatios: string[];
     costNotice: string;
   };
 }
@@ -29,6 +31,9 @@ interface Result {
   model: string;
   imageSize: string;
   imageQuality: string;
+  imageAspectRatio: string | null;
+  sourceMediaAssetId: string | null;
+  provider: string;
   previewAvailable: boolean;
   mediaAssetId: string | null;
   estimatedCostUsd: number | null;
@@ -58,16 +63,19 @@ async function json(path: string, method = 'GET', body?: unknown) {
 }
 export function ImagePanel({
   contentId,
+  brandId,
   brandName,
   disabled,
   onAttached,
 }: {
   contentId: string;
+  brandId: string;
   brandName: string;
   disabled: boolean;
   onAttached: () => void;
 }) {
   const catalog = useModelCatalog('IMAGE_GENERATION');
+  const editingCatalog = useModelCatalog('IMAGE_EDITING');
   const [settings, setSettings] = useState<Settings | null>(null);
   const [prefs, setPrefs] = useState<Prefs | null>(null);
   const [result, setResult] = useState<Result | null>(null);
@@ -77,6 +85,37 @@ export function ImagePanel({
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [attached, setAttached] = useState(false);
+  const [mode, setMode] = useState<'generate' | 'edit'>('generate');
+  const [sources, setSources] = useState<
+    {
+      id: string;
+      originalFilename: string;
+      mimeType: string;
+      sizeBytes: number;
+    }[]
+  >([]);
+  const [sourceId, setSourceId] = useState('');
+  useEffect(() => {
+    let active = true;
+    void json(`/api/brands/${brandId}/media`)
+      .then((data) => {
+        if (active)
+          setSources(
+            data.assets.filter(
+              (item: { mimeType: string; sizeBytes: number }) =>
+                ['image/jpeg', 'image/png', 'image/webp'].includes(
+                  item.mimeType,
+                ) && item.sizeBytes <= 10 * 1024 * 1024,
+            ),
+          );
+      })
+      .catch(() => {
+        if (active) setError('Unable to load brand images for editing.');
+      });
+    return () => {
+      active = false;
+    };
+  }, [brandId]);
   useEffect(() => {
     let active = true;
     const load = () =>
@@ -126,20 +165,35 @@ export function ImagePanel({
   const dirty =
     !!prefs &&
     !!settings &&
-    ['imageEnabled', 'imageModel', 'imageSize', 'imageQuality'].some(
+    [
+      'imageEnabled',
+      'imageModel',
+      'imageSize',
+      'imageQuality',
+      'imageAspectRatio',
+    ].some(
       (k) => prefs[k as keyof Prefs] !== settings.preferences[k as keyof Prefs],
     );
+  const selectedModel = catalog.models.find(
+    (m) => m.model === prefs?.imageModel,
+  );
+  const selectedSettings =
+    selectedModel?.implemented &&
+    selectedModel.capability === 'IMAGE_GENERATION'
+      ? selectedModel.settings
+      : null;
+  const googleSelected = selectedModel?.provider === 'google';
   return (
     <section className="brand-form-card ai-panel" aria-labelledby="image-title">
-      <h2 id="image-title">Generate Image</h2>
+      <h2 id="image-title">Generate or edit image</h2>
       <p>
         Brand: <strong>{brandName}</strong>. Uses the saved draft and Brand
         Profile. Unsaved text stays untouched.
       </p>
       <p>
-        AI-generated conceptual imagery, not authentic product photography.
-        Review carefully; do not present invented products, packaging or claims
-        as real.
+        Generated images are conceptual. AI editing may alter packaging, labels,
+        appearance, quantity or product identity. Compare the source and result
+        carefully before using a product image.
       </p>
       {catalog.message && <p role="status">{catalog.message}</p>}
       {catalog.models
@@ -169,9 +223,26 @@ export function ImagePanel({
               <select
                 id="image-model"
                 value={prefs.imageModel}
-                onChange={(e) =>
-                  setPrefs({ ...prefs, imageModel: e.target.value })
-                }
+                onChange={(e) => {
+                  const model = catalog.models.find(
+                    (m) => m.model === e.target.value,
+                  );
+                  if (
+                    model?.implemented &&
+                    model.capability === 'IMAGE_GENERATION'
+                  )
+                    setPrefs({
+                      ...prefs,
+                      imageModel: e.target.value,
+                      imageSize: model.settings.sizes[0]!,
+                      imageQuality: model.settings.qualities[0]!,
+                      imageAspectRatio:
+                        model.settings.aspectRatios?.[0] ?? '1:1',
+                    });
+                  setMode('generate');
+                  setSourceId('');
+                  setConfirming(false);
+                }}
               >
                 <ModelOptions models={catalog.models} />
               </select>
@@ -184,7 +255,7 @@ export function ImagePanel({
                   setConfirming(false);
                 }}
               >
-                {settings.image.sizes.map((s) => (
+                {selectedSettings?.sizes.map((s) => (
                   <option key={s}>{s}</option>
                 ))}
               </select>
@@ -197,10 +268,27 @@ export function ImagePanel({
                   setConfirming(false);
                 }}
               >
-                {settings.image.qualities.map((q) => (
+                {selectedSettings?.qualities.map((q) => (
                   <option key={q}>{q}</option>
                 ))}
               </select>
+              {googleSelected && (
+                <>
+                  <label htmlFor="image-aspect">Aspect ratio</label>
+                  <select
+                    id="image-aspect"
+                    value={prefs.imageAspectRatio}
+                    onChange={(e) => {
+                      setPrefs({ ...prefs, imageAspectRatio: e.target.value });
+                      setConfirming(false);
+                    }}
+                  >
+                    {selectedSettings?.aspectRatios?.map((ratio) => (
+                      <option key={ratio}>{ratio}</option>
+                    ))}
+                  </select>
+                </>
+              )}
               <p>
                 Paid confirmation is always required for images. Monthly
                 spending preference is shared with AI text generation and
@@ -222,6 +310,7 @@ export function ImagePanel({
                         imageModel: prefs.imageModel,
                         imageSize: prefs.imageSize,
                         imageQuality: prefs.imageQuality,
+                        imageAspectRatio: prefs.imageAspectRatio,
                       },
                     );
                     setSettings(updated);
@@ -238,6 +327,9 @@ export function ImagePanel({
               {settings.preferences.imageModel} ·{' '}
               {settings.preferences.imageSize} ·{' '}
               {settings.preferences.imageQuality} · PNG · Images{' '}
+              {googleSelected
+                ? `${settings.preferences.imageAspectRatio} · `
+                : ''}
               {settings.preferences.imageEnabled ? 'enabled' : 'disabled'}
             </p>
             <p>{settings.image.costNotice}</p>
@@ -255,6 +347,67 @@ export function ImagePanel({
                 and current pricing configuration are required.
               </p>
             )}
+            {googleSelected && (
+              <div
+                className="form-actions"
+                role="group"
+                aria-label="Image action"
+              >
+                <button
+                  type="button"
+                  className={
+                    mode === 'generate' ? 'button' : 'secondary-button'
+                  }
+                  onClick={() => {
+                    setMode('generate');
+                    setConfirming(false);
+                  }}
+                >
+                  Generate new
+                </button>
+                <button
+                  type="button"
+                  className={mode === 'edit' ? 'button' : 'secondary-button'}
+                  disabled={
+                    !editingCatalog.models.some((m) => m.status === 'AVAILABLE')
+                  }
+                  onClick={() => {
+                    setMode('edit');
+                    setConfirming(false);
+                  }}
+                >
+                  Edit existing
+                </button>
+              </div>
+            )}
+            {mode === 'edit' && googleSelected && (
+              <>
+                <label htmlFor="edit-source">
+                  Source image from {brandName}
+                </label>
+                <select
+                  id="edit-source"
+                  value={sourceId}
+                  onChange={(e) => {
+                    setSourceId(e.target.value);
+                    setConfirming(false);
+                  }}
+                >
+                  <option value="">Select an image</option>
+                  {sources.map((source) => (
+                    <option key={source.id} value={source.id}>
+                      {source.originalFilename}
+                    </option>
+                  ))}
+                </select>
+                {!sources.length && (
+                  <p>
+                    No eligible images in this brand. Upload a JPEG, PNG or WebP
+                    under 10 MiB to Media Library first.
+                  </p>
+                )}
+              </>
+            )}
             <label htmlFor="image-instruction">Visual instruction</label>
             <textarea
               id="image-instruction"
@@ -265,7 +418,11 @@ export function ImagePanel({
                 setInstruction(e.target.value);
                 setConfirming(false);
               }}
-              placeholder="Describe a conceptual illustration or atmospheric visual."
+              placeholder={
+                mode === 'edit'
+                  ? 'Describe the specific change, such as improving lighting while keeping the product intact.'
+                  : 'Describe a conceptual illustration or atmospheric visual.'
+              }
             />
             {dirty && <p>Save image preferences before generating.</p>}
             <button
@@ -273,6 +430,7 @@ export function ImagePanel({
               className="button"
               disabled={
                 !instruction.trim() ||
+                (mode === 'edit' && !sourceId) ||
                 dirty ||
                 !catalog.models.some(
                   (m) =>
@@ -287,7 +445,9 @@ export function ImagePanel({
               }
               onClick={() => setConfirming(true)}
             >
-              Generate image preview
+              {mode === 'edit'
+                ? 'Edit image preview'
+                : 'Generate image preview'}
             </button>
             {confirming && (
               <div
@@ -304,6 +464,8 @@ export function ImagePanel({
                   selected. Generate one {settings.preferences.imageSize}{' '}
                   {settings.preferences.imageQuality} image with{' '}
                   {settings.preferences.imageModel}?
+                  {mode === 'edit' &&
+                    ' The original image will remain unchanged.'}
                 </p>
                 <div className="form-actions">
                   <button
@@ -314,12 +476,15 @@ export function ImagePanel({
                         setAttached(false);
                         setResult(
                           await json(
-                            `/api/contents/${contentId}/image-generations`,
+                            `/api/contents/${contentId}/${mode === 'edit' ? 'image-edits' : 'image-generations'}`,
                             'POST',
                             {
                               requestId: crypto.randomUUID(),
                               instruction,
                               confirmed: true,
+                              ...(mode === 'edit'
+                                ? { sourceMediaAssetId: sourceId }
+                                : {}),
                             },
                           ),
                         );
@@ -345,21 +510,53 @@ export function ImagePanel({
         )}
         {result && (
           <section aria-label="Generated image result">
-            <h3>AI-generated image — review before saving</h3>
-            {(result.previewAvailable || result.mediaAssetId) && (
-              <img
-                className="generated-image-preview"
-                src={
-                  result.mediaAssetId
-                    ? `/api/media/${result.mediaAssetId}/file`
-                    : `/api/image-generations/${result.id}/file`
-                }
-                alt="AI-generated conceptual visual; not authentic product photography"
-              />
+            <h3>
+              {result.sourceMediaAssetId
+                ? 'AI-edited image'
+                : 'AI-generated image'}{' '}
+              — review before saving
+            </h3>
+            {result.sourceMediaAssetId && (
+              <div className="image-compare">
+                <div>
+                  <p>Original — unchanged</p>
+                  <img
+                    className="generated-image-preview"
+                    src={`/api/media/${result.sourceMediaAssetId}/file`}
+                    alt="Original source image"
+                  />
+                </div>
+                <div>
+                  <p>Edited preview</p>
+                  {(result.previewAvailable || result.mediaAssetId) && (
+                    <img
+                      className="generated-image-preview"
+                      src={
+                        result.mediaAssetId
+                          ? `/api/media/${result.mediaAssetId}/file`
+                          : `/api/image-generations/${result.id}/file`
+                      }
+                      alt="AI-edited result for visual review"
+                    />
+                  )}
+                </div>
+              </div>
             )}
+            {!result.sourceMediaAssetId &&
+              (result.previewAvailable || result.mediaAssetId) && (
+                <img
+                  className="generated-image-preview"
+                  src={
+                    result.mediaAssetId
+                      ? `/api/media/${result.mediaAssetId}/file`
+                      : `/api/image-generations/${result.id}/file`
+                  }
+                  alt="AI-generated conceptual visual; not authentic product photography"
+                />
+              )}
             <p>
-              {result.model} · {result.imageSize} · {result.imageQuality} ·{' '}
-              {result.status}
+              {result.provider} · {result.model} · {result.imageSize} ·{' '}
+              {result.imageQuality} · {result.status}
             </p>
             <p>
               {result.inputTokens === null

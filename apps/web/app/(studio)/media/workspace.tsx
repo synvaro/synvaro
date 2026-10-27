@@ -198,18 +198,40 @@ export function MediaWorkspace({
                     />
                   )}
                   <h3>{asset.originalFilename}</h3>
-                  {asset.origin === 'AI_GENERATED' && (
+                  {(asset.origin === 'AI_GENERATED' ||
+                    asset.origin === 'AI_EDITED') && (
                     <p>
-                      <span className="badge">AI GENERATED</span> Conceptual
-                      visual, not authentic product photography.{' '}
-                      {asset.generation?.provider} · {asset.generation?.model}
+                      <span className="badge">
+                        {asset.origin === 'AI_EDITED'
+                          ? 'AI EDITED'
+                          : 'AI GENERATED'}
+                      </span>{' '}
+                      {asset.origin === 'AI_EDITED'
+                        ? 'Review product details against the original.'
+                        : 'Conceptual visual, not authentic product photography.'}{' '}
+                      {asset.origin === 'AI_EDITED'
+                        ? 'AI-edited'
+                        : 'AI-generated'}{' '}
+                      · {asset.generation?.provider} · {asset.generation?.model}
+                    </p>
+                  )}
+                  {asset.generation?.sourceMediaAssetId && (
+                    <p>
+                      <a
+                        className="auth-link"
+                        href={`/api/media/${asset.generation.sourceMediaAssetId}/file`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        View original source
+                      </a>
                     </p>
                   )}
                   <p>
                     {asset.mimeType} · {(asset.sizeBytes / 1024).toFixed(1)} KiB
                   </p>
                   <p>
-                    {asset.origin === 'AI_GENERATED' ? 'Saved' : 'Uploaded'}{' '}
+                    {asset.origin === 'UPLOADED' ? 'Uploaded' : 'Saved'}{' '}
                     <time dateTime={asset.createdAt}>
                       {new Date(asset.createdAt)
                         .toISOString()

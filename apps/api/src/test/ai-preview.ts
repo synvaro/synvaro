@@ -57,6 +57,37 @@ google.generate = async (request) => ({
   inputTokens: 100,
   outputTokens: 50,
 });
+const { GoogleImageProvider } = await import('../ai/google-image-provider.js');
+const googleImage = app.get(GoogleImageProvider);
+googleImage.configured = () => true;
+let imageSequence = 0;
+const previewImage = async (request: { aspectRatio?: string }) => {
+  const [width, height] =
+    request.aspectRatio === '4:5'
+      ? [928, 1152]
+      : request.aspectRatio === '9:16'
+        ? [768, 1376]
+        : [1024, 1024];
+  return {
+    bytes: await sharp({
+      create: {
+        width,
+        height,
+        channels: 3,
+        background: imageSequence++ % 2 ? '#6d8f66' : '#b58a62',
+      },
+    })
+      .png()
+      .toBuffer(),
+    providerGenerationId: `mock-google-image-${imageSequence}`,
+    inputTextTokens: 100,
+    inputImageTokens: 0,
+    outputTokens: 1120,
+    imageOutputTokens: 1120,
+  };
+};
+googleImage.generate = previewImage;
+googleImage.edit = previewImage;
 
 const config = loadConfig();
 await app.listen(config.port, config.host);

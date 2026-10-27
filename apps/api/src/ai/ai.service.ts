@@ -1,4 +1,10 @@
 import { GoogleTextProvider } from './google-text-provider.js';
+import { GoogleImageProvider } from './google-image-provider.js';
+import {
+  GOOGLE_IMAGE_GENERATION,
+  GOOGLE_IMAGE_MODEL,
+  IMAGE_MODEL_DEFINITION,
+} from './providers/models.js';
 import { GOOGLE_TEXT_MODEL } from './providers/models.js';
 import { TEXT_PROVIDER, type TextProvider } from './providers/contracts.js';
 import { PRICING_EXPIRES } from './providers/models.js';
@@ -27,6 +33,7 @@ export interface Preferences {
   imageModel?: string;
   imageSize?: string;
   imageQuality?: string;
+  imageAspectRatio?: string;
   enabled: boolean;
   model: string;
   maxOutputTokens: number;
@@ -38,6 +45,7 @@ export const DEFAULTS: Preferences = {
   imageModel: IMAGE_MODEL,
   imageSize: IMAGE_SIZES[0],
   imageQuality: IMAGE_QUALITIES[0],
+  imageAspectRatio: '1:1',
   enabled: false,
   model: MODEL,
   maxOutputTokens: 512,
@@ -55,6 +63,7 @@ export class AiService {
     private readonly db: DatabaseService,
     @Inject(TEXT_PROVIDER) private readonly provider: TextProvider,
     private readonly google: GoogleTextProvider,
+    private readonly googleImage: GoogleImageProvider,
   ) {}
   private textProvider(model: string): TextProvider {
     if (model === MODEL) return this.provider;
@@ -110,6 +119,7 @@ export class AiService {
             imageModel: p.imageModel,
             imageSize: p.imageSize,
             imageQuality: p.imageQuality,
+            imageAspectRatio: p.imageAspectRatio,
             enabled: p.enabled,
             model: p.model,
             maxOutputTokens: p.maxOutputTokens,
@@ -127,11 +137,23 @@ export class AiService {
           ? 'AI is unavailable: model pricing needs maintenance review.'
           : null,
       image: {
-        models: [IMAGE_MODEL],
-        sizes: IMAGE_SIZES,
-        qualities: IMAGE_QUALITIES,
+        models: [IMAGE_MODEL, GOOGLE_IMAGE_MODEL],
+        sizes:
+          (p?.imageModel ?? IMAGE_MODEL) === GOOGLE_IMAGE_MODEL
+            ? GOOGLE_IMAGE_GENERATION.settings.sizes
+            : IMAGE_MODEL_DEFINITION.settings.sizes,
+        qualities:
+          (p?.imageModel ?? IMAGE_MODEL) === GOOGLE_IMAGE_MODEL
+            ? GOOGLE_IMAGE_GENERATION.settings.qualities
+            : IMAGE_MODEL_DEFINITION.settings.qualities,
+        aspectRatios:
+          (p?.imageModel ?? IMAGE_MODEL) === GOOGLE_IMAGE_MODEL
+            ? GOOGLE_IMAGE_GENERATION.settings.aspectRatios
+            : ['1:1'],
         available:
-          this.provider.configured() &&
+          ((p?.imageModel ?? IMAGE_MODEL) === GOOGLE_IMAGE_MODEL
+            ? this.googleImage.configured()
+            : this.provider.configured()) &&
           !!process.env.MEDIA_STORAGE_ROOT &&
           this.now() < IMAGE_PRICING_EXPIRES,
         costBoundAvailable: false,

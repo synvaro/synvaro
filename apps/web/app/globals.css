@@ -616,3 +616,9 @@ fieldset .button,
   height: auto;
   border-radius: 8px;
 }
+
+.image-compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 1rem;
+}

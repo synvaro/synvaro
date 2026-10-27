@@ -232,6 +232,7 @@ export function DraftEditor({
       {content && (
         <ImagePanel
           contentId={content.id}
+          brandId={brand.id}
           brandName={brand.name}
           disabled={busy || !!leaving}
           onAttached={() => setAttachmentVersion((v) => v + 1)}

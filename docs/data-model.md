@@ -13,7 +13,7 @@ UTC timestamps are used; authentication secrets are hashes, not plaintext.
 | Brand | id, organizationId FK, name, slug, nullable description, createdAt, updatedAt; unique (organizationId, slug) |
 | BrandProfile | id, unique brandId FK, description, targetAudience, toneOfVoice, nullable defaultLanguage, contentGuidelines, createdAt, updatedAt |
 | Content | id, brandId FK, title (200), body text (empty allowed), status DRAFT, createdAt, updatedAt; index (brandId, updatedAt DESC, id DESC) |
-| MediaAsset | id, brandId FK (RESTRICT delete), originalFilename (255), unique opaque UUID storageKey, mimeType, sizeBytes Int (20 MiB max), nullable width/height/durationMs, origin UPLOADED or AI_GENERATED, createdAt; index (brandId, createdAt DESC, id DESC) |
+| MediaAsset | id, brandId FK (RESTRICT delete), originalFilename (255), unique opaque UUID storageKey, mimeType, sizeBytes Int (20 MiB max), nullable width/height/durationMs, origin UPLOADED, AI_GENERATED or AI_EDITED, createdAt; index (brandId, createdAt DESC, id DESC) |
 
 | ContentMedia | composite PK (contentId, mediaAssetId), cascading FKs to Content and MediaAsset, position Int, createdAt; indexes (contentId, position, mediaAssetId), (mediaAssetId) |
 
@@ -40,6 +40,14 @@ SYN-008 extends AiPreference with imageEnabled (false), imageModel (gpt-image-2.
 AiGeneration adds kind (TEXT default / IMAGE), provider (openai), imageSize/quality, inputImageTokens, unique nullable previewKey, previewExpiresAt (indexed), and unique nullable mediaAssetId FK (RESTRICT). Existing text rows and accounting are preserved. For images, inputTokens is text input usage; inputImageTokens tracks image input separately; maxOutputTokens is zero (not an image API setting). An unknown image charge is costUncertain=true, not a free request, even when budgetChargeMicros is zero.
 
 Accepted MediaAsset has one optional generation provenance relation, including provider/model/settings/time. The same private object becomes the accepted asset; no image duplication. No prompt or instruction is persisted. See [IMG-001–007](contracts/ai-image-generation.md).
+
+SYN-AI-003 adds `AI_EDITED` MediaOrigin, optional AiPreference.imageAspectRatio,
+and AiGeneration.imageAspectRatio, sourceMediaAssetId (RESTRICT FK to MediaAsset)
+and providerGenerationId. One source can have many edited outputs. The source
+object and metadata remain untouched; accepting an edit creates a new
+MediaAsset from its private preview. The generation record links both source
+and accepted output, without storing prompts or image bytes in PostgreSQL.
+See [IMG-G001/002](contracts/google-image-generation-editing.md).
 
 ## Remaining design draft (not migrated)
 
