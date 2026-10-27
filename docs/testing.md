@@ -323,8 +323,10 @@ USD 1.00 monthly preference was not changed.
   A full `pg_restore` into a disposable database succeeded; counts matched
   across User 1, Session 3, Organization 1, Brand 3, BrandProfile 1,
   Content 1, ContentMedia 0, MediaAsset 0, AiPreference 1, AiGeneration 2
-  and migration history 7. The disposable database was removed; the backup
-  remains local and was not committed.
+  and migration history 7. The disposable database was removed. A verified
+  SHA-identical, mode-0600 copy is retained outside the repository at
+  `~/Library/Application Support/Synvaro/backups/synvaro-2026-10-27-pre-image-migration.dump`
+  in a mode-0700 directory; it was not committed.
 - `pnpm db:deploy` applied only `20261026161445_ai_image_generation`;
   `prisma migrate status` now reports eight migrations and an up-to-date
   schema. Post-migration Prisma reads succeeded. Existing record counts were
