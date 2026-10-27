@@ -6,7 +6,7 @@ Logical modules inside one modular monolith; **not** separate services.
 |---|---|---|
 | Organization & Access | Implemented: session auth, create/read own organization; single owner, one organization per user. No membership or roles. | SYN-002B development |
 | Brand Management | Implemented: create/list/update name and description within owner organization. Detailed brand profiles (description, audience, tone, language and guidelines) are implemented. Brand context is used by explicit text generation; locations remain planned. | SYN-003 development; broader MVP planned |
-| Social Channels | OAuth connections, account capabilities | MVP |
+| Social Channels | Implemented on SYN-SOC-001 review branch: owner-scoped Facebook Page, Page-linked Instagram professional, LinkedIn member and YouTube channel OAuth connection, explicit association, status and disconnect. No publishing or live authorization claim. | SYN-SOC-001 development |
 | Content Planning | campaigns, calendar, ideas | MVP |
 | Content Production | Implemented: owner-scoped manual drafts (create/list/read/update), immutable brand assignment, DRAFT only; same-brand media attach/list/reorder/detach. Revisions and channel variants remain planned. | SYN-006 development |
 | Media Library | Implemented: private original uploads, per-brand lists, authenticated image/video previews and UPLOADED provenance. Draft attachment reuse is implemented; accepted AI-generated PNG provenance and private previews are implemented; no editing. | SYN-008 development |
@@ -23,6 +23,7 @@ See [Publishing contract](contracts/publishing.md). Each new domain contract sho
 
 Current behavior contract: [Organization & Brand](contracts/organization-brand.md).
 Brand profile contract: [BRP-001](contracts/brand-profile.md).
+Social connection contract: [SOC-001–008](contracts/social-account-connections.md).
 Manual draft contract: [CNT-001–004](contracts/content-drafts.md).
 Media library contract: [MED-001–004](contracts/media-library.md).
 Content media contract: [CMA-001–005](contracts/content-media.md).

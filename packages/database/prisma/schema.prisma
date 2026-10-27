@@ -20,6 +20,7 @@ model User {
   aiPreference AiPreference?
   aiGenerations AiGeneration[]
   reelRenders ReelRender[]
+  socialAttempts SocialOauthAttempt[]
 }
 
 model Session {
@@ -59,6 +60,8 @@ model Brand {
   profile        BrandProfile?
   contents       Content[]
   mediaAssets    MediaAsset[]
+  socialAccounts SocialAccount[]
+  socialAttempts SocialOauthAttempt[]
 
   @@unique([organizationId, slug])
 }
@@ -242,6 +245,79 @@ enum ReelRenderStatus {
   RUNNING
   SUCCEEDED
   FAILED
+}
+
+enum SocialPlatform {
+  FACEBOOK
+  INSTAGRAM
+  LINKEDIN
+  YOUTUBE
+}
+
+enum SocialProvider {
+  META
+  LINKEDIN
+  GOOGLE
+}
+
+enum SocialConnectionStatus {
+  CONNECTED
+  REAUTH_REQUIRED
+  EXPIRED
+  ERROR
+}
+
+enum SocialAttemptStatus {
+  STARTED
+  READY
+  FAILED
+  USED
+}
+
+model SocialOauthAttempt {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  brandId String @db.Uuid
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  provider SocialProvider
+  platform SocialPlatform
+  stateHash String @unique @db.Char(64)
+  sessionHash String @db.Char(64)
+  verifierEncrypted String? @db.Text
+  credentialsEncrypted String? @db.Text
+  discovered Json?
+  status SocialAttemptStatus @default(STARTED)
+  errorCode String? @db.VarChar(40)
+  expiresAt DateTime @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  consumedAt DateTime? @db.Timestamptz(3)
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
+}
+
+model SocialAccount {
+  id String @id @default(uuid()) @db.Uuid
+  grantId String @db.Uuid
+  brandId String @db.Uuid
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  platform SocialPlatform
+  externalId String @db.VarChar(160)
+  displayName String @db.VarChar(200)
+  accountType String @db.VarChar(40)
+  status SocialConnectionStatus @default(CONNECTED)
+  scopes String[]
+  credentialsEncrypted String @db.Text
+  accessExpiresAt DateTime? @db.Timestamptz(3)
+  refreshExpiresAt DateTime? @db.Timestamptz(3)
+  lastValidatedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([platform, externalId])
+  @@index([brandId, createdAt(sort: Desc)])
+  @@index([grantId])
 }
 
 model ReelRender {

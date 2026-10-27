@@ -637,3 +637,29 @@ fieldset .button,
   border-radius: 0.75rem;
   background: #111;
 }
+.social-workspace {
+  max-width: 1100px;
+}
+.social-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  gap: 1rem;
+}
+.social-grid .brand-card {
+  min-width: 0;
+}
+.social-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+.social-list li {
+  padding: 1rem;
+  border: 1px solid #d6e2dd;
+  border-radius: 0.6rem;
+  overflow-wrap: anywhere;
+}
+.social-list button {
+  margin-top: 0.5rem;
+}

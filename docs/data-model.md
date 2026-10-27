@@ -76,6 +76,17 @@ AiGeneration record or provider charge is created. See
 
 ## Remaining design draft (not migrated)
 
+SYN-SOC-001 adds implemented `SocialOauthAttempt` and `SocialAccount`. An
+attempt binds a SHA-256 OAuth state hash, initiating session hash, user, Brand,
+provider/platform and ten-minute expiry; encrypted candidate credentials and
+safe discovered metadata are kept only until opportunistic expiry cleanup.
+`SocialAccount` stores one Brand-owned external Page, professional Instagram
+account, LinkedIn member or YouTube channel. The database enforces global
+uniqueness of (platform, externalId). Credential ciphertext uses a versioned
+AES-256-GCM application key ID; scopes, access expiry and validation time are
+metadata, not proof of publishing rights. Disconnect deletes the row and its
+credentials. See [SOC-001–008](contracts/social-account-connections.md).
+
 The historical broader draft below is not an implementation commitment. Current
 single-owner scope supersedes its former membership model. Other planned domain
 entities remain unchanged. Every draft table has UUID id and timestamps unless
