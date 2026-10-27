@@ -423,3 +423,54 @@ observed; it was not attributed to this acceptance.
 
 No provider response text, actual output/thinking tokens, billed USD amount,
 successful Apply or persisted Gemini draft can be claimed from this attempt.
+
+## SYN-AI-002B Gemini failure correction — 2026-10-27
+
+**Diagnosis:** The 2026-10-27 Gemini attempt lasted 29.4 seconds and the
+installed `@google/genai` 2.31.0 adapter had a 30-second HTTP deadline.
+The SDK source confirms that deadline aborts a single HTTP attempt, while
+`retryOptions.attempts=1` disables retries. Timeout is the leading cause, but
+the old row contains only `PROVIDER_FAILED`; no historical HTTP status or
+exception category was retained, so the exact cause cannot be proven. The
+Next.js proxy had a separate 70-second deadline for both sequential phases:
+up to 30 seconds of counting and 30 seconds of generation, plus application
+work. The Studio itself sets no shorter fetch deadline.
+
+**Correction:** Gemini generation now has a 60-second SDK deadline, token
+counting remains 30 seconds, and the Next.js text generation proxy has a
+105-second deadline (15 seconds beyond the two phase limits). Automatic
+retries remain disabled. Google failures are classified into timeout, rate
+limit, authentication, permission, unsupported request, server error,
+malformed response or other provider error. The row stores a category code;
+logs contain only generation ID, provider, model, phase, elapsed milliseconds,
+category and HTTP status where available. Raw provider bodies, prompts and
+credentials are excluded. Failed generation retains its reservation.
+
+**Persistence and regression:** An isolated local PostgreSQL database
+`synvaro_auth_test` was created and all nine forward-only migrations applied
+from empty. Deterministic Google SDK tests passed for delayed response,
+timeout with exactly one transport call, HTTP error classes, malformed output
+and sanitized diagnostics. Real PostgreSQL tests passed for HTTP generation
+failure classification, retained uncertain reservation and the operator-only
+reconciliation transaction. The new audit row records the prior reservation,
+verified charge, evidence reference and operator, and rejects a second
+reconciliation. Full local suite: **94 API + 1 worker tests passed**; format,
+lint, typecheck, Prisma validation and build passed. Built Next/Nest smoke
+passed against the isolated test database with mocked providers. CI is
+tracked on the corrective PR. No paid Gemini call was made for this fix.
+
+**Historical usage review:** Google AI Studio usage/billing for the Synvaro
+project at 2026-10-27 12:23:28–12:23:57 UTC remains unverified in this task.
+A broad Safari state read was rejected by automatic approval review because
+the browser might expose the open API-key details tab; a narrowly targeted
+`aistudio.google.com/usage` tab lookup could not run because Safari was not
+available through the computer-use browser interface. No credential was
+retrieved, no charge was inferred, and generation
+`a7cd1e7e-5898-4c19-8acd-3b2b9d00826f` remains `FAILED` with
+`costUncertain=true` and its USD 0.004319 reservation intact. The existing
+USD 1 monthly preference was not changed. An authorized operator must obtain
+independent provider usage/billing evidence before running
+`node --env-file=.env scripts/reconcile-ai-generation.mjs <generation-id> <charged-micros> <evidence-reference> <operator>`
+after applying the migration and building the API/database packages. A zero
+charge requires explicit evidence. A further paid live request requires new
+owner authorization; the corrected flow has not passed live acceptance.

@@ -40,6 +40,8 @@ SYNVARO is an independent Apache-2.0 open-source AI content studio for preparing
 
 **SYN-AI-002A — Live Google acceptance:** **PARTIAL — one live Gemini attempt failed with uncertain usage**; [evidence](docs/testing.md#syn-ai-002a-live-google-acceptance--preflight-2026-10-27). Backup/migration, Free-tier model listing and authenticated Safari desktop/390px preflight passed. The one owner-authorized real request returned no suggestion; its reservation remains uncertain. Original USD 1.00 preference was restored. No Apply or owner acceptance.
 
+**SYN-AI-002B — Gemini failure correction:** **Implemented — PR pending review**; [Google contract](docs/contracts/google-gemini-text.md) and [test evidence](docs/testing.md#syn-ai-002b-gemini-failure-correction--2026-10-27). The 30-second SDK timeout was consistent with the failed 29-second attempt but cannot be confirmed retrospectively. The correction extends generation and proxy deadlines, classifies safe failure diagnostics and adds an operator-only, audited reservation reconciliation path. No new paid request or change to the owner's USD 1 preference.
+
 **Status vocabulary:** Planned → In development → PR ready → Merged → Owner accepted → Production verified (where applicable). Never infer a later state from an earlier one. `Implemented — PR pending review` denotes code on an open feature PR, not merge or acceptance. GitHub is the authority for current PR/merge/CI state; actual tests and deployment evidence must be checked separately.
 
 ## 3. Architecture and decisions
@@ -83,6 +85,7 @@ SYNVARO is an independent Apache-2.0 open-source AI content studio for preparing
 - **SYN-AI-001:** [Evidence](docs/testing.md#syn-ai-001-provider-foundation): 89 API + 1 worker tests, eight clean PostgreSQL migrations, format/lint/typecheck/Prisma/build/smoke and desktop/390px mock-provider flows passed. No live paid provider calls. PR CI is tracked separately.
 - **SYN-AI-002:** [Test evidence](docs/testing.md#syn-ai-002-google-gemini-text): real PostgreSQL, deterministic Google/OpenAI SDK and domain mocks, build/smoke and desktop/390px checks; no live Gemini request. PR CI tracked separately. Selected-budget Gemini remains blocked.
 - **SYN-AI-002A:** [Preflight and single live-attempt evidence](docs/testing.md#syn-ai-002a-live-google-acceptance--preflight-2026-10-27); backup and eight migrations, Free-tier model listing and Safari desktop/390px check verified. One Gemini request failed with unknown provider charge; original budget restored. Preview and Apply remain open.
+- **SYN-AI-002B:** [Correction evidence](docs/testing.md#syn-ai-002b-gemini-failure-correction--2026-10-27): deterministic delay/timeout/status tests and real PostgreSQL ledger/reconciliation tests; CI to be linked after PR checks. No paid Gemini retest; old charge remains uncertain.
 - CI success means checks ran successfully, **not** live provider integration, production readiness or deployment acceptance.
 
 ## 6. Roadmap and next decision gate
@@ -100,7 +103,7 @@ Before any new development slice:
 
 ## 7. Pending owner / maintainer items
 
-- Reconcile SYN-AI-002A's uncertain Google usage/reservation before any further budgeted generation. A second live request needs new owner authorization; the first request produced no suggestion. The owner retained the test key and the original USD 1.00 preference is restored. Do not interpret planned providers as implemented. Preserve the SYN-008 budget limitation; require a verified reservation strategy before enabling budgeted image requests. Arrange separately authorized live image quality/cost acceptance. Do not infer either from mocked provider tests.
+- Verify Google project usage/billing for 2026-10-27 12:23:28–12:23:57 UTC, then reconcile SYN-AI-002A's uncertain reservation only with evidence. A second live request needs new owner authorization; the first produced no suggestion. The owner's USD 1.00 preference remains unchanged. Preserve the SYN-008 budget limitation and arrange separately authorized image acceptance; mock tests cannot establish live provider success.
 - Keep authentication production hardening tracked before any public registration.
 - Select job queue only when background generation/publishing requires it; Redis remains an option, not an approved dependency.
 - Confirm vulnerability-reporting and main-branch ruleset settings via GitHub administration.

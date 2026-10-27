@@ -162,6 +162,7 @@ enum AiGenerationKind {
 }
 
 model AiGeneration {
+  reconciliation AiGenerationReconciliation?
   kind AiGenerationKind @default(TEXT)
   provider String @default("openai") @db.VarChar(40)
   imageSize String? @db.VarChar(20)
@@ -193,4 +194,17 @@ model AiGeneration {
   @@index([userId, createdAt])
   @@index([contentId])
   @@index([previewExpiresAt])
+}
+
+// Operator-only audit record. Provider usage evidence is required before changing
+// an uncertain reservation; no application endpoint exposes this operation.
+model AiGenerationReconciliation {
+  id String @id @default(uuid()) @db.Uuid
+  generationId String @unique @db.Uuid
+  generation AiGeneration @relation(fields: [generationId], references: [id], onDelete: Restrict)
+  previousBudgetChargeMicros Int
+  resolvedBudgetChargeMicros Int
+  evidenceReference String @db.VarChar(500)
+  operator String @db.VarChar(120)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 }

@@ -1,4 +1,5 @@
 import { GoogleTextProvider } from '../ai/google-text-provider.js';
+import { GoogleFailure } from '../ai/google-failure.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
@@ -542,11 +543,13 @@ test(
           releaseGeneration();
           assert.equal((await first).status, 201);
           googleProvider.generate = async () => {
-            throw new Error('SECRET test provider failure');
+            throw new GoogleFailure('TIMEOUT', 'generate', 60_001);
           };
           const failed = await generate();
           assert.equal(failed.status, 503);
-          assert.ok(!(await failed.text()).includes('SECRET'));
+          const failedBody = await failed.text();
+          assert.ok(!failedBody.includes('SECRET'));
+          assert.ok(!failedBody.includes('GOOGLE_TIMEOUT'));
           const uncertain = await db.aiGeneration.findFirst({
             where: {
               userId: users[0]!.id,
@@ -554,6 +557,8 @@ test(
               costUncertain: true,
             },
           });
+          assert.equal(uncertain?.errorCode, 'GOOGLE_TIMEOUT');
+          assert.ok((uncertain?.budgetChargeMicros ?? 0) > 0);
           assert.ok(uncertain && uncertain.budgetChargeMicros > 0);
           assert.equal(
             (await preferences({ model: MODEL, monthlyBudgetUsd: 100 })).status,

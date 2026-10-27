@@ -5,6 +5,7 @@ import { PRICING_EXPIRES } from './providers/models.js';
 import {
   Injectable,
   Inject,
+  Logger,
   ConflictException,
   NotFoundException,
   BadRequestException,
@@ -13,6 +14,7 @@ import {
 import type { Prisma } from '@synvaro/database';
 import { DatabaseService } from '../auth/database.service.js';
 import { MODEL } from './text-provider.js';
+import { GoogleFailure } from './google-failure.js';
 import {
   IMAGE_MODEL,
   IMAGE_SIZES,
@@ -47,6 +49,7 @@ export const estimate = (input: number, output: number) =>
   Math.ceil(input / 8 + output / 2);
 @Injectable()
 export class AiService {
+  private readonly logger = new Logger(AiService.name);
   now = () => new Date();
   constructor(
     private readonly db: DatabaseService,
@@ -290,12 +293,16 @@ export class AiService {
       count = await provider.count(request);
       if (!Number.isSafeInteger(count) || count < 1 || count > 16384)
         throw new Error('Context token limit');
-    } catch {
+    } catch (error) {
+      this.logProviderFailure(error, record.id, request.model, 'count');
       await this.db.client.aiGeneration.update({
         where: { id: record.id },
         data: {
           status: 'FAILED',
-          errorCode: 'INPUT_COUNT_FAILED',
+          errorCode:
+            error instanceof GoogleFailure
+              ? `GOOGLE_${error.category}`
+              : 'INPUT_COUNT_FAILED',
           completedAt: this.now(),
         },
       });
@@ -410,17 +417,41 @@ export class AiService {
         reservedOrChargedUsd: (cost ?? reserve) / 1e6,
         costUncertain: uncertain,
       };
-    } catch {
+    } catch (error) {
+      this.logProviderFailure(error, record.id, request.model, 'generate');
       await this.db.client.aiGeneration.update({
         where: { id: record.id },
         data: {
           status: 'FAILED',
-          errorCode: 'PROVIDER_FAILED',
+          errorCode:
+            error instanceof GoogleFailure
+              ? `GOOGLE_${error.category}`
+              : 'PROVIDER_FAILED',
           costUncertain: true,
           completedAt: this.now(),
         },
       });
       throw new ServiceUnavailableException();
     }
+  }
+
+  private logProviderFailure(
+    error: unknown,
+    generationId: string,
+    model: string,
+    phase: 'count' | 'generate',
+  ) {
+    this.logger.warn(
+      JSON.stringify({
+        generationId,
+        provider: model === GOOGLE_TEXT_MODEL.model ? 'google' : 'openai',
+        model,
+        phase,
+        category:
+          error instanceof GoogleFailure ? error.category : 'PROVIDER_ERROR',
+        elapsedMs: error instanceof GoogleFailure ? error.elapsedMs : null,
+        httpStatus: error instanceof GoogleFailure ? error.httpStatus : null,
+      }),
+    );
   }
 }
