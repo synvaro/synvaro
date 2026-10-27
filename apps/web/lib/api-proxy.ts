@@ -69,11 +69,15 @@ export async function forwardApi(req: NextRequest, path: string) {
       signal: AbortSignal.timeout(
         /^\/contents\/[0-9a-f-]{36}\/image-(?:generations|edits)$/i.test(path)
           ? 150_000
-          : /^\/contents\/[0-9a-f-]{36}\/speech-generations$/i.test(path)
+          : /^\/contents\/[0-9a-f-]{36}\/video-generations$/i.test(path)
             ? 75_000
-            : /^\/contents\/[0-9a-f-]{36}\/ai-generations$/i.test(path)
-              ? 105_000
-              : 10_000,
+            : /^\/video-generations\/[0-9a-f-]{36}$/i.test(path)
+              ? 55_000
+              : /^\/contents\/[0-9a-f-]{36}\/speech-generations$/i.test(path)
+                ? 75_000
+                : /^\/contents\/[0-9a-f-]{36}\/ai-generations$/i.test(path)
+                  ? 105_000
+                  : 10_000,
       ),
     });
     const outgoing = new Headers({

@@ -153,7 +153,7 @@ test(
             catalog.models.filter(
               (m: { implemented: boolean }) => m.implemented,
             ).length,
-            6,
+            8,
           );
           assert.ok(!JSON.stringify(catalog).includes('API_KEY'));
           const before = await db.aiPreference.findUnique({

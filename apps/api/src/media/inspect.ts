@@ -244,3 +244,48 @@ export async function inspectGeneratedAudio(path: string) {
     throw new BadRequestException('Invalid generated audio');
   }
 }
+
+/** Generated Google MP4: reuse upload codec/container checks and inspect audio. */
+export async function inspectGeneratedVideo(path: string) {
+  const sizeBytes = (await stat(path)).size;
+  if (sizeBytes < 128 || sizeBytes > MAX_FILE_BYTES)
+    throw new BadRequestException('Invalid generated video');
+  const details = await inspectMedia(path);
+  if (
+    details.mimeType !== 'video/mp4' ||
+    !details.durationMs ||
+    !details.width ||
+    !details.height ||
+    details.durationMs < 2500 ||
+    details.durationMs > 11000
+  )
+    throw new BadRequestException('Invalid generated video');
+  const { stdout } = await execute(
+    process.env.FFPROBE_PATH || 'ffprobe',
+    [
+      '-v',
+      'error',
+      '-protocol_whitelist',
+      'file',
+      '-format_whitelist',
+      'mov',
+      '-show_entries',
+      'stream=codec_type,codec_name',
+      '-of',
+      'json',
+      path,
+    ],
+    { timeout: 10000, maxBuffer: 65536 },
+  );
+  const streams = (
+    JSON.parse(stdout) as {
+      streams: { codec_type: string; codec_name: string }[];
+    }
+  ).streams;
+  return {
+    details: { ...details, sizeBytes },
+    hasAudio: streams.some(
+      (s) => s.codec_type === 'audio' && s.codec_name === 'aac',
+    ),
+  };
+}

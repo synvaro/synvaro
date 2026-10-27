@@ -1,6 +1,11 @@
 import { GoogleTextProvider } from '../google-text-provider.js';
 import { GoogleImageProvider } from '../google-image-provider.js';
 import { ElevenLabsProvider } from '../elevenlabs-provider.js';
+import {
+  GoogleVideoProvider,
+  VIDEO_MODEL,
+  VIDEO_PRICING_EXPIRES,
+} from '../google-video-provider.js';
 import { GOOGLE_TEXT_MODEL } from './models.js';
 import { Inject, Injectable } from '@nestjs/common';
 import type { AiModelCatalog } from '@synvaro/contracts';
@@ -25,6 +30,7 @@ export class ModelCatalogService {
     private readonly google: GoogleTextProvider,
     private readonly googleImage: GoogleImageProvider,
     private readonly speech: ElevenLabsProvider,
+    private readonly video: GoogleVideoProvider,
   ) {}
   read(): AiModelCatalog {
     return {
@@ -38,29 +44,38 @@ export class ModelCatalogService {
             unavailableReason: 'Integration not implemented.',
           };
         const adapter =
-          model.capability === 'SPEECH_GENERATION'
-            ? this.speech
-            : model.capability === 'TEXT_GENERATION'
-              ? model.model === GOOGLE_TEXT_MODEL.model
-                ? this.google
-                : this.text
-              : model.model === GOOGLE_IMAGE_MODEL
-                ? this.googleImage
-                : this.image;
+          model.capability === 'VIDEO_GENERATION' ||
+          model.capability === 'IMAGE_TO_VIDEO'
+            ? this.video
+            : model.capability === 'SPEECH_GENERATION'
+              ? this.speech
+              : model.capability === 'TEXT_GENERATION'
+                ? model.model === GOOGLE_TEXT_MODEL.model
+                  ? this.google
+                  : this.text
+                : model.model === GOOGLE_IMAGE_MODEL
+                  ? this.googleImage
+                  : this.image;
         const reason = !adapter.configured()
-          ? model.model === GOOGLE_IMAGE_MODEL
-            ? 'Google image access requires a server key and confirmed paid-tier model access.'
-            : 'Server API key is not configured.'
-          : (model.capability === 'IMAGE_GENERATION' ||
+          ? model.model === VIDEO_MODEL
+            ? 'Google video access requires a server key and confirmed paid-tier model access.'
+            : model.model === GOOGLE_IMAGE_MODEL
+              ? 'Google image access requires a server key and confirmed paid-tier model access.'
+              : 'Server API key is not configured.'
+          : (model.capability === 'VIDEO_GENERATION' ||
+                model.capability === 'IMAGE_TO_VIDEO' ||
+                model.capability === 'IMAGE_GENERATION' ||
                 model.capability === 'IMAGE_EDITING' ||
                 model.capability === 'SPEECH_GENERATION') &&
               !process.env.MEDIA_STORAGE_ROOT?.trim()
             ? 'Private media storage is not configured.'
             : model.capability !== 'SPEECH_GENERATION' &&
                 this.now() >=
-                  (model.model === GOOGLE_IMAGE_MODEL
-                    ? GOOGLE_IMAGE_PRICING_EXPIRES
-                    : PRICING_EXPIRES)
+                  (model.model === VIDEO_MODEL
+                    ? VIDEO_PRICING_EXPIRES
+                    : model.model === GOOGLE_IMAGE_MODEL
+                      ? GOOGLE_IMAGE_PRICING_EXPIRES
+                      : PRICING_EXPIRES)
               ? 'Model pricing needs maintenance review.'
               : null;
         return {

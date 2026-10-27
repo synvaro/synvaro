@@ -90,7 +90,7 @@ export interface MediaAsset {
   width: number | null;
   height: number | null;
   durationMs: number | null;
-  origin: 'UPLOADED' | 'AI_GENERATED' | 'AI_EDITED' | 'AI_VOICE';
+  origin: 'UPLOADED' | 'AI_GENERATED' | 'AI_EDITED' | 'AI_VOICE' | 'AI_VIDEO';
   generation?: {
     id: string;
     provider: string;
@@ -101,6 +101,10 @@ export interface MediaAsset {
     sourceMediaAssetId: string | null;
     providerGenerationId: string | null;
     voiceId: string | null;
+    videoDuration?: string | null;
+    videoAspectRatio?: string | null;
+    videoResolution?: string | null;
+    videoHasAudio?: boolean | null;
     createdAt: string;
   } | null;
   createdAt: string;
@@ -179,6 +183,17 @@ export type AiModelDefinition = AiModelBase &
         settings: {
           outputFormats: readonly string[];
           maxCharacters: number;
+        };
+      }
+    | {
+        implemented: true;
+        capability: 'VIDEO_GENERATION' | 'IMAGE_TO_VIDEO';
+        settings: {
+          inputFormats?: readonly string[];
+          outputFormats: readonly string[];
+          durations: readonly string[];
+          aspectRatios: readonly string[];
+          resolutions: readonly string[];
         };
       }
     | { implemented: false; capability: AiCapability }

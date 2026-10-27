@@ -257,8 +257,8 @@ Set server-only `GOOGLE_API_KEY` to enable the implemented Gemini text adapter.
 Configuration does not establish account/model access. Never put a key in browser
 variables. Google free-tier data terms and the selected-budget block are described in
 [the Google contract](contracts/google-gemini-text.md); live acceptance requires
-separate authorization. Google image is a separate integration; Google video
-remains planned. ElevenLabs speech is documented below.
+separate authorization. Google image and video have separate configuration
+and selected-budget rules below. ElevenLabs speech is documented below.
 
 ### ElevenLabs voice generation (SYN-AI-004)
 
@@ -292,3 +292,22 @@ before dispatch; the application never clears the owner's USD 1 limit. See
 [IMG-G001/002](contracts/google-image-generation-editing.md) for the verified
 settings, pricing and review limitations. A real paid request needs separate
 authorization.
+
+### Google video and image-to-video (SYN-AI-005)
+
+The NestJS server uses `GOOGLE_API_KEY` for the official Interactions API and
+`gemini-omni-1.1-flash`. Confirm paid-tier access for the exact project, then
+set `GOOGLE_VIDEO_PAID_TIER_CONFIRMED=true`; the flag is a local admission
+check, not an entitlement or quota test. `MEDIA_STORAGE_ROOT` and `ffprobe`
+remain required. Leave the flag false without verified account access. Video
+previews are private MP4 files under that root, expire after one hour and are
+backed up with PostgreSQL after explicit acceptance. An unfinished background
+operation is resumed by its stored interaction ID on status reads; a refresh
+does not create another paid request. No automatic paid retries run.
+
+The shared monthly USD budget blocks video generation whenever selected,
+because Google output usage does not establish a trustworthy pre-request
+upper bound. The user's existing USD 1 preference is never changed by setup.
+Unknown usage remains uncertain. Credit-based ElevenLabs uncertainty is
+retained separately and cannot masquerade as an unknown USD charge in the
+budget admission check. See [VID-001–006](contracts/ai-video-generation.md).

@@ -1,5 +1,11 @@
 import type { AiModelDefinition } from '@synvaro/contracts';
 import { MAX_NARRATION, SPEECH_MODEL } from '../elevenlabs-provider.js';
+import {
+  VIDEO_MODEL,
+  VIDEO_DURATIONS,
+  VIDEO_ASPECT_RATIOS,
+  VIDEO_RESOLUTIONS,
+} from '../google-video-provider.js';
 export const PRICING_EXPIRES = new Date('2026-11-25T00:00:00Z');
 const verifiedAt = '2026-10-27';
 const pricing = 'https://developers.openai.com/api/docs/pricing';
@@ -88,7 +94,6 @@ export const GOOGLE_IMAGE_EDITING = {
     aspectRatios: GOOGLE_IMAGE_ASPECT_RATIOS,
   },
 } as const satisfies AiModelDefinition;
-const googleReference = 'https://ai.google.dev/gemini-api/docs/models';
 const speechReference = 'https://elevenlabs.io/docs/overview/models';
 export const MODEL_DEFINITIONS: readonly AiModelDefinition[] = [
   TEXT_MODEL,
@@ -105,19 +110,26 @@ export const MODEL_DEFINITIONS: readonly AiModelDefinition[] = [
     capability: 'IMAGE_EDITING',
     cost: { capability: 'UNAVAILABLE', reference: pricing },
   },
-  ...(
-    [
-      ['gemini-omni-1.1-flash', 'VIDEO_GENERATION'],
-      ['gemini-omni-1.1-flash', 'IMAGE_TO_VIDEO'],
-    ] as const
-  ).map(([model, capability]) => ({
+  ...(['VIDEO_GENERATION', 'IMAGE_TO_VIDEO'] as const).map((capability) => ({
     provider: 'google' as const,
-    model,
+    model: VIDEO_MODEL,
     capability,
-    implemented: false as const,
+    implemented: true as const,
     verifiedAt,
-    reference: googleReference,
-    cost: { capability: 'UNAVAILABLE' as const, reference: googleReference },
+    reference: 'https://ai.google.dev/gemini-api/docs/models/gemini-omni-flash',
+    cost: {
+      capability: 'ESTIMATE_ONLY' as const,
+      reference: 'https://ai.google.dev/gemini-api/docs/pricing',
+    },
+    settings: {
+      outputFormats: ['video/mp4'],
+      ...(capability === 'IMAGE_TO_VIDEO'
+        ? { inputFormats: ['image/jpeg', 'image/png', 'image/webp'] }
+        : {}),
+      durations: VIDEO_DURATIONS,
+      aspectRatios: VIDEO_ASPECT_RATIOS,
+      resolutions: VIDEO_RESOLUTIONS,
+    },
   })),
   {
     provider: 'elevenlabs',

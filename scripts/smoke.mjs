@@ -117,7 +117,7 @@ try {
   const catalog = await catalogResponse.json();
   assert.equal(
     catalog.models.filter((m) => m.status === 'AVAILABLE').length,
-    6,
+    8,
   );
   assert.ok(
     catalog.models.some(
@@ -447,7 +447,7 @@ try {
   assert.equal(mediaPage.status, 200);
   assert.match(
     await mediaPage.text(),
-    /Uploaded originals and accepted AI images/,
+    /Uploaded originals and accepted AI media/,
   );
   assert.equal(
     (await fetch(`${origin}/unknown-section`, { headers: { cookie } })).status,
@@ -691,6 +691,125 @@ try {
     (await (await product(`/contents/${draft.id}`)).json()).content.body,
     suggestion.text,
   );
+  // VID-001–006: mock Google video through built Next/Nest, real DB and storage.
+  const videoPrefs = (await (await product('/ai/preferences')).json())
+    .preferences;
+  assert.equal(
+    (
+      await product('/ai/preferences', 'PUT', {
+        ...videoPrefs,
+        videoEnabled: true,
+        monthlyBudgetUsd: 1,
+      })
+    ).status,
+    200,
+  );
+  const videoRequest = {
+    requestId: randomUUID(),
+    instruction: 'Hypothetical breakfast scene',
+    model: 'gemini-omni-1.1-flash',
+    duration: '3s',
+    aspectRatio: '9:16',
+    resolution: '720p',
+    confirmed: true,
+  };
+  assert.equal(
+    (
+      await product(
+        `/contents/${draft.id}/video-generations`,
+        'POST',
+        videoRequest,
+      )
+    ).status,
+    409,
+  );
+  assert.equal(
+    (
+      await product('/ai/preferences', 'PUT', {
+        ...videoPrefs,
+        videoEnabled: true,
+        monthlyBudgetUsd: null,
+      })
+    ).status,
+    200,
+  );
+  assert.equal(
+    (
+      await product(
+        `/contents/${draft.id}/video-generations`,
+        'POST',
+        videoRequest,
+        'https://evil.example',
+      )
+    ).status,
+    403,
+  );
+  const videoStarted = await product(
+    `/contents/${draft.id}/video-generations`,
+    'POST',
+    videoRequest,
+  );
+  assert.equal(videoStarted.status, 201, await videoStarted.clone().text());
+  const firstVideo = await videoStarted.json();
+  const videoResult =
+    firstVideo.status === 'SUCCEEDED'
+      ? firstVideo
+      : await (await product(`/video-generations/${firstVideo.id}`)).json();
+  assert.equal(videoResult.status, 'SUCCEEDED');
+  const privatePreview = await fetch(
+    `${origin}/api/video-generations/${firstVideo.id}/file`,
+    { headers: { cookie } },
+  );
+  assert.equal(privatePreview.status, 200);
+  const videoBytes = Buffer.from(await privatePreview.arrayBuffer());
+  assert.ok(videoBytes.length > 100);
+  const savedVideoResponse = await product(
+    `/video-generations/${firstVideo.id}/accept`,
+    'POST',
+    {},
+  );
+  assert.equal(savedVideoResponse.status, 201);
+  const savedVideo = await savedVideoResponse.json();
+  assert.equal(savedVideo.origin, 'AI_VIDEO');
+  assert.equal(
+    (
+      await product(`/contents/${draft.id}/media`, 'POST', {
+        mediaAssetId: savedVideo.id,
+      })
+    ).status,
+    201,
+  );
+  assert.deepEqual(
+    Buffer.from(
+      await (await product(`/media/${savedVideo.id}/file`)).arrayBuffer(),
+    ),
+    videoBytes,
+  );
+  const animationRequest = {
+    ...videoRequest,
+    requestId: randomUUID(),
+    sourceMediaAssetId: media.id,
+  };
+  const animation = await product(
+    `/contents/${draft.id}/video-generations`,
+    'POST',
+    animationRequest,
+  );
+  assert.equal(animation.status, 201);
+  const animated = await animation.json();
+  assert.equal(animated.sourceMediaAssetId, media.id);
+  assert.equal(
+    (await product(`/video-generations/${animated.id}`, 'DELETE', {})).status,
+    200,
+  );
+  assert.deepEqual(
+    Buffer.from(await (await product(`/media/${media.id}/file`)).arrayBuffer()),
+    png,
+  );
+  assert.equal(
+    (await (await product(`/contents/${draft.id}`)).json()).content.body,
+    suggestion.text,
+  );
   assert.equal(
     (await auth('logout', {}, cookie, 'https://evil.example')).status,
     403,
@@ -717,7 +836,7 @@ try {
     307,
   );
   console.info(
-    'SYN-AI-004 (mock ElevenLabs) + prior slices passed: real PostgreSQL, Next/Nest auth, private voice preview/save/attach, media, CSRF and logout.',
+    'SYN-AI-005 (mock Google video) + prior slices passed: real PostgreSQL, Next/Nest auth, private video preview/save/attach, media, CSRF and logout.',
   );
 } finally {
   for (const { child, exited } of children) {

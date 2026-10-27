@@ -99,6 +99,7 @@ enum MediaOrigin {
   AI_GENERATED
   AI_EDITED
   AI_VOICE
+  AI_VIDEO
   UPLOADED
 }
 
@@ -138,6 +139,7 @@ model ContentMedia {
 
 model AiPreference {
   speechEnabled Boolean @default(false)
+  videoEnabled Boolean @default(false)
   imageEnabled Boolean @default(false)
   imageModel String @default("gpt-image-2.5-flare") @db.VarChar(80)
   imageSize String @default("1024x1024") @db.VarChar(20)
@@ -155,6 +157,7 @@ model AiPreference {
 
 enum AiGenerationStatus {
   COUNTING
+  PENDING
   RUNNING
   SUCCEEDED
   FAILED
@@ -165,9 +168,15 @@ enum AiGenerationKind {
   TEXT
   IMAGE
   SPEECH
+  VIDEO
 }
 
 model AiGeneration {
+  videoAspectRatio String? @db.VarChar(10)
+  videoResolution String? @db.VarChar(10)
+  videoDuration String? @db.VarChar(10)
+  outputVideoTokens Int?
+  videoHasAudio Boolean?
   voiceId String? @db.VarChar(80)
   narrationCharacters Int?
   providerCharacterCost Int?

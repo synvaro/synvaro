@@ -3,6 +3,9 @@ import { GoogleImageProvider } from './google-image-provider.js';
 import { ElevenLabsProvider } from './elevenlabs-provider.js';
 import { SpeechService } from './speech.service.js';
 import { SpeechController } from './speech.controller.js';
+import { GoogleVideoProvider } from './google-video-provider.js';
+import { VideoService } from './video.service.js';
+import { VideoController } from './video.controller.js';
 import { TEXT_PROVIDER, IMAGE_PROVIDER } from './providers/contracts.js';
 import { ModelCatalogService } from './providers/catalog.service.js';
 import { ModelCatalogController } from './providers/catalog.controller.js';
@@ -21,6 +24,7 @@ import { OpenAIImageProvider } from './image-provider.js';
     AiController,
     ImageController,
     SpeechController,
+    VideoController,
     ModelCatalogController,
   ],
   providers: [
@@ -29,6 +33,8 @@ import { OpenAIImageProvider } from './image-provider.js';
     GoogleImageProvider,
     ElevenLabsProvider,
     SpeechService,
+    GoogleVideoProvider,
+    VideoService,
     OpenAITextProvider,
     ImageService,
     OpenAIImageProvider,

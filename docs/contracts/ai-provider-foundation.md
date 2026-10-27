@@ -36,10 +36,15 @@ configuration and the selected-budget fail-closed rules. See
 [Google images](google-image-generation-editing.md) and
 [ElevenLabs voice](elevenlabs-voice-generation.md).
 
+Google `gemini-omni-1.1-flash` video and image-to-video now have an implemented
+adapter, conditional on server configuration and selected-budget fail-closed
+admission. See [VID-001–006](ai-video-generation.md). The adapter starts one
+background Interaction and retrieves the same operation ID for recovery; it
+does not automatically retry or resubmit. This does not prove live account access.
+
 Reference-only planned combinations:
-- Google `gemini-omni-1.1-flash` video and image-to-video:
-  [official model](https://ai.google.dev/gemini-api/docs/models/gemini-omni-flash).
-  Veo 3.1 preview was shut down October 22; it is not a supported selection.
+- Other video providers and models remain future research; discontinued Veo
+  preview models are not executable choices.
 - OpenAI Flare image editing is reference-only. Other video providers remain
   future research, without speculative executable model identifiers.
 
@@ -52,11 +57,10 @@ Capability-specific TypeScript interfaces live under the API AI providers folder
 Nest injection tokens bind the existing concrete text/image SDK adapters through
 useExisting; business services depend on interfaces. Explicit supported-model
 checks prevent passing arbitrary identifiers to the SDK. No dynamic registry.
-Future asynchronous video contracts are types only: no fake adapters, API routes
-or polling loops. Video start returns a provider
-operation ID; retrieval returns pending, failed or completed bounded bytes/usage.
-Future callers must authorize and reserve before start, preserve uncertain charges
-across interruption, and validate/store results privately. Provider operation IDs
+The video contract starts one background provider operation and returns its ID;
+retrieval observes pending, failed or completed bounded bytes/usage. The
+application authorizes before start, preserves uncertain charges across
+interruption, and validates/stores results privately. Provider operation IDs
 are server-side provenance, not authorization credentials.
 
 OPENAI_API_KEY, GOOGLE_API_KEY and ELEVENLABS_API_KEY are consumed server-side
@@ -79,8 +83,8 @@ Pricing review expiry remains November 25; catalog verification does not extend 
 
 ## Limitations
 
-OpenAI text/image, Google text/image/editing and ElevenLabs speech have
-implemented adapters; video and image-to-video are unimplemented. No database-managed credentials,
+OpenAI text/image, Google text/image/editing/video and ElevenLabs speech have
+implemented adapters. No database-managed credentials,
 voice cloning, billing system, automatic retries or live provider claims. Future
 adapters must implement their own validated pricing/reservation semantics before
 being admitted to budgeted execution. Existing development-only auth limitations
