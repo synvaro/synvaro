@@ -74,7 +74,7 @@ export class GoogleVideoProvider implements VideoProvider {
         },
         { timeout_ms: 60_000, retries: { strategy: 'none' } },
       );
-      return this.observe(response);
+      return await this.observe(response, true);
     } catch (error) {
       throw classifyGoogleFailure(error, 'generate', Date.now() - started);
     }
@@ -89,22 +89,112 @@ export class GoogleVideoProvider implements VideoProvider {
         undefined,
         { timeout_ms: 45_000, retries: { strategy: 'none' } },
       );
-      return this.observe(response);
+      return await this.observe(response);
     } catch (error) {
       throw classifyGoogleFailure(error, 'generate', Date.now() - started);
     }
   }
-  private observe(response: {
-    id?: string;
-    model?: string;
-    status?: string;
-    output_video?: { data?: string; mime_type?: string; uri?: string };
-    usage?: {
-      total_input_tokens?: number;
-      total_output_tokens?: number;
-      output_tokens_by_modality?: { modality?: string; tokens?: number }[];
-    };
-  }): VideoObservation {
+  private fileId(uri: string): string {
+    if (/^files\/[a-zA-Z0-9-]{1,80}$/.test(uri)) return uri.slice(6);
+    let url: URL;
+    try {
+      url = new URL(uri);
+    } catch {
+      throw new GoogleFailure('MALFORMED_RESPONSE', 'generate', 0);
+    }
+    const match = /^\/v1beta\/files\/([a-zA-Z0-9-]{1,80})(?::download)?$/.exec(
+      url.pathname,
+    );
+    if (
+      url.origin !== 'https://generativelanguage.googleapis.com' ||
+      url.username ||
+      url.password ||
+      url.hash ||
+      (url.search && url.search !== '?alt=media') ||
+      !match
+    )
+      throw new GoogleFailure('MALFORMED_RESPONSE', 'generate', 0);
+    return match[1]!;
+  }
+  private async download(id: string): Promise<Buffer | null> {
+    const file = await this.client().files.get({
+      name: `files/${id}`,
+      config: {
+        httpOptions: { timeout: 10_000, retryOptions: { attempts: 1 } },
+      },
+    });
+    if (file.state === 'PROCESSING') return null;
+    if (file.state !== 'ACTIVE')
+      throw new GoogleFailure('MALFORMED_RESPONSE', 'generate', 0);
+    if (
+      file.sizeBytes &&
+      (!Number.isSafeInteger(Number(file.sizeBytes)) ||
+        Number(file.sizeBytes) > MAX_VIDEO_BYTES)
+    )
+      throw new GoogleFailure('MALFORMED_RESPONSE', 'generate', 0);
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/files/${id}:download?alt=media`;
+    const signal = AbortSignal.timeout(40_000);
+    let response = await fetch(endpoint, {
+      headers: { 'x-goog-api-key': process.env.GOOGLE_API_KEY! },
+      redirect: 'manual',
+      signal,
+    });
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get('location');
+      let redirect: URL;
+      try {
+        redirect = new URL(location ?? '');
+      } catch {
+        throw new GoogleFailure('MALFORMED_RESPONSE', 'generate', 0);
+      }
+      if (
+        redirect.origin !== 'https://storage.googleapis.com' ||
+        redirect.username ||
+        redirect.password ||
+        redirect.hash
+      )
+        throw new GoogleFailure('MALFORMED_RESPONSE', 'generate', 0);
+      response.body?.cancel().catch(() => {});
+      response = await fetch(redirect, {
+        redirect: 'manual',
+        signal,
+      });
+    }
+    if (!response.ok) throw response;
+    if (
+      !response.body ||
+      (response.headers.get('content-length') &&
+        Number(response.headers.get('content-length')) > MAX_VIDEO_BYTES)
+    )
+      throw new GoogleFailure('MALFORMED_RESPONSE', 'generate', 0);
+    const chunks: Buffer[] = [];
+    let size = 0;
+    for await (const chunk of response.body) {
+      const bytes = Buffer.from(chunk);
+      size += bytes.length;
+      if (size > MAX_VIDEO_BYTES) {
+        await response.body.cancel().catch(() => {});
+        throw new GoogleFailure('MALFORMED_RESPONSE', 'generate', 0);
+      }
+      chunks.push(bytes);
+    }
+    if (!size) throw new GoogleFailure('MALFORMED_RESPONSE', 'generate', 0);
+    return Buffer.concat(chunks);
+  }
+  private async observe(
+    response: {
+      id?: string;
+      model?: string;
+      status?: string;
+      output_video?: { data?: string; mime_type?: string; uri?: string };
+      usage?: {
+        total_input_tokens?: number;
+        total_output_tokens?: number;
+        output_tokens_by_modality?: { modality?: string; tokens?: number }[];
+      };
+    },
+    deferUri = false,
+  ): Promise<VideoObservation> {
     if (
       !response.id ||
       !/^[-_a-zA-Z0-9]{1,160}$/.test(response.id) ||
@@ -125,30 +215,26 @@ export class GoogleVideoProvider implements VideoProvider {
       return { status: 'FAILED', operationId: response.id };
     const video = response.output_video;
     const encoded = video?.data;
-    // The create response may contain only a provider URI. A subsequent
-    // interactions.get currently returns inline bytes, so never fetch the URI.
-    if (
-      response.status === 'completed' &&
-      !encoded &&
-      video?.uri?.startsWith(
-        'https://generativelanguage.googleapis.com/v1beta/files/',
-      )
-    )
-      return { status: 'RUNNING', operationId: response.id };
     if (
       response.status !== 'completed' ||
       video?.mime_type !== 'video/mp4' ||
-      !encoded ||
-      encoded.length > MAX_ENCODED ||
-      encoded.length % 4 !== 0 ||
-      /[^A-Za-z0-9+/=]/.test(encoded)
+      (!encoded && !video.uri) ||
+      (encoded &&
+        (encoded.length > MAX_ENCODED ||
+          encoded.length % 4 !== 0 ||
+          /[^A-Za-z0-9+/=]/.test(encoded)))
     )
       throw new GoogleFailure('MALFORMED_RESPONSE', 'generate', 0);
-    const bytes = Buffer.from(encoded, 'base64');
+    if (!encoded && video.uri && deferUri)
+      return { status: 'RUNNING', operationId: response.id };
+    const bytes = encoded
+      ? Buffer.from(encoded, 'base64')
+      : await this.download(this.fileId(video.uri!));
+    if (!bytes) return { status: 'RUNNING', operationId: response.id };
     if (
       !bytes.length ||
       bytes.length > MAX_VIDEO_BYTES ||
-      bytes.toString('base64') !== encoded
+      (encoded && bytes.toString('base64') !== encoded)
     )
       throw new GoogleFailure('MALFORMED_RESPONSE', 'generate', 0);
     const usage = response.usage;

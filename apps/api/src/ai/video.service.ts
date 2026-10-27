@@ -104,13 +104,13 @@ export class VideoService implements OnModuleInit, OnModuleDestroy {
     });
     return { generation: row ? await this.result(userId, row.id) : null };
   }
-  async result(userId: string, id: string) {
+  async result(userId: string, id: string, poll = true) {
     let row = await this.db.client.aiGeneration.findFirst({
       where: this.owned(userId, id),
       select: { ...projection, previewKey: true },
     });
     if (!row) throw missing();
-    if (row.status === 'PENDING' || row.status === 'RUNNING') {
+    if (poll && (row.status === 'PENDING' || row.status === 'RUNNING')) {
       if (row.providerGenerationId) {
         try {
           const observation = await this.provider.retrieve(
@@ -130,6 +130,7 @@ export class VideoService implements OnModuleInit, OnModuleDestroy {
               where: { id: row.id },
               data: {
                 status: 'FAILED',
+                previewKey: null,
                 errorCode:
                   error instanceof GoogleFailure
                     ? 'GOOGLE_MALFORMED_RESPONSE'
@@ -306,7 +307,6 @@ export class VideoService implements OnModuleInit, OnModuleDestroy {
           videoResolution: input.resolution,
           sourceMediaAssetId: source?.id,
           previewKey: key,
-          previewExpiresAt: new Date(this.now().getTime() + 3_600_000),
         },
         select: { id: true },
       });
@@ -367,13 +367,15 @@ export class VideoService implements OnModuleInit, OnModuleDestroy {
         data: { providerGenerationId: result.operationId, status: 'RUNNING' },
       });
       await this.settle(admitted.record.id, result);
-      return this.result(userId, admitted.record.id);
+      return this.result(userId, admitted.record.id, false);
     } catch (error) {
       this.log(error, admitted.record.id, 'start', Date.now() - started);
+      await this.storage.remove(admitted.key).catch(() => {});
       await this.db.client.aiGeneration.update({
         where: { id: admitted.record.id },
         data: {
           status: 'FAILED',
+          previewKey: null,
           errorCode:
             error instanceof GoogleFailure
               ? `GOOGLE_${error.category}`
@@ -393,6 +395,7 @@ export class VideoService implements OnModuleInit, OnModuleDestroy {
         where: { id },
         data: {
           status: 'FAILED',
+          previewKey: null,
           errorCode: 'GOOGLE_PROVIDER_ERROR',
           completedAt: this.now(),
         },
@@ -442,6 +445,7 @@ export class VideoService implements OnModuleInit, OnModuleDestroy {
       where: { id },
       data: {
         status: 'SUCCEEDED',
+        previewExpiresAt: new Date(this.now().getTime() + 3_600_000),
         videoHasAudio: hasAudio,
         inputTokens: valid ? observation.inputTokens : null,
         outputTokens: valid ? observation.outputTokens : null,
@@ -582,6 +586,7 @@ export class VideoService implements OnModuleInit, OnModuleDestroy {
     const rows = await this.db.client.aiGeneration.findMany({
       where: {
         kind: 'VIDEO',
+        status: 'SUCCEEDED',
         previewKey: { not: null },
         mediaAssetId: null,
         previewExpiresAt: { lte: this.now() },
@@ -606,13 +611,6 @@ export class VideoService implements OnModuleInit, OnModuleDestroy {
               where: { id: row.id },
               data: {
                 previewKey: null,
-                ...(row.status === 'RUNNING' || row.status === 'PENDING'
-                  ? {
-                      status: 'FAILED',
-                      errorCode: 'STATUS_EXPIRED',
-                      completedAt: this.now(),
-                    }
-                  : {}),
               },
             });
           }

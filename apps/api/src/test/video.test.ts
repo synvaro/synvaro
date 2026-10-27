@@ -72,7 +72,7 @@ test(
       polls = 0,
       prompt = '',
       sourceLength = 0;
-    let mode: 'normal' | 'invalid' | 'no-usage' = 'normal';
+    let mode: 'normal' | 'invalid' | 'no-usage' | 'delayed' = 'normal';
     provider.start = async (request) => {
       starts++;
       prompt = request.prompt;
@@ -82,6 +82,7 @@ test(
     provider.retrieve = async (id): Promise<VideoObservation> => {
       polls++;
       assert.match(id, /^mock-video-/);
+      if (mode === 'delayed') return { status: 'RUNNING', operationId: id };
       if (mode === 'invalid')
         return {
           status: 'SUCCEEDED',
@@ -332,6 +333,10 @@ test(
       let observed = await (
         await call(`/video-generations/${initial.id}`)
       ).json();
+      if (observed.status === 'RUNNING')
+        observed = await (
+          await call(`/video-generations/${initial.id}`)
+        ).json();
       assert.equal(observed.status, 'SUCCEEDED');
       assert.equal(observed.previewAvailable, true);
       assert.equal(observed.estimatedCostUsd, 0.30665);
@@ -384,6 +389,8 @@ test(
       assert.equal(sourceLength, png.length);
       const secondId = (await second.json()).id;
       observed = await (await call(`/video-generations/${secondId}`)).json();
+      if (observed.status === 'RUNNING')
+        observed = await (await call(`/video-generations/${secondId}`)).json();
       assert.equal(observed.status, 'SUCCEEDED');
       assert.equal(observed.sourceMediaAssetId, sourceId);
       assert.equal(
@@ -508,7 +515,10 @@ test(
         200,
       );
       mode = 'invalid';
-      const invalid = await (await start()).json();
+      const invalidStart = await (await start()).json();
+      const invalid = await (
+        await call(`/video-generations/${invalidStart.id}`)
+      ).json();
       assert.equal(invalid.status, 'FAILED');
       assert.equal(invalid.costUncertain, true);
       assert.equal(invalid.errorCode, 'VIDEO_OUTPUT_INVALID');
@@ -517,7 +527,10 @@ test(
         404,
       );
       mode = 'no-usage';
-      const unknown = await (await start()).json();
+      const unknownStart = await (await start()).json();
+      const unknown = await (
+        await call(`/video-generations/${unknownStart.id}`)
+      ).json();
       assert.equal(unknown.status, 'SUCCEEDED');
       assert.equal(unknown.estimatedCostUsd, null);
       assert.equal(unknown.costUncertain, true);
@@ -527,7 +540,40 @@ test(
         (await call(`/video-generations/${unknown.id}/file`)).status,
         404,
       );
+      mode = 'delayed';
+      const delayed = await (await start()).json();
+      assert.equal(delayed.status, 'RUNNING');
+      assert.equal(delayed.previewExpiresAt, null);
+      const delayedOperation = await db.aiGeneration.findUniqueOrThrow({
+        where: { id: delayed.id },
+      });
+      now = new Date(now.getTime() + 3_600_001);
+      await service.sweep();
+      const stillRunning = await (
+        await call(`/video-generations/${delayed.id}`)
+      ).json();
+      assert.equal(stillRunning.status, 'RUNNING');
+      assert.equal(stillRunning.previewExpiresAt, null);
+      assert.equal(stillRunning.costUncertain, true);
+      assert.equal(
+        stillRunning.providerGenerationId,
+        delayedOperation.providerGenerationId,
+      );
       mode = 'normal';
+      let recovered = await (
+        await call(`/video-generations/${delayed.id}`)
+      ).json();
+      if (recovered.status === 'RUNNING')
+        recovered = await (
+          await call(`/video-generations/${delayed.id}`)
+        ).json();
+      assert.equal(recovered.status, 'SUCCEEDED');
+      assert.equal(recovered.previewAvailable, true);
+      assert.ok(new Date(recovered.previewExpiresAt).getTime() > now.getTime());
+      assert.equal(
+        (await call(`/video-generations/${delayed.id}`, 'DELETE', {})).status,
+        200,
+      );
       const beforeConcurrent = starts;
       let releaseStart: (() => void) | undefined;
       const pendingStart = new Promise<void>((resolve) => {

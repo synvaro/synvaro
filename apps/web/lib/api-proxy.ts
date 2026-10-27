@@ -72,7 +72,7 @@ export async function forwardApi(req: NextRequest, path: string) {
           : /^\/contents\/[0-9a-f-]{36}\/video-generations$/i.test(path)
             ? 75_000
             : /^\/video-generations\/[0-9a-f-]{36}$/i.test(path)
-              ? 55_000
+              ? 110_000
               : /^\/contents\/[0-9a-f-]{36}\/speech-generations$/i.test(path)
                 ? 75_000
                 : /^\/contents\/[0-9a-f-]{36}\/ai-generations$/i.test(path)

@@ -799,6 +799,10 @@ try {
   const animated = await animation.json();
   assert.equal(animated.sourceMediaAssetId, media.id);
   assert.equal(
+    (await (await product(`/video-generations/${animated.id}`)).json()).status,
+    'SUCCEEDED',
+  );
+  assert.equal(
     (await product(`/video-generations/${animated.id}`, 'DELETE', {})).status,
     200,
   );

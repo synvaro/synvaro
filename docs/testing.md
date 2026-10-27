@@ -609,3 +609,23 @@ These are **mock-provider tests**; they do not demonstrate live Google model
 access, actual video quality, actual token usage or billed cost. The current
 Google project has no confirmed paid video access. No paid video request was
 made. CI results remain separate from local tests and browser evidence.
+
+### PR #25 review correction — 2026-10-27
+
+The reviewer identified two recovery risks at `096ebf8`. Google's
+[documented Files path](https://ai.google.dev/gemini-api/docs/omni#retrieving-videos-with-an-uri)
+can return only a provider URI for a completed interaction. The adapter now
+parses only a Google Files ID from that response, checks processing state with
+the official SDK, and streams at most 20 MiB from a constructed Google endpoint.
+It permits at most one redirect to `storage.googleapis.com` and sends no key to
+that host. Deterministic SDK tests cover completed URI-only success, foreign
+host rejection, oversized file metadata and an untrusted redirect. No paid
+provider call was made.
+
+Active `PENDING`/`RUNNING` video records no longer receive the one-hour
+completed-preview expiry or get terminalized by the preview sweep. A real
+PostgreSQL test holds a provider operation past one hour, verifies the same
+operation ID and uncertain usage remain, then completes it successfully and
+starts the one-hour preview TTL at completion. Existing completed-preview
+expiry still removes unsaved bytes. No migration or change to the owner's USD 1
+preference was needed. Full local and PR CI results are recorded separately.
