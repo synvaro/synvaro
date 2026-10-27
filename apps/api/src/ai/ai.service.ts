@@ -1,3 +1,5 @@
+import { GoogleTextProvider } from './google-text-provider.js';
+import { GOOGLE_TEXT_MODEL } from './providers/models.js';
 import { TEXT_PROVIDER, type TextProvider } from './providers/contracts.js';
 import { PRICING_EXPIRES } from './providers/models.js';
 import {
@@ -49,7 +51,19 @@ export class AiService {
   constructor(
     private readonly db: DatabaseService,
     @Inject(TEXT_PROVIDER) private readonly provider: TextProvider,
+    private readonly google: GoogleTextProvider,
   ) {}
+  private textProvider(model: string): TextProvider {
+    if (model === MODEL) return this.provider;
+    if (model === GOOGLE_TEXT_MODEL.model) return this.google;
+    throw new BadRequestException('Unsupported text model');
+  }
+  private textCost(model: string, input: number, output: number): number {
+    // Conservative standard-tier rates include the published January 2027 increase.
+    return model === GOOGLE_TEXT_MODEL.model
+      ? Math.ceil(input * 1.5 + output * 7.5)
+      : estimate(input, output);
+  }
   private async lock(tx: Prisma.TransactionClient, userId: string) {
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId}::uuid FOR UPDATE`;
   }
@@ -85,6 +99,7 @@ export class AiService {
     const p = await this.db.client.aiPreference.findUnique({
       where: { userId },
     });
+    const selectedProvider = this.textProvider(p?.model ?? MODEL);
     return {
       preferences: p
         ? {
@@ -102,8 +117,8 @@ export class AiService {
             confirmPaid: p.confirmPaid,
           }
         : DEFAULTS,
-      available: this.provider.configured() && this.now() < PRICING_EXPIRES,
-      unavailableReason: !this.provider.configured()
+      available: selectedProvider.configured() && this.now() < PRICING_EXPIRES,
+      unavailableReason: !selectedProvider.configured()
         ? 'AI is unavailable: the server API key is not configured.'
         : this.now() >= PRICING_EXPIRES
           ? 'AI is unavailable: model pricing needs maintenance review.'
@@ -119,12 +134,17 @@ export class AiService {
         costBoundAvailable: false,
         costNotice: IMAGE_COST_NOTICE,
       },
-      models: [MODEL],
+      models: [MODEL, GOOGLE_TEXT_MODEL.model],
       pricing: {
-        version: '2026-10-26',
+        version:
+          (p?.model ?? MODEL) === GOOGLE_TEXT_MODEL.model
+            ? '2026-10-27-conservative'
+            : '2026-10-26',
         expiresAt: PRICING_EXPIRES.toISOString(),
-        inputUsdPerMillion: 0.125,
-        outputUsdPerMillion: 0.5,
+        inputUsdPerMillion:
+          (p?.model ?? MODEL) === GOOGLE_TEXT_MODEL.model ? 1.5 : 0.125,
+        outputUsdPerMillion:
+          (p?.model ?? MODEL) === GOOGLE_TEXT_MODEL.model ? 7.5 : 0.5,
       },
       usage: await this.summary(this.db.client, userId, this.now()),
       budgetNotice:
@@ -207,10 +227,15 @@ export class AiService {
         throw new ConflictException(
           'Enable AI generation in preferences first.',
         );
-      if (p.model !== MODEL)
-        throw new BadRequestException('Unsupported text model');
-      if (!this.provider.configured() || this.now() >= PRICING_EXPIRES)
+      if (
+        !this.textProvider(p.model).configured() ||
+        this.now() >= PRICING_EXPIRES
+      )
         throw new ServiceUnavailableException();
+      if (p.model === GOOGLE_TEXT_MODEL.model && p.monthlyBudgetMicros !== null)
+        throw new ConflictException(
+          'Gemini generation is unavailable with a selected spending limit because token counting is not a verified upper bound.',
+        );
       if (!content.brand.profile)
         throw new ConflictException(
           'Create a Brand Profile before generating.',
@@ -243,6 +268,7 @@ export class AiService {
           contentId,
           requestId: input.requestId,
           model: p.model,
+          provider: p.model === GOOGLE_TEXT_MODEL.model ? 'google' : 'openai',
           maxOutputTokens: p.maxOutputTokens,
           status: 'COUNTING',
           createdAt: this.now(),
@@ -258,9 +284,10 @@ export class AiService {
       };
     });
     const { record, request } = admitted;
+    const provider = this.textProvider(request.model);
     let count: number;
     try {
-      count = await this.provider.count(request);
+      count = await provider.count(request);
       if (!Number.isSafeInteger(count) || count < 1 || count > 16384)
         throw new Error('Context token limit');
     } catch {
@@ -276,7 +303,11 @@ export class AiService {
         'Unable to validate the input token count. No generation was sent. Shorten the context or try later.',
       );
     }
-    const reserve = estimate(count, request.maxOutputTokens);
+    const reserve = this.textCost(
+      request.model,
+      count,
+      request.maxOutputTokens,
+    );
     const allowed = await this.db.client.$transaction(async (tx) => {
       await this.lock(tx, userId);
       const p = await tx.aiPreference.findUniqueOrThrow({ where: { userId } });
@@ -331,7 +362,7 @@ export class AiService {
         'Estimated budget is insufficient or a prior uncertain charge needs operator reconciliation.',
       );
     try {
-      const result = await this.provider.generate(request);
+      const result = await provider.generate(request);
       if (
         !result.text.trim() ||
         result.text.length > 20000 ||
@@ -346,7 +377,11 @@ export class AiService {
         result.inputTokens! < 1e7 &&
         result.outputTokens! < 1e7;
       const cost = validUsage
-        ? estimate(result.inputTokens!, result.outputTokens!)
+        ? this.textCost(
+            request.model,
+            result.inputTokens!,
+            result.outputTokens!,
+          )
         : null;
       const uncertain = cost === null || cost > reserve;
       await this.db.client.aiGeneration.update({

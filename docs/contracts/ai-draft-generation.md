@@ -103,3 +103,9 @@ No live collaboration/version check, billing integration, per-user keys, provide
 billing reconciliation UI, automatic recovery worker, prompt/output history, AI
 images/video, publishing or agents. AI suggestions can be inaccurate despite
 instructions and must be reviewed. Existing development auth limits remain.
+
+## SYN-AI-002 extension
+
+Google Gemini is a second explicitly selected text adapter. Selected budgets block
+Gemini until a reliable input-token upper bound is documented; OpenAI budgeting
+is unchanged. See [Google contract](google-gemini-text.md) for pricing and usage.

@@ -1,3 +1,4 @@
+import { GoogleTextProvider } from '../ai/google-text-provider.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
@@ -19,6 +20,19 @@ test(
     const service = app.get(AiService);
     let now = new Date('2026-10-26T16:00:00Z');
     service.now = () => now;
+    const googleProvider = app.get(GoogleTextProvider);
+    let googleCalls = 0;
+    googleProvider.configured = () => true;
+    googleProvider.count = async () => 100;
+    googleProvider.generate = async (req) => {
+      googleCalls++;
+      return {
+        text: 'Hypothetical Gemini suggestion',
+        model: req.model,
+        inputTokens: 100,
+        outputTokens: 50,
+      };
+    };
     const provider = app.get(OpenAITextProvider);
     let configured = true,
       calls = 0,
@@ -138,7 +152,7 @@ test(
             catalog.models.filter(
               (m: { implemented: boolean }) => m.implemented,
             ).length,
-            2,
+            3,
           );
           assert.ok(!JSON.stringify(catalog).includes('API_KEY'));
           const before = await db.aiPreference.findUnique({
@@ -148,7 +162,7 @@ test(
             where: { userId: users[0]!.id },
           });
           for (const change of [
-            { model: 'gemini-3.8-flash' },
+            { model: 'gemini-unknown' },
             { model: 'gpt-image-2.5-flare' },
             { imageModel: MODEL },
             { imageModel: 'gemini-nano-banana-2.1' },
@@ -442,6 +456,110 @@ test(
             await db.aiGeneration.findMany({ where, orderBy: { id: 'asc' } }),
             ledgerBefore,
           );
+        },
+      );
+      await t.test(
+        'AIG-G001: Google selection, shared budget, attribution, isolation and no overwrite',
+        async () => {
+          await db.aiGeneration.deleteMany({ where: { userId: users[0]!.id } });
+          const original = await db.content.findUniqueOrThrow({
+            where: { id: contentId },
+          });
+          await db.aiGeneration.create({
+            data: {
+              userId: users[0]!.id,
+              contentId,
+              requestId: randomUUID(),
+              model: MODEL,
+              provider: 'openai',
+              maxOutputTokens: 512,
+              status: 'SUCCEEDED',
+              budgetChargeMicros: 990000,
+              createdAt: now,
+            },
+          });
+          assert.equal(
+            (
+              await preferences({
+                model: 'gemini-3.8-flash',
+                monthlyBudgetUsd: 1,
+                maxOutputTokens: 2048,
+              })
+            ).status,
+            200,
+          );
+          assert.equal((await generate()).status, 409);
+          assert.equal(googleCalls, 0);
+          assert.equal(
+            (
+              await preferences({
+                model: 'gemini-3.8-flash',
+                monthlyBudgetUsd: null,
+              })
+            ).status,
+            200,
+          );
+          assert.equal((await generate({}, users[1]!.cookie)).status, 404);
+          const requestId = randomUUID();
+          const response = await generate({ requestId });
+          assert.equal(response.status, 201);
+          const result = await response.json();
+          assert.equal(result.text, 'Hypothetical Gemini suggestion');
+          assert.equal(result.estimatedCostUsd, 0.000525);
+          assert.equal(googleCalls, 1);
+          assert.equal((await generate({ requestId })).status, 409);
+          const row = await db.aiGeneration.findUniqueOrThrow({
+            where: { id: result.generationId },
+          });
+          assert.equal(row.provider, 'google');
+          assert.equal(row.model, 'gemini-3.8-flash');
+          assert.equal(row.budgetChargeMicros, 525);
+          assert.deepEqual(
+            await db.content.findUniqueOrThrow({ where: { id: contentId } }),
+            original,
+          );
+          let signalEntered!: () => void;
+          let releaseGeneration!: () => void;
+          const entered = new Promise<void>((resolve) => {
+            signalEntered = resolve;
+          });
+          const release = new Promise<void>((resolve) => {
+            releaseGeneration = resolve;
+          });
+          googleProvider.generate = async (request) => {
+            signalEntered();
+            await release;
+            return {
+              text: 'Hypothetical',
+              model: request.model,
+              inputTokens: 100,
+              outputTokens: 50,
+            };
+          };
+          const first = generate();
+          await entered;
+          assert.equal((await generate()).status, 409);
+          releaseGeneration();
+          assert.equal((await first).status, 201);
+          googleProvider.generate = async () => {
+            throw new Error('SECRET test provider failure');
+          };
+          const failed = await generate();
+          assert.equal(failed.status, 503);
+          assert.ok(!(await failed.text()).includes('SECRET'));
+          const uncertain = await db.aiGeneration.findFirst({
+            where: {
+              userId: users[0]!.id,
+              provider: 'google',
+              costUncertain: true,
+            },
+          });
+          assert.ok(uncertain && uncertain.budgetChargeMicros > 0);
+          assert.equal(
+            (await preferences({ model: MODEL, monthlyBudgetUsd: 100 })).status,
+            200,
+          );
+          assert.equal((await generate()).status, 409);
         },
       );
       await t.test('AIG-001–005: OpenAPI protected routes', async () => {

@@ -1,3 +1,4 @@
+import { GOOGLE_TEXT_MODEL } from './providers/models.js';
 import {
   BadRequestException,
   Body,
@@ -34,7 +35,7 @@ const preference = z
     imageSize: z.enum(IMAGE_SIZES).optional(),
     imageQuality: z.enum(IMAGE_QUALITIES).optional(),
     enabled: z.boolean(),
-    model: z.literal(MODEL),
+    model: z.enum([MODEL, GOOGLE_TEXT_MODEL.model]),
     maxOutputTokens: z.number().int().min(128).max(2048),
     monthlyBudgetUsd: z
       .number()
@@ -108,7 +109,7 @@ export class AiController {
         imageSize: { type: 'string', enum: [...IMAGE_SIZES] },
         imageQuality: { type: 'string', enum: [...IMAGE_QUALITIES] },
         enabled: { type: 'boolean' },
-        model: { type: 'string', enum: [MODEL] },
+        model: { type: 'string', enum: [MODEL, GOOGLE_TEXT_MODEL.model] },
         maxOutputTokens: { type: 'integer', minimum: 128, maximum: 2048 },
         monthlyBudgetUsd: {
           type: 'number',

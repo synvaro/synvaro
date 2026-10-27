@@ -16,6 +16,23 @@ export const TEXT_MODEL = {
     maxOutputTokens: 2048,
   },
 } as const satisfies AiModelDefinition;
+export const GOOGLE_TEXT_MODEL = {
+  provider: 'google',
+  model: 'gemini-3.8-flash',
+  capability: 'TEXT_GENERATION',
+  implemented: true,
+  verifiedAt,
+  reference: 'https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash',
+  cost: {
+    capability: 'ESTIMATE_ONLY',
+    reference: 'https://ai.google.dev/gemini-api/docs/pricing',
+  },
+  settings: {
+    outputFormats: ['text/plain'],
+    minOutputTokens: 128,
+    maxOutputTokens: 2048,
+  },
+} as const satisfies AiModelDefinition;
 export const IMAGE_MODEL_DEFINITION = {
   provider: 'openai',
   model: 'gpt-image-2.5-flare',
@@ -35,6 +52,7 @@ const googleReference = 'https://ai.google.dev/gemini-api/docs/models';
 const speechReference = 'https://elevenlabs.io/docs/overview/models';
 export const MODEL_DEFINITIONS: readonly AiModelDefinition[] = [
   TEXT_MODEL,
+  GOOGLE_TEXT_MODEL,
   IMAGE_MODEL_DEFINITION,
   {
     provider: 'openai',
@@ -47,7 +65,6 @@ export const MODEL_DEFINITIONS: readonly AiModelDefinition[] = [
   },
   ...(
     [
-      ['gemini-3.8-flash', 'TEXT_GENERATION'],
       ['gemini-nano-banana-2.1', 'IMAGE_GENERATION'],
       ['gemini-omni-1.1-flash', 'VIDEO_GENERATION'],
       ['gemini-omni-1.1-flash', 'IMAGE_TO_VIDEO'],

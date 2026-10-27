@@ -318,6 +318,22 @@ export function AiPanel({
             {preferencesDirty && (
               <p>Save your preference changes before generating.</p>
             )}
+            {settings.preferences.monthlyBudgetUsd !== null &&
+              catalog.models.find((m) => m.model === settings.preferences.model)
+                ?.cost.capability !== 'CONSERVATIVE_BOUND' && (
+                <p role="status">
+                  The selected model cannot enforce a spending limit reliably.
+                  Generation is blocked until a reliable bound is available or
+                  you explicitly remove the limit.
+                </p>
+              )}
+            {catalog.models.find((m) => m.model === settings.preferences.model)
+              ?.provider === 'google' && (
+              <p>
+                Google may use free-tier data to improve products. Review your
+                account tier and data terms before sending brand information.
+              </p>
+            )}
             <button
               type="button"
               className="button"
@@ -328,6 +344,10 @@ export function AiPanel({
                     m.status === 'AVAILABLE',
                 ) ||
                 !settings.available ||
+                (settings.preferences.monthlyBudgetUsd !== null &&
+                  catalog.models.find(
+                    (m) => m.model === settings.preferences.model,
+                  )?.cost.capability !== 'CONSERVATIVE_BOUND') ||
                 !settings.preferences.enabled ||
                 !!preferencesDirty
               }
@@ -350,6 +370,15 @@ export function AiPanel({
                   {settings.preferences.maxOutputTokens} tokens. The server
                   checks your selected estimated budget before generation.
                 </p>
+                {catalog.models.find(
+                  (m) => m.model === settings.preferences.model,
+                )?.provider === 'google' && (
+                  <p>
+                    Google may use data from its free tier to improve products.
+                    Review your Google account tier and data terms before
+                    sending brand information.
+                  </p>
+                )}
                 <div className="form-actions">
                   <button
                     type="button"

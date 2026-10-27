@@ -255,3 +255,21 @@ Verification on 2026-10-27:
   temporary storage directory; test processes were stopped after verification.
 - Local screenshots: `/tmp/syn-ai-001-desktop.png`,
   `/tmp/syn-ai-001-mobile-catalog.png`, `/tmp/syn-ai-001-mobile.png`.
+
+## SYN-AI-002 Google Gemini text
+
+AIG-G001/G002 verification, 2026-10-27: real PostgreSQL 16 and deterministic
+OpenAI/Google provider mocks; the Google SDK wire test intercepts HTTP and makes
+no live request. Tests cover model selection, ownership, shared accounting,
+selected-budget rejection, duplicate/concurrent admission, failure uncertainty,
+usage including thinking tokens and SDK no-retry behavior. Existing auth, content,
+media and OpenAI regressions remain enabled. No database migration was introduced.
+
+Built Next/Nest smoke verifies Google selection, selected-budget rejection and a
+mock suggestion after the disposable account explicitly unsets its limit; OpenAI
+text and image regressions remain in the same smoke. Chrome desktop and 390×844
+show both text choices, the budget block, Google data notice, mock confirmation,
+Discard → Generate Again → Apply and refresh persistence. The mobile document width
+was 390px. Browser test data and processes were removed afterward. Only mock output
+was used; the local Google key was not configured and no paid or live Gemini test
+was attempted. [Contract](contracts/google-gemini-text.md) records the open bound.

@@ -117,7 +117,7 @@ try {
   const catalog = await catalogResponse.json();
   assert.equal(
     catalog.models.filter((m) => m.status === 'AVAILABLE').length,
-    2,
+    3,
   );
   assert.ok(
     catalog.models
@@ -486,6 +486,53 @@ try {
     headers: { cookie },
   });
   assert.ok((await refreshedAI.text()).includes(suggestion.text));
+  const googlePrefs = (await (await product('/ai/preferences')).json())
+    .preferences;
+  assert.equal(
+    (
+      await product('/ai/preferences', 'PUT', {
+        ...googlePrefs,
+        model: 'gemini-3.8-flash',
+      })
+    ).status,
+    200,
+  );
+  assert.equal(
+    (
+      await product(`/contents/${draft.id}/ai-generations`, 'POST', {
+        requestId: randomUUID(),
+        confirmed: true,
+      })
+    ).status,
+    409,
+  );
+  assert.equal(
+    (
+      await product('/ai/preferences', 'PUT', {
+        ...googlePrefs,
+        model: 'gemini-3.8-flash',
+        monthlyBudgetUsd: null,
+      })
+    ).status,
+    200,
+  );
+  const googleResponse = await product(
+    `/contents/${draft.id}/ai-generations`,
+    'POST',
+    {
+      requestId: randomUUID(),
+      confirmed: true,
+      instruction: 'Hypothetical only',
+    },
+  );
+  assert.equal(googleResponse.status, 201);
+  const googleSuggestion = await googleResponse.json();
+  assert.equal(googleSuggestion.model, 'gemini-3.8-flash');
+  assert.equal(googleSuggestion.estimatedCostUsd, 0.000525);
+  assert.equal(
+    (await (await product(`/contents/${draft.id}`)).json()).content.body,
+    suggestion.text,
+  );
   const imagePrefs = (await (await product('/ai/preferences')).json())
     .preferences;
   assert.equal(
