@@ -1,6 +1,6 @@
 # SYNVARO Engineering Master
 
-**Version:** 0.4 · **Updated:** 2026-10-26 · **Status:** Working engineering index
+**Version:** 0.5 · **Updated:** 2026-10-26 · **Status:** Working engineering index
 
 > **Purpose:** One human-readable entry point for owners, contributors and AI agents. This is an **index, not a second specification**. The linked source documents, code, migrations, CI and PRs remain authoritative for their respective subjects. If sources disagree, raise the conflict; do not silently resolve it here.
 
@@ -30,7 +30,11 @@ SYNVARO is an independent Apache-2.0 open-source AI content studio for preparing
 
 **SYN-006 — Content Media Attachments:** Merged into `main` ([PR #13](https://github.com/synvaro/synvaro/pull/13), [CMA-001–005 contract](docs/contracts/content-media.md), [CI](https://github.com/synvaro/synvaro/actions/runs/40318392921)). Same-brand media linking, ordering and detaching are implemented; no AI or publishing features are claimed.
 
-**Status vocabulary:** Planned → In development → PR ready → Merged → Owner accepted → Production verified (where applicable). Never infer a later state from an earlier one. GitHub is the authority for current PR/merge/CI state; actual tests and deployment evidence must be checked separately.
+**SYN-007 / SYN-007A — AI text drafts and live acceptance:** Merged into `main` ([PR #15](https://github.com/synvaro/synvaro/pull/15), [PR #16](https://github.com/synvaro/synvaro/pull/16), [AIG-001–005 contract](docs/contracts/ai-draft-generation.md)). Controlled live text-provider acceptance is recorded in [testing evidence](docs/testing.md#syn-007a-live-acceptance--2026-10-26); this does not verify image generation.
+
+**SYN-008 — AI Image Generation:** **Implemented — PR pending review** ([PR #17](https://github.com/synvaro/synvaro/pull/17), [IMG-001–007 contract](docs/contracts/ai-image-generation.md), [test evidence](docs/testing.md#syn-008-ai-image-generation), [verified implementation CI](https://github.com/synvaro/synvaro/actions/runs/40363544906)). Private preview, explicit save/attach and AI provenance are implemented on the feature branch, not merged or owner-accepted. Selected-budget image requests remain blocked: [reservation research](docs/contracts/ai-image-generation.md#pr-17-budget-review--2026-10-26). Live image-provider quality/cost acceptance is separate and unperformed.
+
+**Status vocabulary:** Planned → In development → PR ready → Merged → Owner accepted → Production verified (where applicable). Never infer a later state from an earlier one. `Implemented — PR pending review` denotes code on an open feature PR, not merge or acceptance. GitHub is the authority for current PR/merge/CI state; actual tests and deployment evidence must be checked separately.
 
 ## 3. Architecture and decisions
 
@@ -39,22 +43,22 @@ SYNVARO is an independent Apache-2.0 open-source AI content studio for preparing
 - **Security limit:** Process-local rate limiting is accepted **only for development**; production registration is disabled pending hardening. No production launch approval.
 - **Still open:** Background queue technology (PostgreSQL vs Redis/BullMQ), brand location scope, infrastructure/secrets/observability vendors, future commercial modules.
 - **Storage direction:** Local storage remains the self-host baseline; Cloudflare R2 is the preferred future cloud adapter, not implemented. Google Drive is a planned optional one-way import source; OneDrive/Dropbox are later options, not storage backends. No synchronization is committed.
-- **AI usage preference:** The owner has chosen user-controlled generation limits rather than a fixed product-wide content quota. Future AI UI must allow user-configured spending/generation preferences, show estimated and observed usage when available, and require explicit intent for paid requests. Operational security protections remain mandatory and separate from user preferences. Detailed provider/key implementation is scoped to SYN-007.
+- **AI usage preference:** The owner has chosen user-controlled generation limits rather than a fixed product-wide content quota. Current AI controls expose user spending/generation preferences, estimated usage and explicit paid intent; image requests with a selected budget remain blocked pending a reliable reservation bound. Operational security protections remain mandatory and separate from user preferences. Detailed provider/key implementation is scoped to SYN-007.
 - **Publishing invariant:** No publication without approval of the exact immutable content revision; never fabricate real-world product facts or deployed feature claims.
 
 **Source of truth:** [ADR register](docs/decisions.md) (decision statuses) · [Architecture](docs/architecture.md) · [Security](SECURITY.md). **Do not record a new architectural decision by editing this index alone.**
 
 ## 4. Domain and data references
 
-| Area                                                 | Current state                                                                                                 | Contract / reference                                                                                 |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Identity & Access                                    | Development implementation (users, sessions)                                                                  | [Auth spike](docs/auth-spike.md) · [ADR-013](docs/decisions.md)                                      |
-| Organization & Brand                                 | Development implementation (single owner, brand CRUD subset)                                                  | [Organization & Brand](docs/contracts/organization-brand.md)                                         |
-| Brand Profile                                        | Development implementation; detailed description, target audience, tone, language, guidelines; no AI behavior | [BRP-001](docs/contracts/brand-profile.md) · [Prisma schema](packages/database/prisma/schema.prisma) |
-| Content Planning / Production                        | Manual drafts and brand-scoped content–media attachments merged; other features planned                       | [CNT-001–004](docs/contracts/content-drafts.md) · [CMA-001–005](docs/contracts/content-media.md)     |
-| Media Library / AI Generation                        | Private local Media Library implemented; AI Generation planned                                                | [MED-001–004](docs/contracts/media-library.md) · [Domain map](docs/domains.md)                       |
-| Review / Publishing                                  | Planned                                                                                                       | [Publishing draft contract](docs/contracts/publishing.md)                                            |
-| Social channels, Analytics, Engagement, Integrations | Planned                                                                                                       | [Domain map](docs/domains.md)                                                                        |
+| Area                                                 | Current state                                                                                             | Contract / reference                                                                                                                                         |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Identity & Access                                    | Development implementation (users, sessions)                                                              | [Auth spike](docs/auth-spike.md) · [ADR-013](docs/decisions.md)                                                                                              |
+| Organization & Brand                                 | Development implementation (single owner, brand CRUD subset)                                              | [Organization & Brand](docs/contracts/organization-brand.md)                                                                                                 |
+| Brand Profile                                        | Development implementation; detailed brand context consumed by explicit AI requests; no approval workflow | [BRP-001](docs/contracts/brand-profile.md) · [Prisma schema](packages/database/prisma/schema.prisma)                                                         |
+| Content Planning / Production                        | Manual drafts and brand-scoped content–media attachments merged; other features planned                   | [CNT-001–004](docs/contracts/content-drafts.md) · [CMA-001–005](docs/contracts/content-media.md)                                                             |
+| Media Library / AI Generation                        | Private Media Library and AI text merged; AI image preview/save/attach implemented, PR pending review     | [MED-001–004](docs/contracts/media-library.md) · [AIG-001–005](docs/contracts/ai-draft-generation.md) · [IMG-001–007](docs/contracts/ai-image-generation.md) |
+| Review / Publishing                                  | Planned                                                                                                   | [Publishing draft contract](docs/contracts/publishing.md)                                                                                                    |
+| Social channels, Analytics, Engagement, Integrations | Planned                                                                                                   | [Domain map](docs/domains.md)                                                                                                                                |
 
 **Authoritative model:** [Data model](docs/data-model.md) for design intent; [Prisma schema and migrations](packages/database/prisma/) for _implemented_ persistence. These may intentionally differ while features are planned.
 
@@ -68,11 +72,13 @@ SYNVARO is an independent Apache-2.0 open-source AI content studio for preparing
 - **SYN-004:** [PR #8](https://github.com/synvaro/synvaro/pull/8) / [CI](https://github.com/synvaro/synvaro/actions/runs/40301531909). PR reports 43 API + 1 worker tests, clean migrations and desktop/390px browser checks; separate production acceptance not recorded.
 - **SYN-005:** [PR #11](https://github.com/synvaro/synvaro/pull/11) / [CI](https://github.com/synvaro/synvaro/actions/runs/40311904288). PR reports 58 API + 1 worker tests, five clean PostgreSQL migrations and desktop/390px media tests. The 20 MiB limit, preserved EXIF/container metadata and crash-orphan cleanup limitation remain documented.
 - **SYN-006:** [PR #13](https://github.com/synvaro/synvaro/pull/13) / [CI](https://github.com/synvaro/synvaro/actions/runs/40318392921). PR reports 68 API + 1 worker tests, six clean migrations and desktop/390px attachment and isolation checks.
+- **SYN-007A:** [Live text acceptance evidence](docs/testing.md#syn-007a-live-acceptance--2026-10-26); two controlled Responses API suggestions. No image-provider acceptance is inferred.
+- **SYN-008:** [PR #17](https://github.com/synvaro/synvaro/pull/17) / [implementation CI at 5c06668](https://github.com/synvaro/synvaro/actions/runs/40363544906) / [test evidence](docs/testing.md#syn-008-ai-image-generation). Evidence includes 84 API + 1 worker tests, eight clean PostgreSQL migrations and desktop/390px mock-provider walkthroughs. Follow-up budget regression is linked in the same test evidence; current-head CI belongs to the PR checks. Zero paid image requests; live quality/cost acceptance remains open.
 - CI success means checks ran successfully, **not** live provider integration, production readiness or deployment acceptance.
 
 ## 6. Roadmap and next decision gate
 
-[Roadmap](docs/roadmap.md) governs milestone scope. Candidate progression: SYN-007 opt-in AI draft text generation → later AI media creation → social channels and publishing. This is sequencing guidance, **not** evidence of implementation or a committed deadline.
+[Roadmap](docs/roadmap.md) governs milestone scope. Current progression: AI draft text merged → SYN-008 image PR review and separate live acceptance → future social channels and publishing. This is sequencing guidance, **not** evidence of implementation or a committed deadline.
 
 Before any new development slice:
 
@@ -85,7 +91,7 @@ Before any new development slice:
 
 ## 7. Pending owner / maintainer items
 
-- Define SYN-007 AI text-draft contract: explicit user action, user-configurable generation/spending preferences, bring-your-own-key, safe provider failure handling and no automatic publishing.
+- Review SYN-008 and its documented budget limitation; require a verified reservation strategy before enabling budgeted image requests. Arrange separately authorized live image quality/cost acceptance. Do not infer either from mocked provider tests.
 - Keep authentication production hardening tracked before any public registration.
 - Select job queue only when background generation/publishing requires it; Redis remains an option, not an approved dependency.
 - Confirm vulnerability-reporting and main-branch ruleset settings via GitHub administration.

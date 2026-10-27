@@ -1,4 +1,4 @@
-// Real PostgreSQL + built Next/Nest; only the SYN-007 external AI provider is mocked.
+// Real PostgreSQL + built Next/Nest; only external AI providers are mocked.
 import { Buffer, Blob } from 'node:buffer';
 const { FormData } = globalThis;
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
@@ -421,7 +421,10 @@ try {
     headers: { cookie },
   });
   assert.equal(mediaPage.status, 200);
-  assert.match(await mediaPage.text(), /Original images and videos/);
+  assert.match(
+    await mediaPage.text(),
+    /Uploaded originals and accepted AI images/,
+  );
   assert.equal(
     (await fetch(`${origin}/unknown-section`, { headers: { cookie } })).status,
     404,
@@ -467,6 +470,62 @@ try {
     headers: { cookie },
   });
   assert.ok((await refreshedAI.text()).includes(suggestion.text));
+  const imagePrefs = (await (await product('/ai/preferences')).json())
+    .preferences;
+  assert.equal(
+    (
+      await product('/ai/preferences', 'PUT', {
+        ...imagePrefs,
+        imageEnabled: true,
+        monthlyBudgetUsd: null,
+      })
+    ).status,
+    200,
+  );
+  const imageResponse = await product(
+    `/contents/${draft.id}/image-generations`,
+    'POST',
+    {
+      requestId: randomUUID(),
+      instruction: 'Hypothetical conceptual illustration only',
+      confirmed: true,
+    },
+  );
+  assert.equal(imageResponse.status, 201);
+  const image = await imageResponse.json();
+  assert.equal(image.estimatedCostUsd, 0.0065);
+  const preview = await fetch(
+    `${origin}/api/image-generations/${image.id}/file`,
+    { headers: { cookie } },
+  );
+  assert.equal(preview.status, 200);
+  const previewBytes = Buffer.from(await preview.arrayBuffer());
+  const accepted = await product(
+    `/image-generations/${image.id}/accept`,
+    'POST',
+    {},
+  );
+  assert.equal(accepted.status, 201);
+  const generatedAsset = await accepted.json();
+  assert.equal(generatedAsset.origin, 'AI_GENERATED');
+  assert.equal(generatedAsset.generation.id, image.id);
+  assert.equal(
+    (
+      await product(`/contents/${draft.id}/media`, 'POST', {
+        mediaAssetId: generatedAsset.id,
+      })
+    ).status,
+    201,
+  );
+  const savedImage = await fetch(
+    `${origin}/api/media/${generatedAsset.id}/file`,
+    { headers: { cookie } },
+  );
+  assert.deepEqual(Buffer.from(await savedImage.arrayBuffer()), previewBytes);
+  assert.equal(
+    (await (await product(`/contents/${draft.id}`)).json()).content.body,
+    suggestion.text,
+  );
   assert.equal(
     (await auth('logout', {}, cookie, 'https://evil.example')).status,
     403,
@@ -492,7 +551,7 @@ try {
     307,
   );
   console.info(
-    'SYN-007 (mock provider) + SYN-006 + SYN-005 + SYN-004 + SYN-003 + SYN-002B + SYN-002A-A11 passed: real PostgreSQL, Next/Nest auth, organization, multiple brands, edit/reload, media upload/stream, CSRF and logout.',
+    'SYN-008 + SYN-007 (mock providers) + SYN-006 + SYN-005 + SYN-004 + SYN-003 + SYN-002B + SYN-002A-A11 passed: real PostgreSQL, Next/Nest auth, organization, multiple brands, edit/reload, media upload/stream, CSRF and logout.',
   );
 } finally {
   for (const { child, exited } of children) {

@@ -151,7 +151,7 @@ Monitor disk capacity and keep the storage filesystem persistent across releases
 Do not prune files based only on age. Normal failed uploads remove staged/published
 bytes; a process/host crash can leave an unreferenced UUID or `.part` object between
 filesystem publication and DB commit. Reconcile such objects offline against
-`MediaAsset.storageKey` after backup, with uploads stopped. No automatic orphan
+`MediaAsset.storageKey` and `AiGeneration.previewKey` after backup, with uploads stopped. No automatic orphan
 sweeper or distributed transaction is claimed. Brand deletion is restricted while
 media metadata exists. No deletion endpoint is provided in this slice.
 
@@ -195,3 +195,42 @@ records against provider usage before changing their status/charge; never blindl
 clear an active record while a request could still complete. This slice has no
 automatic recovery or billing administration UI. Back up generation records with
 PostgreSQL; no separate file storage is added.
+
+## AI images (SYN-008)
+
+Uses the same server-only `OPENAI_API_KEY`, official SDK 7.43.0 and private
+`MEDIA_STORAGE_ROOT`; no additional credentials or public storage. Open an existing
+saved draft with a Brand Profile, enable image generation, select dimensions and
+quality, then explicitly confirm the paid request. Saved profiles are owner-edited
+context; no approval workflow is introduced.
+
+Model/settings/pricing verified 2026-10-26: `gpt-image-2.5-flare`, direct Images API,
+one opaque PNG, sizes 1024x1024 / 1536x1024 / 1024x1536, quality low / medium / high.
+Defaults: disabled, square, low. Timeout 120 seconds, no automatic retries, JSON
+response bounded at 30 MiB, decoded image at 20 MiB. Next's explicit generation
+route allows 150 seconds; other JSON route limits are unchanged.
+
+Official sources: [model](https://developers.openai.com/api/docs/models/gpt-image-2.5-flare),
+[Images API](https://developers.openai.com/api/reference/resources/images/methods/generate),
+[image generation guide](https://developers.openai.com/api/docs/guides/image-generation).
+The API supplies estimates/usage, not a trustworthy pre-request maximum charge.
+**Any selected monthly budget blocks image requests.** It is never automatically
+removed. Images always require paid confirmation, even if text confirmation is off.
+Without a selected budget, returned usage is estimated at $5/M text input, $8/M image
+input and $30/M image output tokens. Unknown usage/failure retains cost uncertainty;
+zero recorded charge must not be interpreted as free usage. Pricing expires on
+2026-11-25 pending maintenance review. No live request is implied by configuration.
+
+Preview objects reuse the private media store, with opaque keys recorded before
+provider submission. They expire after one hour and become inaccessible immediately.
+Startup and 60-second cleanup sweeps remove up to 50 expired previews per pass;
+cleanup shares the user's transaction lock with save/discard. Failed removals retain
+the key for retry. Stop/start recovery does not clear uncertain usage or crashed
+RUNNING records. Accepted assets are never swept. Back up DB and media together,
+including preview keys; stop generation as well as uploads for coordinated backup.
+One unaccepted preview per user bounds transient storage; this is not a monthly quota.
+
+Generated assets are clearly labeled conceptual AI imagery, not authentic product
+photography. No uploaded image bytes are sent to this text-to-image API. Inspect
+outputs before use; prompt constraints cannot prove semantic authenticity. Existing
+production-registration hardening restrictions remain unchanged.

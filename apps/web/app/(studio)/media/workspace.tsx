@@ -198,11 +198,18 @@ export function MediaWorkspace({
                     />
                   )}
                   <h3>{asset.originalFilename}</h3>
+                  {asset.origin === 'AI_GENERATED' && (
+                    <p>
+                      <span className="badge">AI GENERATED</span> Conceptual
+                      visual, not authentic product photography.{' '}
+                      {asset.generation?.provider} · {asset.generation?.model}
+                    </p>
+                  )}
                   <p>
                     {asset.mimeType} · {(asset.sizeBytes / 1024).toFixed(1)} KiB
                   </p>
                   <p>
-                    Uploaded{' '}
+                    {asset.origin === 'AI_GENERATED' ? 'Saved' : 'Uploaded'}{' '}
                     <time dateTime={asset.createdAt}>
                       {new Date(asset.createdAt)
                         .toISOString()

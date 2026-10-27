@@ -13,7 +13,8 @@ export default async function MediaPage({
       <p className="eyebrow">YOUR STUDIO</p>
       <h1>Media</h1>
       <p className="intro">
-        Original images and videos, privately stored for each brand.
+        Uploaded originals and accepted AI images, privately stored for each
+        brand.
       </p>
       <MediaWorkspace
         initialBrand={selected}

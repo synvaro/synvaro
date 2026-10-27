@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { ImagePanel } from './image-panel';
 import { AiPanel } from './ai-panel';
 import { AttachedMedia } from './attachments';
 import { useEffect, useRef, useState } from 'react';
@@ -12,6 +13,7 @@ export function DraftEditor({
   brand: { id: string; name: string };
   initial: Content | null;
 }) {
+  const [attachmentVersion, setAttachmentVersion] = useState(0);
   const [content, setContent] = useState(initial);
   const [saved, setSaved] = useState({
     title: initial?.title ?? '',
@@ -212,7 +214,7 @@ export function DraftEditor({
       </form>
       {content ? (
         <AttachedMedia
-          key={content.id}
+          key={`${content.id}-${attachmentVersion}`}
           contentId={content.id}
           brand={brand}
           disabled={busy || !!leaving}
@@ -225,6 +227,14 @@ export function DraftEditor({
           contentId={content.id}
           disabled={busy || !!leaving || pendingAI !== null}
           onApply={(text) => void applySuggestion(text)}
+        />
+      )}
+      {content && (
+        <ImagePanel
+          contentId={content.id}
+          brandName={brand.name}
+          disabled={busy || !!leaving}
+          onAttached={() => setAttachmentVersion((v) => v + 1)}
         />
       )}
       {pendingAI !== null && (

@@ -6,6 +6,7 @@ import { LocalMediaStorage } from './storage.js';
 @Module({
   imports: [AuthModule],
   controllers: [MediaController],
+  exports: [LocalMediaStorage, MediaService],
   providers: [MediaService, LocalMediaStorage],
 })
 export class MediaModule {}

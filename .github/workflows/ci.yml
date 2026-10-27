@@ -36,7 +36,12 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install media inspection dependency
+        run: |
+          # Use Ubuntu's signed official archive; the Azure HTTP mirror can stall downloads.
+          sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
       - run: pnpm install --frozen-lockfile
       - run: pnpm format:check
       - run: pnpm lint

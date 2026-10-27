@@ -153,3 +153,67 @@ The scoped follow-up replaces that stale sentence with the implemented draft
 context behavior. No model, pricing, provider, authentication or generation logic
 changes are included. Local browser evidence is kept outside the repository;
 no credentials, complete prompts or confidential context are in this report.
+
+## SYN-008 AI image generation
+
+`image.test.ts` exercises IMG-001–007 through authenticated Nest HTTP, real
+PostgreSQL and dedicated temporary private storage. Only the image provider is
+replaced. Coverage includes disabled/missing configuration, unsupported settings,
+strict input/ownership, profile context, explicit confirmation, selected-budget
+rejection before any provider call, shared text/image admission locking, request
+replay, concurrent idempotent acceptance, no automatic draft mutation, protected
+preview bytes, provenance, same-brand attachment, cross-brand/organization
+rejection, failure/timeout, malformed/oversized/wrong-size output, unknown usage,
+expiry, retryable cleanup failure and preservation of interrupted charge evidence.
+Accepted and retrieved bytes are compared exactly; saved/attached files are not
+copied. Existing text AI, auth, content and media integration tests remain active.
+
+`image-provider.test.ts` drives the official SDK against deterministic fetch
+responses: Images API parameters, base64-only output, unsupported usage breakdown,
+no retries on rate limiting and a 30 MiB response-stream boundary. These are wire
+contract tests, not proof of a live model response. `pnpm smoke` covers the built
+Next → Nest → PostgreSQL → test-provider → private preview → MediaAsset →
+ContentMedia flow, binary equality and unchanged draft text. CI has no paid key.
+
+2026-10-26 local acceptance: 84 API tests and 1 worker test passed. All eight
+migrations applied to a new PostgreSQL 16 database; the existing test schema also
+upgraded forward without resets. Browser Chrome desktop and 390px used a disposable
+hypothetical test organization with Qos Workspace and ISIS Türkiye. Four mocked
+image requests: first discarded, second saved/attached and recovered after refresh,
+third landscape/medium preview discarded on mobile; fourth portrait/high preview
+verified immediate shared-usage refresh without making text preferences dirty, then
+was discarded. Dirty draft text survived
+image actions; text was saved only through its separate Save button. Media Library
+and attachments show AI provenance; ISIS lists/pickers exclude Qos assets. Mobile
+document width was exactly 390px and protected PNGs decoded correctly. Setting a
+USD 1 budget in this disposable account disabled generation with an explicit
+explanation. Logout followed by direct file access returned 401. Browser warning/
+error logs were empty. A browser-discovered no-result JSON bug was fixed and
+covered by a regression test.
+
+**Live image provider evidence: not performed; zero paid image requests.** The
+existing real owner's USD 1 preference was not changed. A trustworthy pre-request
+cost bound is unavailable, so that selected budget cannot authorize this image
+path. Real OpenAI image availability, visual quality and actual usage remain for
+a separately authorized limited live acceptance. Mock token/cost values are not
+provider billing evidence. Screenshots and local test logs remain outside source;
+CI result is recorded against the PR commit. No owner/product acceptance is implied.
+
+### SYN-008 PR #17 review follow-up — 2026-10-26
+
+Rechecked official Flare model, pricing, Images API schema and the current image
+cost guide. The [reservation research](contracts/ai-image-generation.md#pr-17-budget-review--2026-10-26)
+distinguishes output-cost estimates from a verified total request upper bound.
+No reliable bound was established; existing selected-budget blocking and runtime
+model/pricing are unchanged. No paid requests or owner preference changes.
+
+Added a real PostgreSQL regression for IMG-002/006: each of the nine supported
+size/quality combinations receives two concurrent confirmed requests with a USD 1
+monthly preference, prior settled text usage, and text paid-confirmation disabled.
+All 18 requests return the documented 409 cost-bound explanation. Provider call
+count, the complete preference row and existing shared usage ledger remain
+unchanged. API preferences expose the limitation and retain the USD 1 value.
+
+Local suite: 85 API tests and 1 worker test passed. Browser runtime/UI is unchanged;
+no new browser or live-provider acceptance is claimed. Current-head CI is linked
+from PR #17; earlier screenshots/CI remain evidence for their recorded commit.

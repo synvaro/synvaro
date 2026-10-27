@@ -13,7 +13,7 @@ UTC timestamps are used; authentication secrets are hashes, not plaintext.
 | Brand | id, organizationId FK, name, slug, nullable description, createdAt, updatedAt; unique (organizationId, slug) |
 | BrandProfile | id, unique brandId FK, description, targetAudience, toneOfVoice, nullable defaultLanguage, contentGuidelines, createdAt, updatedAt |
 | Content | id, brandId FK, title (200), body text (empty allowed), status DRAFT, createdAt, updatedAt; index (brandId, updatedAt DESC, id DESC) |
-| MediaAsset | id, brandId FK (RESTRICT delete), originalFilename (255), unique opaque UUID storageKey, mimeType, sizeBytes Int (20 MiB max), nullable width/height/durationMs, origin UPLOADED, createdAt; index (brandId, createdAt DESC, id DESC) |
+| MediaAsset | id, brandId FK (RESTRICT delete), originalFilename (255), unique opaque UUID storageKey, mimeType, sizeBytes Int (20 MiB max), nullable width/height/durationMs, origin UPLOADED or AI_GENERATED, createdAt; index (brandId, createdAt DESC, id DESC) |
 
 | ContentMedia | composite PK (contentId, mediaAssetId), cascading FKs to Content and MediaAsset, position Int, createdAt; indexes (contentId, position, mediaAssetId), (mediaAssetId) |
 
@@ -34,6 +34,12 @@ User 1:0..1 AiPreference: enabled (false), supported model, maxOutputTokens (512
 AiGeneration: UUID, userId and contentId (RESTRICT foreign keys for attributable usage), unique (userId, requestId), model, maxOutputTokens, COUNTING/RUNNING/SUCCEEDED/FAILED/BLOCKED status, optional input/output tokens and estimatedCostMicros, budgetChargeMicros, costUncertain, sanitized errorCode, createdAt/completedAt. Indexes (userId, createdAt) and contentId. No prompt, instruction, suggestion text or media bytes are persisted. The explicit owner reference supports per-user preferences and budget locking; authorization still follows Content → Brand → Organization → User.
 
 See [AIG-001–005](contracts/ai-draft-generation.md) for reservation and uncertainty semantics. Generation never updates Content; explicit application uses the existing draft PATCH.
+
+SYN-008 extends AiPreference with imageEnabled (false), imageModel (gpt-image-2.5-flare), imageSize (1024x1024), imageQuality (low). The monthly budget remains shared with text generation.
+
+AiGeneration adds kind (TEXT default / IMAGE), provider (openai), imageSize/quality, inputImageTokens, unique nullable previewKey, previewExpiresAt (indexed), and unique nullable mediaAssetId FK (RESTRICT). Existing text rows and accounting are preserved. For images, inputTokens is text input usage; inputImageTokens tracks image input separately; maxOutputTokens is zero (not an image API setting). An unknown image charge is costUncertain=true, not a free request, even when budgetChargeMicros is zero.
+
+Accepted MediaAsset has one optional generation provenance relation, including provider/model/settings/time. The same private object becomes the accepted asset; no image duplication. No prompt or instruction is persisted. See [IMG-001–007](contracts/ai-image-generation.md).
 
 ## Remaining design draft (not migrated)
 
@@ -56,7 +62,7 @@ otherwise noted.
 | contents | Implemented as Content above; idea/type and non-draft states remain outside this slice |
 | content_revisions | content_id, revision_no, body, created_by, immutable_snapshot |
 | content_variants | content_revision_id, platform, caption, status |
-| assets | Uploaded originals implemented as MediaAsset above; generated assets and other origins remain planned |
+| assets | Uploaded originals implemented as MediaAsset above; accepted AI images implemented in SYN-008; other origins remain planned |
 | content_assets | Current draft attachments implemented as ContentMedia above; publication variants/purpose remain planned |
 | generation_jobs | brand_id, content_id?, type, provider, model, status, cost_usd |
 | generation_outputs | generation_job_id, asset_id?, text_output?, metadata |
