@@ -98,6 +98,7 @@ model Content {
 enum MediaOrigin {
   AI_GENERATED
   AI_EDITED
+  AI_VOICE
   UPLOADED
 }
 
@@ -136,6 +137,7 @@ model ContentMedia {
 }
 
 model AiPreference {
+  speechEnabled Boolean @default(false)
   imageEnabled Boolean @default(false)
   imageModel String @default("gpt-image-2.5-flare") @db.VarChar(80)
   imageSize String @default("1024x1024") @db.VarChar(20)
@@ -162,9 +164,13 @@ enum AiGenerationStatus {
 enum AiGenerationKind {
   TEXT
   IMAGE
+  SPEECH
 }
 
 model AiGeneration {
+  voiceId String? @db.VarChar(80)
+  narrationCharacters Int?
+  providerCharacterCost Int?
   reconciliation AiGenerationReconciliation?
   kind AiGenerationKind @default(TEXT)
   provider String @default("openai") @db.VarChar(40)

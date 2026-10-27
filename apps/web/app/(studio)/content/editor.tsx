@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { ImagePanel } from './image-panel';
+import { VoicePanel } from './voice-panel';
 import { AiPanel } from './ai-panel';
 import { AttachedMedia } from './attachments';
 import { useEffect, useRef, useState } from 'react';
@@ -234,6 +235,15 @@ export function DraftEditor({
           contentId={content.id}
           brandId={brand.id}
           brandName={brand.name}
+          disabled={busy || !!leaving}
+          onAttached={() => setAttachmentVersion((v) => v + 1)}
+        />
+      )}
+      {content && (
+        <VoicePanel
+          contentId={content.id}
+          brandName={brand.name}
+          savedBody={saved.body}
           disabled={busy || !!leaving}
           onAttached={() => setAttachmentVersion((v) => v + 1)}
         />

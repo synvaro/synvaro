@@ -46,6 +46,7 @@ class GenerationProvenanceDto {
   sourceMediaAssetId!: string | null;
   @ApiProperty({ type: String, nullable: true }) providerGenerationId!:
     string | null;
+  @ApiProperty({ type: String, nullable: true }) voiceId!: string | null;
   @ApiProperty({ type: String, format: 'date-time' }) createdAt!: string;
 }
 export class AssetDto {
@@ -60,14 +61,14 @@ export class AssetDto {
   @ApiProperty({ type: String, maxLength: 255 }) originalFilename!: string;
   @ApiProperty({
     type: String,
-    enum: ['image/jpeg', 'image/png', 'image/webp', 'video/mp4'],
+    enum: ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'audio/mpeg'],
   })
   mimeType!: string;
   @ApiProperty({ type: Number, maximum: 20971520 }) sizeBytes!: number;
   @ApiProperty({ type: Number, nullable: true }) width!: number | null;
   @ApiProperty({ type: Number, nullable: true }) height!: number | null;
   @ApiProperty({ type: Number, nullable: true }) durationMs!: number | null;
-  @ApiProperty({ enum: ['UPLOADED', 'AI_GENERATED', 'AI_EDITED'] })
+  @ApiProperty({ enum: ['UPLOADED', 'AI_GENERATED', 'AI_EDITED', 'AI_VOICE'] })
   origin!: string;
   @ApiProperty({ type: String, format: 'date-time' }) createdAt!: string;
 }
@@ -202,7 +203,7 @@ export class MediaController {
     res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
     res.setHeader(
       'Content-Disposition',
-      `inline; filename="media-${asset.id}.${asset.mimeType === 'video/mp4' ? 'mp4' : asset.mimeType.split('/')[1]}"`,
+      `inline; filename="media-${asset.id}.${asset.mimeType === 'video/mp4' ? 'mp4' : asset.mimeType === 'audio/mpeg' ? 'mp3' : asset.mimeType.split('/')[1]}"`,
     );
     return new StreamableFile(stream);
   }

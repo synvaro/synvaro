@@ -104,6 +104,16 @@ export class ModelCatalogController {
                         type: 'array',
                         items: { type: 'string' },
                       },
+                      maxCharacters: { type: 'integer' },
+                    },
+                  },
+                  {
+                    type: 'object',
+                    properties: {
+                      outputFormats: {
+                        type: 'array',
+                        items: { type: 'string' },
+                      },
                       sizes: { type: 'array', items: { type: 'string' } },
                       qualities: { type: 'array', items: { type: 'string' } },
                       aspectRatios: {

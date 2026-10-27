@@ -189,6 +189,13 @@ export function MediaWorkspace({
                       src={`/api/media/${asset.id}/file`}
                       aria-label={asset.originalFilename}
                     /> /* Authenticated originals must bypass public image optimization caches. */
+                  ) : asset.mimeType === 'audio/mpeg' ? (
+                    <audio
+                      controls
+                      preload="metadata"
+                      src={`/api/media/${asset.id}/file`}
+                      aria-label={asset.originalFilename}
+                    />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -199,19 +206,26 @@ export function MediaWorkspace({
                   )}
                   <h3>{asset.originalFilename}</h3>
                   {(asset.origin === 'AI_GENERATED' ||
-                    asset.origin === 'AI_EDITED') && (
+                    asset.origin === 'AI_EDITED' ||
+                    asset.origin === 'AI_VOICE') && (
                     <p>
                       <span className="badge">
                         {asset.origin === 'AI_EDITED'
                           ? 'AI EDITED'
-                          : 'AI GENERATED'}
+                          : asset.origin === 'AI_VOICE'
+                            ? 'AI VOICE'
+                            : 'AI GENERATED'}
                       </span>{' '}
                       {asset.origin === 'AI_EDITED'
                         ? 'Review product details against the original.'
-                        : 'Conceptual visual, not authentic product photography.'}{' '}
+                        : asset.origin === 'AI_VOICE'
+                          ? 'Generated narration; review pronunciation before use.'
+                          : 'Conceptual visual, not authentic product photography.'}{' '}
                       {asset.origin === 'AI_EDITED'
                         ? 'AI-edited'
-                        : 'AI-generated'}{' '}
+                        : asset.origin === 'AI_VOICE'
+                          ? 'AI-generated voice'
+                          : 'AI-generated'}{' '}
                       · {asset.generation?.provider} · {asset.generation?.model}
                     </p>
                   )}

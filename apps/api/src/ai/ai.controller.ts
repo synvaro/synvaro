@@ -36,6 +36,7 @@ import {
 } from './providers/models.js';
 const preference = z
   .object({
+    speechEnabled: z.boolean().optional(),
     imageEnabled: z.boolean().optional(),
     imageModel: z.enum([IMAGE_MODEL, GOOGLE_IMAGE_MODEL]).optional(),
     imageSize: z.enum([...IMAGE_SIZES, ...GOOGLE_IMAGE_SIZES]).optional(),
@@ -113,6 +114,7 @@ export class AiController {
         'confirmPaid',
       ],
       properties: {
+        speechEnabled: { type: 'boolean' },
         imageEnabled: { type: 'boolean' },
         imageModel: { type: 'string', enum: [IMAGE_MODEL, GOOGLE_IMAGE_MODEL] },
         imageSize: {

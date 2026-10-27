@@ -243,7 +243,8 @@ preferences and accounting are unchanged; no database migration is needed.
 `AVAILABLE` checks local adapter/key/storage/pricing prerequisites, not paid account
 access. `NOT_CONFIGURED` is an implemented integration missing prerequisites.
 `PLANNED` never executes. `GOOGLE_API_KEY` configures implemented Gemini text;
-`ELEVENLABS_API_KEY` is a future placeholder and does not enable an adapter.
+`ELEVENLABS_API_KEY` enables the implemented speech adapter when private media
+storage is configured. It does not prove account credit or model entitlement.
 Never add `NEXT_PUBLIC_` provider keys. Follow the
 [provider contract](contracts/ai-provider-foundation.md) when adding a capability;
 reverify official IDs, account access and capability-specific cost bounds first.
@@ -256,8 +257,20 @@ Set server-only `GOOGLE_API_KEY` to enable the implemented Gemini text adapter.
 Configuration does not establish account/model access. Never put a key in browser
 variables. Google free-tier data terms and the selected-budget block are described in
 [the Google contract](contracts/google-gemini-text.md); live acceptance requires
-separate authorization. Google image is a separate integration; video and
-ElevenLabs remain planned.
+separate authorization. Google image is a separate integration; Google video
+remains planned. ElevenLabs speech is documented below.
+
+### ElevenLabs voice generation (SYN-AI-004)
+
+Set server-only `ELEVENLABS_API_KEY` for the premade voice list and synchronous
+`eleven_multilingual_v2` TTS. If account voice listing is restricted, optionally
+set `ELEVENLABS_VOICE_ID` to an actual premade voice ID from the same account;
+the API validates it with ElevenLabs before offering it. No browser key is used.
+Generated MP3 previews live under the configured private `MEDIA_STORAGE_ROOT`
+for one hour; back up that root and PostgreSQL together. A selected monthly USD
+budget blocks paid TTS because provider character credits cannot currently be
+converted into a trustworthy USD reservation. The owner's existing budget is
+never changed by setup. See [VOC-001–006](contracts/elevenlabs-voice-generation.md).
 
 ### Google image generation and editing (SYN-AI-003)
 

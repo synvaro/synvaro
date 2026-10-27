@@ -30,6 +30,7 @@ export const mediaSelect = {
       imageAspectRatio: true,
       sourceMediaAssetId: true,
       providerGenerationId: true,
+      voiceId: true,
       createdAt: true,
     },
   },

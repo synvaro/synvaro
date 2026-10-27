@@ -533,3 +533,40 @@ Missing or ambiguous usage is recorded as uncertain; it is not claimed as a
 zero provider charge. No paid Google image calls, live model acceptance or
 production verification occurred. Desktop and 390px browser verification is
 reported separately from the mocked API tests.
+## SYN-AI-004 ElevenLabs voice generation — 2026-10-27
+
+- Branch: `feat/syn-ai-004-elevenlabs-voice`; implementation is pending PR review.
+- Official API/model verification: `eleven_multilingual_v2` Turkish TTS,
+  synchronous `/v1/text-to-speech/:voice_id`, premade voice listing via
+  `/v2/voices`, `mp3_44100_128`, response `character-cost` and `request-id`
+  where available. References and limits are in
+  [VOC-001–006](contracts/elevenlabs-voice-generation.md).
+- Applied all 11 forward-only Prisma migrations on a **clean isolated real
+  PostgreSQL** `synvaro_voice_test` database. No existing user data was reset.
+- Format, lint, typecheck, Prisma validate and build passed. Full tests:
+  **102 API + 1 worker**, zero failures. The new real-PostgreSQL voice test
+  covers preferences, selected-budget block, session and organization isolation,
+  voice/model validation, Turkish MP3 preview, exact bytes, save/attach, draft
+  preservation, concurrent request rejection, discard, expiry and malformed
+  output. Deterministic HTTP adapter tests cover voice filtering, bounded MP3,
+  timeout and provider errors.
+- [PR #24 CI at implementation commit](https://github.com/synvaro/synvaro/actions/runs/40528145948)
+  passed its PostgreSQL migration, test, build and smoke gates. CI uses
+  deterministic provider responses and no paid ElevenLabs key.
+- Built Next.js → NestJS → PostgreSQL smoke passed with a deterministic local
+  audio provider. It checked selected-budget refusal before generation, Origin
+  rejection, voice listing, protected preview, save to private Media Library,
+  attachment without copying bytes and unchanged saved draft body. This is
+  **mock-provider evidence**, not a live ElevenLabs response.
+- Chrome desktop and 390px walkthrough on the isolated test database: registered
+  a hypothetical account/brand/draft, enabled the voice preference, selected
+  the mock premade Turkish voice, explicitly confirmed generation, saw the
+  protected player and character usage, saved the MP3, attached it and
+  refreshed. The saved title/body and audio attachment remained visible.
+  The 390px voice selector, narration field, player and attach control stayed
+  usable without horizontal overflow. This verifies rendered Studio behavior
+  with a deterministic provider, not real ElevenLabs voice quality.
+- No paid ElevenLabs request was made. Account entitlement, voice quality,
+  commercial-use rights and actual USD charges remain unverified. The owner's
+  existing USD 1 monthly preference and historical Gemini uncertainty were
+  not altered. With any selected USD ceiling, voice generation stays blocked.

@@ -622,3 +622,9 @@ fieldset .button,
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   gap: 1rem;
 }
+.media-card audio,
+.ai-panel audio {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+}

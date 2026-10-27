@@ -1,5 +1,6 @@
 // Test-only executable, never imported by main.ts. No production mock-provider flag.
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { createApp } from '../app.js';
 import { loadConfig } from '../config.js';
 import { AiService } from '../ai/ai.service.js';
@@ -88,6 +89,35 @@ const previewImage = async (request: { aspectRatio?: string }) => {
 };
 googleImage.generate = previewImage;
 googleImage.edit = previewImage;
+
+// Local acceptance uses a generated tone, not a paid ElevenLabs request.
+const { ElevenLabsProvider } = await import('../ai/elevenlabs-provider.js');
+const voice = app.get(ElevenLabsProvider);
+voice.configured = () => true;
+voice.voices = async () => [
+  { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'Premade test voice', languages: ['tr'] },
+];
+voice.generate = async (request) => ({
+  bytes: execFileSync('ffmpeg', [
+    '-v',
+    'error',
+    '-f',
+    'lavfi',
+    '-i',
+    'sine=frequency=440:duration=0.5',
+    '-codec:a',
+    'libmp3lame',
+    '-b:a',
+    '128k',
+    '-f',
+    'mp3',
+    'pipe:1',
+  ]),
+  mimeType: 'audio/mpeg',
+  model: request.model,
+  characterCost: [...request.text].length,
+  providerGenerationId: 'mock-elevenlabs-voice',
+});
 
 const config = loadConfig();
 await app.listen(config.port, config.host);

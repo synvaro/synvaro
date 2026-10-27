@@ -29,6 +29,7 @@ import {
   IMAGE_PRICING_EXPIRES,
 } from './image-provider.js';
 export interface Preferences {
+  speechEnabled?: boolean;
   imageEnabled?: boolean;
   imageModel?: string;
   imageSize?: string;
@@ -41,6 +42,7 @@ export interface Preferences {
   confirmPaid: boolean;
 }
 export const DEFAULTS: Preferences = {
+  speechEnabled: false,
   imageEnabled: false,
   imageModel: IMAGE_MODEL,
   imageSize: IMAGE_SIZES[0],
@@ -115,6 +117,7 @@ export class AiService {
     return {
       preferences: p
         ? {
+            speechEnabled: p.speechEnabled,
             imageEnabled: p.imageEnabled,
             imageModel: p.imageModel,
             imageSize: p.imageSize,
