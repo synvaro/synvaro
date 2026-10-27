@@ -23,7 +23,7 @@ required. No automatic routing, orchestration, publishing or provider discovery.
 
 ## Implemented versus planned (verified 2026-10-27)
 
-Executable combinations remain OpenAI `gpt-6-luna` text and
+Executable combinations are Google `gemini-3.8-flash` text, OpenAI `gpt-6-luna` text and
 `gpt-image-2.5-flare` image generation. Parameters and prices are unchanged:
 Responses API, reasoning none, standard tier, store false; Images API n=1 PNG,
 opaque, moderation auto, three existing sizes and low/medium/high quality.
@@ -31,7 +31,7 @@ opaque, moderation auto, three existing sizes and low/medium/high quality.
 [image model](https://developers.openai.com/api/docs/models/gpt-image-2.5-flare).
 
 Reference-only planned combinations:
-- Google `gemini-3.8-flash` text and `gemini-nano-banana-2.1` image:
+- Google `gemini-nano-banana-2.1` image:
   [official model catalog](https://ai.google.dev/gemini-api/docs/models).
 - Google `gemini-omni-1.1-flash` video and image-to-video:
   [official model](https://ai.google.dev/gemini-api/docs/models/gemini-omni-flash).
@@ -57,8 +57,8 @@ Future callers must authorize and reserve before start, preserve uncertain charg
 across interruption, and validate/store results privately. Provider operation IDs
 are server-side provenance, not authorization credentials.
 
-OPENAI_API_KEY remains the only consumed provider key. GOOGLE_API_KEY and
-ELEVENLABS_API_KEY are documented placeholders; setting them implements nothing.
+OPENAI_API_KEY and GOOGLE_API_KEY are consumed server-side by their implemented adapters.
+ELEVENLABS_API_KEY remains a planned placeholder.
 No credentials in catalog, browser, database or logs. AVAILABLE means local
 prerequisites are present, not a paid health check or proof of provider entitlement.
 Catalog reads never contact providers and use no-store responses.
@@ -67,9 +67,7 @@ Catalog reads never contact providers and use no-store responses.
 
 The domain services retain authorization, context construction, transactions,
 preferences, reservations, usage settlement and private preview lifecycle.
-Adapters perform bounded provider calls with no retries. Text can reserve a
-conservative bound using counted input and maximum output; images can estimate
-returned usage only. Missing/invalid usage remains uncertain, never free.
+Adapters perform bounded provider calls with no retries. OpenAI text can reserve a conservative bound. Google text and images are estimate-only; selected-budget execution fails closed. Missing/invalid usage remains uncertain, never free.
 The catalog distinguishes CONSERVATIVE_BOUND, ESTIMATE_ONLY and UNAVAILABLE.
 Any selected spending ceiling continues to block image generation before dispatch.
 Text and image charges share the existing user ledger and lock. Catalog availability
@@ -78,9 +76,11 @@ Pricing review expiry remains November 25; catalog verification does not extend 
 
 ## Limitations
 
-Only two OpenAI capability/model combinations execute. Google, ElevenLabs, editing,
+OpenAI text/image and Google text execute; Google image/video, ElevenLabs, editing,
 video and image-to-video are unimplemented. No database-managed credentials,
 voice cloning, billing system, automatic retries or live provider claims. Future
 adapters must implement their own validated pricing/reservation semantics before
 being admitted to budgeted execution. Existing development-only auth limitations
 and SYN-008 cleanup/uncertain-charge limitations remain in their canonical contracts.
+
+Google details and counting limitation: [SYN-AI-002](google-gemini-text.md).

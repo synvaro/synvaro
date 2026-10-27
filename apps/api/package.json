@@ -11,6 +11,7 @@
     "test": "pnpm build && node --test --test-concurrency=1 dist/test/*.test.js"
   },
   "dependencies": {
+    "@google/genai": "2.31.0",
     "@nestjs/common": "12.2.0",
     "@nestjs/core": "12.2.0",
     "@nestjs/platform-express": "12.2.0",

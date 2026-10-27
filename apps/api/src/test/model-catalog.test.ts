@@ -1,3 +1,4 @@
+import { GoogleTextProvider } from '../ai/google-text-provider.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ModelCatalogService } from '../ai/providers/catalog.service.js';
@@ -21,12 +22,21 @@ test('AIP-002: catalog derives availability without provider calls or leaking ke
       throw new Error('No network');
     },
   };
-  const catalog = new ModelCatalogService(text, image);
+  const catalog = new ModelCatalogService(
+    text,
+    image,
+    new GoogleTextProvider(),
+  );
   catalog.now = () => new Date('2026-10-27');
   const previous = process.env.MEDIA_STORAGE_ROOT;
   const google = process.env.GOOGLE_API_KEY;
   const eleven = process.env.ELEVENLABS_API_KEY;
   try {
+    delete process.env.GOOGLE_API_KEY;
+    assert.equal(
+      catalog.read().models.find((m) => m.model === 'gemini-3.8-flash')?.status,
+      'NOT_CONFIGURED',
+    );
     process.env.GOOGLE_API_KEY = 'test-only-not-a-real-key';
     process.env.ELEVENLABS_API_KEY = 'test-only-not-a-real-key';
     delete process.env.MEDIA_STORAGE_ROOT;
@@ -40,12 +50,12 @@ test('AIP-002: catalog derives availability without provider calls or leaking ke
     configured = true;
     rows = catalog.read().models;
     assert.equal(rows[0]!.status, 'AVAILABLE');
-    assert.equal(rows[1]!.status, 'NOT_CONFIGURED');
+    assert.equal(rows[2]!.status, 'NOT_CONFIGURED');
     process.env.MEDIA_STORAGE_ROOT = '/tmp/test-only-catalog';
     rows = catalog.read().models;
-    assert.equal(rows.filter((m) => m.status === 'AVAILABLE').length, 2);
+    assert.equal(rows.filter((m) => m.status === 'AVAILABLE').length, 3);
     assert.equal(rows[0]!.cost.capability, 'CONSERVATIVE_BOUND');
-    assert.equal(rows[1]!.cost.capability, 'ESTIMATE_ONLY');
+    assert.equal(rows[2]!.cost.capability, 'ESTIMATE_ONLY');
     assert.equal(
       rows.filter((m) => m.capability === 'IMAGE_EDITING')[0]!.status,
       'PLANNED',

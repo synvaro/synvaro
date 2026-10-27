@@ -1,3 +1,4 @@
+import { GoogleTextProvider } from './google-text-provider.js';
 import { TEXT_PROVIDER, IMAGE_PROVIDER } from './providers/contracts.js';
 import { ModelCatalogService } from './providers/catalog.service.js';
 import { ModelCatalogController } from './providers/catalog.controller.js';
@@ -15,6 +16,7 @@ import { OpenAIImageProvider } from './image-provider.js';
   controllers: [AiController, ImageController, ModelCatalogController],
   providers: [
     AiService,
+    GoogleTextProvider,
     OpenAITextProvider,
     ImageService,
     OpenAIImageProvider,

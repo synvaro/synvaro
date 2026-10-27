@@ -46,5 +46,17 @@ imageProvider.generate = async (request) => {
     outputTokens: 200,
   };
 };
+// Deterministic Gemini adapter for local/CI browser and smoke acceptance only.
+const { GoogleTextProvider } = await import('../ai/google-text-provider.js');
+const google = app.get(GoogleTextProvider);
+google.configured = () => true;
+google.count = async () => 100;
+google.generate = async (request) => ({
+  text: 'Hypothetical Google test-provider suggestion; no released claims.',
+  model: request.model,
+  inputTokens: 100,
+  outputTokens: 50,
+});
+
 const config = loadConfig();
 await app.listen(config.port, config.host);
