@@ -65,6 +65,15 @@ ContentMedia relations are reused. No full prompt or video bytes enter PostgreSQ
 The shared USD ledger excludes uncertain ElevenLabs credit-only rows from its
 USD uncertainty admission check; those records remain in the ledger.
 
+SYN-AI-006 adds `ReelRender` for local FFmpeg work: owner User and Content FKs,
+unique `(userId, requestId)`, ordered scene JSON, optional narration asset ID,
+QUEUED/RUNNING/SUCCEEDED/FAILED status, duration, safe error code, private
+preview key/expiry, optional accepted MediaAsset FK and lifecycle timestamps.
+A partial unique index allows one active render per user. Accepted assets have
+`REEL_ASSEMBLED` origin; ContentMedia links them without copying bytes. No
+AiGeneration record or provider charge is created. See
+[REEL-001–008](contracts/reels-assembly.md).
+
 ## Remaining design draft (not migrated)
 
 The historical broader draft below is not an implementation commitment. Current

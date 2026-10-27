@@ -38,6 +38,15 @@ export const mediaSelect = {
       createdAt: true,
     },
   },
+  reelOutput: {
+    select: {
+      id: true,
+      contentId: true,
+      scenes: true,
+      narrationAssetId: true,
+      createdAt: true,
+    },
+  },
 } as const;
 @Injectable()
 export class MediaService {

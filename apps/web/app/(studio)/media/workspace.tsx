@@ -208,32 +208,40 @@ export function MediaWorkspace({
                   {(asset.origin === 'AI_GENERATED' ||
                     asset.origin === 'AI_EDITED' ||
                     asset.origin === 'AI_VOICE' ||
-                    asset.origin === 'AI_VIDEO') && (
+                    asset.origin === 'AI_VIDEO' ||
+                    asset.origin === 'REEL_ASSEMBLED') && (
                     <p>
                       <span className="badge">
-                        {asset.origin === 'AI_EDITED'
-                          ? 'AI EDITED'
-                          : asset.origin === 'AI_VIDEO'
-                            ? 'AI VIDEO'
-                            : asset.origin === 'AI_VOICE'
-                              ? 'AI VOICE'
-                              : 'AI GENERATED'}
+                        {asset.origin === 'REEL_ASSEMBLED'
+                          ? 'REEL ASSEMBLED'
+                          : asset.origin === 'AI_EDITED'
+                            ? 'AI EDITED'
+                            : asset.origin === 'AI_VIDEO'
+                              ? 'AI VIDEO'
+                              : asset.origin === 'AI_VOICE'
+                                ? 'AI VOICE'
+                                : 'AI GENERATED'}
                       </span>{' '}
-                      {asset.origin === 'AI_EDITED'
-                        ? 'Review product details against the original.'
-                        : asset.origin === 'AI_VIDEO'
-                          ? 'Generated video; review visual and audio details before use.'
-                          : asset.origin === 'AI_VOICE'
-                            ? 'Generated narration; review pronunciation before use.'
-                            : 'Conceptual visual, not authentic product photography.'}{' '}
-                      {asset.origin === 'AI_EDITED'
-                        ? 'AI-edited'
-                        : asset.origin === 'AI_VIDEO'
-                          ? 'AI-generated video'
-                          : asset.origin === 'AI_VOICE'
-                            ? 'AI-generated voice'
-                            : 'AI-generated'}{' '}
-                      · {asset.generation?.provider} · {asset.generation?.model}
+                      {asset.origin === 'REEL_ASSEMBLED'
+                        ? 'Local FFmpeg render from existing brand media.'
+                        : asset.origin === 'AI_EDITED'
+                          ? 'Review product details against the original.'
+                          : asset.origin === 'AI_VIDEO'
+                            ? 'Generated video; review visual and audio details before use.'
+                            : asset.origin === 'AI_VOICE'
+                              ? 'Generated narration; review pronunciation before use.'
+                              : 'Conceptual visual, not authentic product photography.'}{' '}
+                      {asset.origin === 'REEL_ASSEMBLED'
+                        ? 'Reel assembled locally'
+                        : asset.origin === 'AI_EDITED'
+                          ? 'AI-edited'
+                          : asset.origin === 'AI_VIDEO'
+                            ? 'AI-generated video'
+                            : asset.origin === 'AI_VOICE'
+                              ? 'AI-generated voice'
+                              : 'AI-generated'}{' '}
+                      {asset.generation?.provider &&
+                        `· ${asset.generation.provider} · ${asset.generation.model}`}
                     </p>
                   )}
                   {asset.generation?.sourceMediaAssetId && (

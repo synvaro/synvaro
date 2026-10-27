@@ -629,3 +629,28 @@ operation ID and uncertain usage remain, then completes it successfully and
 starts the one-hour preview TTL at completion. Existing completed-preview
 expiry still removes unsaved bytes. No migration or change to the owner's USD 1
 preference was needed. Full local and PR CI results are recorded separately.
+
+### SYN-AI-006 Reels Assembly — 2026-10-27
+
+On `feat/syn-ai-006-reels-assembly`, all 13 forward-only migrations applied to
+the clean isolated real PostgreSQL `synvaro_reels_test` database. Format, lint,
+typecheck, Prisma validation, 105 API + 1 worker tests, build and existing
+Next/Nest smoke passed locally. The new Reel integration test uses real HTTP,
+PostgreSQL and FFmpeg rather than mocked rendering. It covers mixed image/video
+scenes with Turkish overlays and MP3 narration, image-only and video-only
+renders, trims, H.264 1080×1920/30 fps output, AAC narration and silent video,
+private preview, 404 isolation, session/Origin checks, invalid duration,
+duplicate admission, discard, expiry, interrupted-job recovery, explicit
+save/attach and byte integrity. Saved source files and draft body remain
+unchanged; no AiGeneration row is created.
+
+Built local Next.js → NestJS → PostgreSQL browser walkthrough used a disposable
+hypothetical brand and draft, uploaded a synthetic PNG, rendered a three-second
+Reel with `Merhaba Türkiye` overlay, recovered its protected preview after
+refresh, saved it to Media Library and attached it to the draft. A second
+refresh preserved the attachment, and logout returned the browser to login.
+On a 390px
+Chrome viewport the Reel controls and video preview were visible with no
+horizontal overflow (`innerWidth=390`, `scrollWidth=390`). This is local
+development acceptance, not production performance or publishing acceptance.
+PR CI is tracked separately; it has not passed merely because local gates did.

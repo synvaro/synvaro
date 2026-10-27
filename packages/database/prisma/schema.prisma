@@ -19,6 +19,7 @@ model User {
   organization Organization?
   aiPreference AiPreference?
   aiGenerations AiGeneration[]
+  reelRenders ReelRender[]
 }
 
 model Session {
@@ -91,6 +92,7 @@ model Content {
 
   media ContentMedia[]
   aiGenerations AiGeneration[]
+  reelRenders ReelRender[]
 
   @@index([brandId, updatedAt(sort: Desc), id(sort: Desc)])
 }
@@ -100,6 +102,7 @@ enum MediaOrigin {
   AI_EDITED
   AI_VOICE
   AI_VIDEO
+  REEL_ASSEMBLED
   UPLOADED
 }
 
@@ -120,6 +123,8 @@ model MediaAsset {
   generation AiGeneration?
   sourceForGenerations AiGeneration[] @relation("ImageEditSource")
   contents ContentMedia[]
+  reelOutput ReelRender? @relation("ReelOutput")
+  reelNarrations ReelRender[] @relation("ReelNarration")
 
   @@index([brandId, createdAt(sort: Desc), id(sort: Desc)])
 }
@@ -230,4 +235,38 @@ model AiGenerationReconciliation {
   evidenceReference String @db.VarChar(500)
   operator String @db.VarChar(120)
   createdAt DateTime @default(now()) @db.Timestamptz(3)
+}
+
+enum ReelRenderStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+model ReelRender {
+  id String @id @default(uuid()) @db.Uuid
+  requestId String @db.Uuid
+  userId String @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  contentId String @db.Uuid
+  content Content @relation(fields: [contentId], references: [id], onDelete: Restrict)
+  scenes Json
+  narrationAssetId String? @db.Uuid
+  narrationAsset MediaAsset? @relation("ReelNarration", fields: [narrationAssetId], references: [id], onDelete: Restrict)
+  status ReelRenderStatus @default(QUEUED)
+  previewKey String? @unique @db.Uuid
+  previewExpiresAt DateTime? @db.Timestamptz(3)
+  mediaAssetId String? @unique @db.Uuid
+  mediaAsset MediaAsset? @relation("ReelOutput", fields: [mediaAssetId], references: [id], onDelete: Restrict)
+  durationMs Int
+  errorCode String? @db.VarChar(40)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  startedAt DateTime? @db.Timestamptz(3)
+  completedAt DateTime? @db.Timestamptz(3)
+
+  @@unique([userId, requestId])
+  @@index([userId, status])
+  @@index([contentId, createdAt(sort: Desc)])
+  @@index([previewExpiresAt])
 }

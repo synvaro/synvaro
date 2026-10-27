@@ -6,7 +6,8 @@ ContentMedia links an existing Content draft to an existing MediaAsset. No file 
 copied, transformed or uploaded by this domain. Ownership follows each parent's
 Brand → Organization → User. Both parents must belong to the same brand.
 The same relation also attaches accepted `AI_VOICE` MP3 assets; attachment
-ordering and isolation rules are unchanged.
+ordering and isolation rules are unchanged. Accepted `REEL_ASSEMBLED` MP4s use
+the same relationship without copying rendered or source files.
 
 ## Rules and concurrency
 

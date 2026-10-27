@@ -132,7 +132,9 @@ export function AttachedMedia({
                   ? 'AI generated · '
                   : asset.origin === 'AI_EDITED'
                     ? 'AI edited · '
-                    : ''}
+                    : asset.origin === 'REEL_ASSEMBLED'
+                      ? 'Reel assembled · '
+                      : ''}
                 {asset.originalFilename} ({asset.mimeType})
               </option>
             ))}
@@ -208,24 +210,29 @@ export function AttachedMedia({
               {(item.asset.origin === 'AI_GENERATED' ||
                 item.asset.origin === 'AI_EDITED' ||
                 item.asset.origin === 'AI_VOICE' ||
-                item.asset.origin === 'AI_VIDEO') && (
+                item.asset.origin === 'AI_VIDEO' ||
+                item.asset.origin === 'REEL_ASSEMBLED') && (
                 <p>
                   <span className="badge">
-                    {item.asset.origin === 'AI_EDITED'
-                      ? 'AI EDITED'
-                      : item.asset.origin === 'AI_VIDEO'
-                        ? 'AI VIDEO'
-                        : item.asset.origin === 'AI_VOICE'
-                          ? 'AI VOICE'
-                          : 'AI GENERATED'}
+                    {item.asset.origin === 'REEL_ASSEMBLED'
+                      ? 'REEL ASSEMBLED'
+                      : item.asset.origin === 'AI_EDITED'
+                        ? 'AI EDITED'
+                        : item.asset.origin === 'AI_VIDEO'
+                          ? 'AI VIDEO'
+                          : item.asset.origin === 'AI_VOICE'
+                            ? 'AI VOICE'
+                            : 'AI GENERATED'}
                   </span>{' '}
-                  {item.asset.origin === 'AI_EDITED'
-                    ? 'Review against the original image before use.'
-                    : item.asset.origin === 'AI_VIDEO'
-                      ? 'Generated video; review visual and audio details before use.'
-                      : item.asset.origin === 'AI_VOICE'
-                        ? 'Generated narration; review pronunciation before use.'
-                        : 'Conceptual visual, not authentic product photography.'}
+                  {item.asset.origin === 'REEL_ASSEMBLED'
+                    ? 'Local render from existing brand media.'
+                    : item.asset.origin === 'AI_EDITED'
+                      ? 'Review against the original image before use.'
+                      : item.asset.origin === 'AI_VIDEO'
+                        ? 'Generated video; review visual and audio details before use.'
+                        : item.asset.origin === 'AI_VOICE'
+                          ? 'Generated narration; review pronunciation before use.'
+                          : 'Conceptual visual, not authentic product photography.'}
                 </p>
               )}
               <div className="form-actions">

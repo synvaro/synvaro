@@ -123,6 +123,19 @@ behaviors. No Spexop-UI, provider adapters or AI generation capabilities are inc
 
 ## Private media storage (SYN-005)
 
+### Local Reels rendering (SYN-AI-006)
+
+Install `ffmpeg` and `ffprobe` on the API host. `FFMPEG_PATH` may specify the
+FFmpeg executable; ffprobe uses the host PATH. Reels are rendered by one local
+API process from private assets under `MEDIA_STORAGE_ROOT`. Keep this root on
+persistent private storage with free space for sources, an intermediate render
+and the accepted output. The first version supports one active render per
+owner, one API process on one host, a 180-second FFmpeg timeout, a 20 MiB output
+limit and one-hour unsaved preview expiry. RUNNING jobs interrupted by an API
+restart become FAILED; the user may explicitly submit a new render. No AI key
+or provider charge is used. Back up accepted Reels with the rest of Media
+Library and PostgreSQL. See [Reels contract](contracts/reels-assembly.md).
+
 Set `MEDIA_STORAGE_ROOT` in the API environment to an **absolute, persistent**
 directory outside the repository and every publicly served directory. There is no
 fallback. Provision it for the API service account with mode `0700`; files are
