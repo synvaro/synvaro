@@ -352,9 +352,22 @@ USD 1.00 monthly preference was not changed.
   not a billing hard cap.
 - The API was rebuilt and restarted from the repository-root `.env`;
   `GET /health` returned 200 and the Nest startup log mapped
-  `GET /ai/models`. The Chrome Studio session was at `/login`, so the
-  authenticated catalog and editor walkthrough remain pending a normal
-  owner login. No database session token was extracted or substituted.
+  `GET /ai/models`. An unauthenticated request through NestJS and Next.js
+  returned 401. The Chrome session was at `/login`; the owner then signed
+  in normally through Safari. The authenticated Safari session loaded
+  `/api/ai/models` and the existing hypothetical test draft. The Studio
+  model selector showed OpenAI and selectable
+  `google · gemini-3.8-flash` (its UI only enables `AVAILABLE` entries
+  from the backend catalog). Model selection was reverted before saving.
+  The USD 1.00 preference, paid confirmation, draft title and body remained
+  unchanged. Safari Responsive Design Mode at 390×874 showed the AI controls
+  in a single-column layout; no visible horizontal overflow was observed.
+  The desktop view was also usable. No database session token was extracted
+  or substituted.
+
+Before live acceptance, rotate the local Google credential and verify the
+replacement's project/model mapping. No credential value is included in
+this evidence or PR.
 
 The separate owner authorization for a live request and temporary budget
 change has **not** been given. No input/output/thinking usage, cost, preview,
