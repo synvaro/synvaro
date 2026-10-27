@@ -66,22 +66,27 @@ export interface SpeechProvider {
     characterCost?: number;
   }>;
 }
-export type VideoResult =
-  | { status: 'PENDING' }
-  | { status: 'FAILED'; code: 'PROVIDER_FAILURE' }
+export type VideoRequest = {
+  model: string;
+  prompt: string;
+  duration: string;
+  aspectRatio: string;
+  resolution: string;
+  source?: { bytes: Uint8Array; mimeType: string };
+};
+export type VideoObservation =
+  | { status: 'RUNNING'; operationId: string }
+  | { status: 'FAILED'; operationId: string }
   | {
-      status: 'COMPLETED';
-      bytes: Uint8Array;
-      mimeType: string;
-      usage?: { videoSeconds: number };
+      status: 'SUCCEEDED';
+      operationId: string;
+      bytes: Buffer;
+      inputTokens?: number;
+      outputTokens?: number;
+      outputVideoTokens?: number;
     };
 export interface VideoProvider {
-  start(request: {
-    model: string;
-    prompt: string;
-    durationSeconds: number;
-    aspectRatio: string;
-    sourceImage?: { bytes: Uint8Array; mimeType: string };
-  }): Promise<{ operationId: string }>;
-  retrieve(operationId: string): Promise<VideoResult>;
+  configured(): boolean;
+  start(request: VideoRequest): Promise<VideoObservation>;
+  retrieve(operationId: string): Promise<VideoObservation>;
 }

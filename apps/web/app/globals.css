@@ -628,3 +628,12 @@ fieldset .button,
   width: 100%;
   max-width: 100%;
 }
+.generated-video-preview {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  max-height: 70vh;
+  margin-block: 1rem;
+  border-radius: 0.75rem;
+  background: #111;
+}

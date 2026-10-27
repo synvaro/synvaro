@@ -1,6 +1,7 @@
 import { GoogleTextProvider } from '../ai/google-text-provider.js';
 import { GoogleImageProvider } from '../ai/google-image-provider.js';
 import { ElevenLabsProvider } from '../ai/elevenlabs-provider.js';
+import { GoogleVideoProvider } from '../ai/google-video-provider.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ModelCatalogService } from '../ai/providers/catalog.service.js';
@@ -30,12 +31,14 @@ test('AIP-002: catalog derives availability without provider calls or leaking ke
     new GoogleTextProvider(),
     new GoogleImageProvider(),
     new ElevenLabsProvider(),
+    new GoogleVideoProvider(),
   );
   catalog.now = () => new Date('2026-10-27');
   const previous = process.env.MEDIA_STORAGE_ROOT;
   const google = process.env.GOOGLE_API_KEY;
   const eleven = process.env.ELEVENLABS_API_KEY;
   const imageAccess = process.env.GOOGLE_IMAGE_PAID_TIER_CONFIRMED;
+  const videoAccess = process.env.GOOGLE_VIDEO_PAID_TIER_CONFIRMED;
   try {
     delete process.env.GOOGLE_API_KEY;
     assert.equal(
@@ -46,7 +49,7 @@ test('AIP-002: catalog derives availability without provider calls or leaking ke
     process.env.ELEVENLABS_API_KEY = 'test-only-not-a-real-key';
     delete process.env.MEDIA_STORAGE_ROOT;
     let rows = catalog.read().models;
-    assert.equal(rows.filter((m) => m.status === 'NOT_CONFIGURED').length, 5);
+    assert.equal(rows.filter((m) => m.status === 'NOT_CONFIGURED').length, 7);
     assert.ok(
       rows
         .filter((m) => !m.implemented)
@@ -68,6 +71,28 @@ test('AIP-002: catalog derives availability without provider calls or leaking ke
     process.env.GOOGLE_IMAGE_PAID_TIER_CONFIRMED = 'true';
     rows = catalog.read().models;
     assert.equal(rows.filter((m) => m.status === 'AVAILABLE').length, 6);
+    assert.equal(
+      rows
+        .filter(
+          (m) =>
+            m.capability === 'VIDEO_GENERATION' ||
+            m.capability === 'IMAGE_TO_VIDEO',
+        )
+        .every((m) => m.status === 'NOT_CONFIGURED'),
+      true,
+    );
+    process.env.GOOGLE_VIDEO_PAID_TIER_CONFIRMED = 'true';
+    rows = catalog.read().models;
+    assert.equal(
+      rows
+        .filter(
+          (m) =>
+            m.capability === 'VIDEO_GENERATION' ||
+            m.capability === 'IMAGE_TO_VIDEO',
+        )
+        .every((m) => m.status === 'AVAILABLE'),
+      true,
+    );
     assert.equal(rows[0]!.cost.capability, 'CONSERVATIVE_BOUND');
     assert.equal(rows[2]!.cost.capability, 'ESTIMATE_ONLY');
     assert.equal(
@@ -90,6 +115,7 @@ test('AIP-002: catalog derives availability without provider calls or leaking ke
     for (const [name, value] of [
       ['MEDIA_STORAGE_ROOT', previous],
       ['GOOGLE_IMAGE_PAID_TIER_CONFIRMED', imageAccess],
+      ['GOOGLE_VIDEO_PAID_TIER_CONFIRMED', videoAccess],
       ['GOOGLE_API_KEY', google],
       ['ELEVENLABS_API_KEY', eleven],
     ] as const) {

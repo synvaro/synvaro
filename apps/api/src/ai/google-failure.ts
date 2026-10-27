@@ -36,11 +36,18 @@ export function classifyGoogleFailure(
       ? error.status
       : error instanceof Response
         ? error.status
-        : null;
+        : error &&
+            typeof error === 'object' &&
+            'status' in error &&
+            typeof error.status === 'number' &&
+            Number.isSafeInteger(error.status)
+          ? error.status
+          : null;
   const name = error instanceof Error ? error.name : '';
   const category: GoogleFailureCategory =
     name === 'AbortError' ||
     name === 'TimeoutError' ||
+    /timeout|abort/i.test(name) ||
     status === 408 ||
     status === 504
       ? 'TIMEOUT'

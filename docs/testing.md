@@ -570,3 +570,62 @@ reported separately from the mocked API tests.
   commercial-use rights and actual USD charges remain unverified. The owner's
   existing USD 1 monthly preference and historical Gemini uncertainty were
   not altered. With any selected USD ceiling, voice generation stays blocked.
+
+## SYN-AI-005 Google video generation — 2026-10-27
+
+[VID-001–006](contracts/ai-video-generation.md) maps text-to-video,
+same-brand image-to-video, private preview, explicit save/attach, recovery,
+spending and isolation to real PostgreSQL and deterministic Google responses.
+All 12 forward-only migrations applied to a **clean isolated real PostgreSQL**
+`synvaro_video_test` database. Existing user data and the owner's USD 1
+preference were not touched.
+
+Local integration suite: **104 API + 1 worker tests, zero failures**. The
+video test exercises session/Origin checks, brand context, foreign draft/source
+404s, selected-budget refusal before a provider call, duplicate request IDs,
+concurrent admission with only one provider start, pending-to-completed
+observation after refresh, private byte/range retrieval, usage estimate,
+missing-usage uncertainty, invalid MP4 rejection, preview expiry, AI_VIDEO
+provenance, save/attach, source/draft preservation and discard. A separate SDK
+test verifies background create/get request parameters,
+one call per action, timeout/rate classification, rejection before network for
+unsupported settings and no raw provider error in the safe classification.
+Credit-only ElevenLabs uncertainty remains recorded while USD budgeted OpenAI
+text remains usable; an uncertain USD image charge still blocks admission.
+
+Built Next.js → NestJS → PostgreSQL smoke passed with a deterministic Google
+video provider. Chrome desktop walkthrough on the isolated test database used
+a hypothetical account, brand profile and saved draft: explicitly generated a
+text-to-video preview, played the protected MP4, saved and attached it, then
+refreshed and observed the attachment. A synthetic PNG was uploaded to the
+same brand; image-to-video showed the unchanged source beside the protected
+result and saved the new MP4 privately. At 390px the source and video previews,
+model/settings and controls remained usable with no horizontal overflow
+(`innerWidth` and document scroll width both 390px). The browser used local
+deterministic output, not Google. No publication or draft-text modification
+occurred. The owner's account and USD 1 preference were not used or changed.
+
+These are **mock-provider tests**; they do not demonstrate live Google model
+access, actual video quality, actual token usage or billed cost. The current
+Google project has no confirmed paid video access. No paid video request was
+made. CI results remain separate from local tests and browser evidence.
+
+### PR #25 review correction — 2026-10-27
+
+The reviewer identified two recovery risks at `096ebf8`. Google's
+[documented Files path](https://ai.google.dev/gemini-api/docs/omni#retrieving-videos-with-an-uri)
+can return only a provider URI for a completed interaction. The adapter now
+parses only a Google Files ID from that response, checks processing state with
+the official SDK, and streams at most 20 MiB from a constructed Google endpoint.
+It permits at most one redirect to `storage.googleapis.com` and sends no key to
+that host. Deterministic SDK tests cover completed URI-only success, foreign
+host rejection, oversized file metadata and an untrusted redirect. No paid
+provider call was made.
+
+Active `PENDING`/`RUNNING` video records no longer receive the one-hour
+completed-preview expiry or get terminalized by the preview sweep. A real
+PostgreSQL test holds a provider operation past one hour, verifies the same
+operation ID and uncertain usage remain, then completes it successfully and
+starts the one-hour preview TTL at completion. Existing completed-preview
+expiry still removes unsaved bytes. No migration or change to the owner's USD 1
+preference was needed. Full local and PR CI results are recorded separately.

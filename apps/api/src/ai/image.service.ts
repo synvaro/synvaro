@@ -223,7 +223,7 @@ export class ImageService implements OnModuleInit, OnModuleDestroy {
           where: {
             userId,
             OR: [
-              { status: { in: ['COUNTING', 'RUNNING'] } },
+              { status: { in: ['COUNTING', 'PENDING', 'RUNNING'] } },
               {
                 kind: 'IMAGE',
                 previewKey: { not: null },

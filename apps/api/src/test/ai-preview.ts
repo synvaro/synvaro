@@ -119,5 +119,45 @@ voice.generate = async (request) => ({
   providerGenerationId: 'mock-elevenlabs-voice',
 });
 
+// Deterministic Google video operation; no provider network or paid request.
+const { GoogleVideoProvider } = await import('../ai/google-video-provider.js');
+const video = app.get(GoogleVideoProvider);
+video.configured = () => true;
+let videoSequence = 0;
+video.start = async () => ({
+  status: 'RUNNING',
+  operationId: `mock-video-${++videoSequence}`,
+});
+video.retrieve = async (id) => ({
+  status: 'SUCCEEDED',
+  operationId: id,
+  bytes: execFileSync(
+    'ffmpeg',
+    [
+      '-v',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'color=c=blue:s=720x1280:r=24:d=3',
+      '-c:v',
+      'libx264',
+      '-preset',
+      'ultrafast',
+      '-pix_fmt',
+      'yuv420p',
+      '-movflags',
+      'frag_keyframe+empty_moov',
+      '-f',
+      'mp4',
+      'pipe:1',
+    ],
+    { maxBuffer: 20 * 1024 * 1024 },
+  ),
+  inputTokens: 100,
+  outputTokens: 18000,
+  outputVideoTokens: 17000,
+});
+
 const config = loadConfig();
 await app.listen(config.port, config.host);

@@ -81,6 +81,11 @@ OpenAPI documents multipart input, metadata, streaming/range responses and error
 
 ## Limitations and evidence
 
+SYN-AI-005 accepted Google video previews use the same private storage and
+become `AI_VIDEO` MediaAssets. The existing authenticated MP4 range endpoint
+and ContentMedia association apply; source images remain unchanged. See
+[VID-001–006](ai-video-generation.md).
+
 No editing, processing/transcoding, derivatives, AI, tagging, folders, deletion,
 content attachments, public URLs, provider integration or publishing. List pagination,
 quotas, malware scanning and distributed concurrency controls remain deferred.

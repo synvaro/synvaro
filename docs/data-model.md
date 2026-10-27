@@ -56,6 +56,15 @@ preview/media relationships and shared usage ledger are reused. Narration
 text and provider credentials are not persisted. Accepted MP3 is a new
 brand-owned MediaAsset; ContentMedia can associate it without copying bytes.
 
+SYN-AI-005 adds `videoEnabled` (false) to AiPreference, `VIDEO` to
+AiGenerationKind, `PENDING` to AiGenerationStatus, and `AI_VIDEO` to
+MediaOrigin. AiGeneration stores optional video duration/aspect/resolution,
+video output token usage, audio-track presence, the provider interaction ID,
+and an optional source MediaAsset ID. Existing preview, accepted-asset and
+ContentMedia relations are reused. No full prompt or video bytes enter PostgreSQL.
+The shared USD ledger excludes uncertain ElevenLabs credit-only rows from its
+USD uncertainty admission check; those records remain in the ledger.
+
 ## Remaining design draft (not migrated)
 
 The historical broader draft below is not an implementation commitment. Current

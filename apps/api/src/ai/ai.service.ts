@@ -30,6 +30,7 @@ import {
 } from './image-provider.js';
 export interface Preferences {
   speechEnabled?: boolean;
+  videoEnabled?: boolean;
   imageEnabled?: boolean;
   imageModel?: string;
   imageSize?: string;
@@ -43,6 +44,7 @@ export interface Preferences {
 }
 export const DEFAULTS: Preferences = {
   speechEnabled: false,
+  videoEnabled: false,
   imageEnabled: false,
   imageModel: IMAGE_MODEL,
   imageSize: IMAGE_SIZES[0],
@@ -83,7 +85,7 @@ export class AiService {
   }
   private async active(tx: Prisma.TransactionClient, userId: string) {
     return tx.aiGeneration.findFirst({
-      where: { userId, status: { in: ['COUNTING', 'RUNNING'] } },
+      where: { userId, status: { in: ['COUNTING', 'PENDING', 'RUNNING'] } },
     });
   }
   private month(now: Date) {
@@ -118,6 +120,7 @@ export class AiService {
       preferences: p
         ? {
             speechEnabled: p.speechEnabled,
+            videoEnabled: p.videoEnabled,
             imageEnabled: p.imageEnabled,
             imageModel: p.imageModel,
             imageSize: p.imageSize,
@@ -360,7 +363,7 @@ export class AiService {
         _sum: { budgetChargeMicros: true },
       });
       const uncertain = await tx.aiGeneration.findFirst({
-        where: { userId, costUncertain: true },
+        where: { userId, costUncertain: true, kind: { not: 'SPEECH' } },
       });
       if (
         p.monthlyBudgetMicros !== null &&

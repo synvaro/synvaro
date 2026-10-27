@@ -31,12 +31,14 @@ Rows not explicitly marked implemented describe planned capabilities.
 AI draft contract: [AIG-001–005](contracts/ai-draft-generation.md).
 
 AI image contract: [IMG-001–007](contracts/ai-image-generation.md).
-Google image generation and editing: [IMG-G001/002](contracts/google-image-generation-editing.md) (implementation pending PR review; paid live access unverified).
+Google image generation and editing: [IMG-G001/002](contracts/google-image-generation-editing.md) (merged; paid live access unverified).
 
 ### AI provider foundation — implemented
 
 SYN-AI-001 added backend model/capability discovery and interface-based
-injection. OpenAI text/image and Google text/image/editing are implemented;
-ElevenLabs speech is implemented on the SYN-AI-004 review branch. Video and
-image-to-video remain planned. See [AIP-001–005](contracts/ai-provider-foundation.md)
-and [VOC-001–006](contracts/elevenlabs-voice-generation.md).
+injection. OpenAI text/image, Google text/image/editing and ElevenLabs speech
+are merged. Google video and image-to-video are implemented on the SYN-AI-005
+review branch; paid live access is unverified. See
+[AIP-001–005](contracts/ai-provider-foundation.md),
+[VOC-001–006](contracts/elevenlabs-voice-generation.md) and
+[VID-001–006](contracts/ai-video-generation.md).
