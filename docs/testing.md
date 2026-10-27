@@ -507,8 +507,9 @@ same-brand authorization and shared-budget blocking. Existing OpenAI image,
 OpenAI/Gemini text, Media Library, auth and CSRF regressions also passed.
 Format, lint, typecheck, Prisma validation and production build passed. Built
 Next/Nest smoke passed against the isolated database; it exercises the existing
-auth, organization, content and media path with mocked AI providers. PR CI is
-tracked separately.
+auth, organization, content and media path with mocked AI providers. The
+initial [PR #23 CI run](https://github.com/synvaro/synvaro/actions/runs/40514622449)
+passed all gates, including clean migration, tests, build and smoke.
 
 **Browser check:** A dedicated hypothetical account, organization, brand,
 profile and draft were created through local Next.js/NestJS on the isolated
