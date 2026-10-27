@@ -324,3 +324,24 @@ upper bound. The user's existing USD 1 preference is never changed by setup.
 Unknown usage remains uncertain. Credit-based ElevenLabs uncertainty is
 retained separately and cannot masquerade as an unknown USD charge in the
 budget admission check. See [VID-001–006](contracts/ai-video-generation.md).
+
+### Social OAuth connections (SYN-SOC-001)
+
+Set the private server variables in `.env`: `META_APP_ID`/`META_APP_SECRET`,
+`LINKEDIN_CLIENT_ID`/`LINKEDIN_CLIENT_SECRET`,
+`GOOGLE_OAUTH_CLIENT_ID`/`GOOGLE_OAUTH_CLIENT_SECRET`, and
+`SOCIAL_TOKEN_ACTIVE_KEY_ID`/`SOCIAL_TOKEN_KEYS_JSON`. The keyring is a JSON
+object of key IDs to base64-encoded 32-byte random keys. Generate keys using a
+cryptographic random source; never copy placeholder values. Keep old key IDs
+when rotating so existing ciphertext remains readable. Protect and back up
+the keyring separately from PostgreSQL; losing it makes grants unusable.
+
+Register the exact callback URLs derived from `WEB_ORIGIN`:
+`/api/social/oauth/meta/callback`, `/api/social/oauth/linkedin/callback`,
+and `/api/social/oauth/google/callback`. Use HTTPS outside loopback. Configure
+provider app consent/test users and any required review before live OAuth.
+The browser sees only safe account metadata; tokens remain encrypted in
+PostgreSQL. No publishing scopes are requested. See
+[SOC-001–008](contracts/social-account-connections.md) for platform-specific
+prerequisites. Real OAuth acceptance requires separately configured provider
+applications; deterministic CI does not prove external authorization.

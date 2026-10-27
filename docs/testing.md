@@ -18,6 +18,16 @@
 
 Every test must cite behavior/acceptance IDs, expected result, actual result, environment and evidence. A mocked integration test is **not** proof of successful production publishing.
 
+## SYN-SOC-001 social account connections — 2026-10-27
+
+**Environment:** isolated local PostgreSQL 16 database `synvaro_soc_clean_test` (14 forward-only migrations from empty), loopback Next.js/NestJS on ports 43400/43401, synthetic test owner and brand. No existing SYNVARO user database was reset or modified for this acceptance. Provider credentials were absent; no live OAuth or publishing request occurred.
+
+**Actual result:** `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm db:validate`, `pnpm build`, `pnpm test` and `pnpm smoke` passed. The full suite passed **116 API tests and 1 worker test**. `social.test.ts` exercised all four platform paths through Nest HTTP and real PostgreSQL with deterministic provider responses: session/Brand isolation, Origin rejection, state replay and expiry, consent denial, safe discovery, explicit association, cross-Brand duplicate rejection, reauthorization, YouTube refresh, encrypted token persistence and disconnect. `social-providers.test.ts` exercised per-provider token/discovery parsing and sanitized HTTP errors. `social-crypto.test.ts` covered AES-GCM tamper rejection and key rotation. These are mock-provider tests, not external account authorization.
+
+**Browser:** Chrome on a dedicated local test database showed Brand → Social accounts navigation, four `App configuration required` states, disabled Connect buttons, the empty connection list and no publishing claim. A 390px viewport showed all four cards with document width 390px and no horizontal overflow. Logout returned to the sign-in screen. The existing `pnpm smoke` passed Next → Nest → PostgreSQL regression paths for prior AI/media/auth slices; it does not exercise a real social-provider callback.
+
+**External acceptance still open:** Meta app credentials/review and Facebook Page plus linked professional Instagram consent; LinkedIn OIDC app consent for member identity (organization access needs separately approved permissions); Google OAuth consent/project and YouTube channel authorization. No live authorization, refresh, revocation or eligibility has been claimed for any platform. Current `AVAILABLE` means locally configured only.
+
 ## Implemented SYN-002B verification
 
 The [Organization & Brand contract](contracts/organization-brand.md) defines

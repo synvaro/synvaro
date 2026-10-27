@@ -265,6 +265,14 @@ export function BrandWorkspace({
                     Brand profile
                   </a>
                 </p>
+                <p>
+                  <a
+                    className="auth-link"
+                    href={`/brands/${brand.id}/social-accounts`}
+                  >
+                    Social accounts
+                  </a>
+                </p>
                 <p className="brand-description">
                   {brand.description || 'No description yet.'}
                 </p>
