@@ -365,9 +365,11 @@ USD 1.00 monthly preference was not changed.
   The desktop view was also usable. No database session token was extracted
   or substituted.
 
-Before live acceptance, rotate the local Google credential and verify the
-replacement's project/model mapping. No credential value is included in
-this evidence or PR.
+The owner confirmed the local Google credential is a test key and chose to
+retain it for this acceptance. Its full value is not included in this
+evidence or PR. The separate authorization to temporarily remove the USD
+1.00 SYNVARO preference and send one real generation request remains open;
+no request was sent.
 
 The separate owner authorization for a live request and temporary budget
 change has **not** been given. No input/output/thinking usage, cost, preview,
