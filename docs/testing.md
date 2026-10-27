@@ -217,3 +217,41 @@ unchanged. API preferences expose the limitation and retain the USD 1 value.
 Local suite: 85 API tests and 1 worker test passed. Browser runtime/UI is unchanged;
 no new browser or live-provider acceptance is claimed. Current-head CI is linked
 from PR #17; earlier screenshots/CI remain evidence for their recorded commit.
+
+## SYN-AI-001 provider foundation
+
+- AIP-001–005: authenticated `/ai/models`, capability-specific selections,
+  unavailable configuration and planned-provider exclusion; SDK boundary rejects
+  unsupported model/capability/settings before a network call.
+- Existing real PostgreSQL text/image/auth/media tests remain the regression suite.
+  Catalog reads and invalid preference/model updates are checked against persisted
+  preferences and uncertain spending records; no ledger rewrites or migrations.
+- API test files run sequentially: each starts an application with a preview
+  sweeper against the shared test database. Parallel files with different test
+  clocks previously could clear another file's preview metadata. Serial execution
+  isolates these sweeps without disabling production cleanup or relaxing assertions.
+- Smoke also exercises the authenticated catalog through built Next.js → NestJS;
+  existing text Apply and image preview/Save/Attach checks are retained.
+- Deterministic provider fixtures are not live API acceptance. No paid calls or
+  new Google/ElevenLabs integrations are claimed.
+
+Verification on 2026-10-27:
+- Format, lint, typecheck, Prisma validation, build and Next/Nest smoke passed.
+- 89 API tests + 1 worker test passed; real PostgreSQL 16, deterministic providers.
+- All eight existing migrations applied successfully to a new disposable database;
+  no migration or existing-record rewrite introduced by this slice.
+- Chrome desktop: login, Qos hypothetical draft, backend-derived model selection,
+  planned integrations not selectable, USD 1 image block, explicit text confirmation,
+  suggestion Apply and refresh persistence passed.
+- Chrome 390×844: preferences retained; only the disposable mock account's budget
+  was explicitly cleared to test image confirmation → preview → Save → Attach;
+  attachment persisted after refresh. Planned catalog and image panel measured
+  document width 390px (no horizontal overflow); logout returned to login.
+- Mock usage: one text suggestion (100 input / 50 output, $0.000038 estimate) and
+  one synthetic solid-color PNG (100 text input / 0 image input / 200 output,
+  $0.006500 estimate). These figures verify UI/accounting only, not billed costs.
+- Zero live provider calls. Owner development data, credentials and preferences
+  were untouched. Browser test application used ports 43300/43301 and a dedicated
+  temporary storage directory; test processes were stopped after verification.
+- Local screenshots: `/tmp/syn-ai-001-desktop.png`,
+  `/tmp/syn-ai-001-mobile-catalog.png`, `/tmp/syn-ai-001-mobile.png`.

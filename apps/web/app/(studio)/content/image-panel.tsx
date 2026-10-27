@@ -1,6 +1,7 @@
 'use client';
 /* eslint-disable @next/next/no-img-element -- authenticated same-origin private media */
 import { useEffect, useState } from 'react';
+import { ModelOptions, useModelCatalog } from './model-catalog';
 interface Prefs {
   enabled: boolean;
   model: string;
@@ -66,6 +67,7 @@ export function ImagePanel({
   disabled: boolean;
   onAttached: () => void;
 }) {
+  const catalog = useModelCatalog('IMAGE_GENERATION');
   const [settings, setSettings] = useState<Settings | null>(null);
   const [prefs, setPrefs] = useState<Prefs | null>(null);
   const [result, setResult] = useState<Result | null>(null);
@@ -139,6 +141,14 @@ export function ImagePanel({
         Review carefully; do not present invented products, packaging or claims
         as real.
       </p>
+      {catalog.message && <p role="status">{catalog.message}</p>}
+      {catalog.models
+        .filter((m) => m.unavailableReason)
+        .map((m) => (
+          <p key={m.model}>
+            {m.model}: {m.unavailableReason}
+          </p>
+        ))}
       <fieldset disabled={busy || disabled}>
         {settings && prefs && (
           <>
@@ -163,9 +173,7 @@ export function ImagePanel({
                   setPrefs({ ...prefs, imageModel: e.target.value })
                 }
               >
-                {settings.image.models.map((m) => (
-                  <option key={m}>{m}</option>
-                ))}
+                <ModelOptions models={catalog.models} />
               </select>
               <label htmlFor="image-size">Image dimensions</label>
               <select
@@ -266,6 +274,11 @@ export function ImagePanel({
               disabled={
                 !instruction.trim() ||
                 dirty ||
+                !catalog.models.some(
+                  (m) =>
+                    m.model === settings.preferences.imageModel &&
+                    m.status === 'AVAILABLE',
+                ) ||
                 !settings.image.available ||
                 !settings.preferences.imageEnabled ||
                 settings.preferences.monthlyBudgetUsd !== null ||
@@ -283,9 +296,12 @@ export function ImagePanel({
                 aria-label="Confirm paid image generation"
               >
                 <p>
-                  This sends saved brand context to OpenAI. Cost cannot be
-                  bounded reliably. No spending limit is selected. Generate one{' '}
-                  {settings.preferences.imageSize}{' '}
+                  This sends saved brand context to{' '}
+                  {catalog.models.find(
+                    (m) => m.model === settings.preferences.imageModel,
+                  )?.provider ?? 'the configured provider'}
+                  . Cost cannot be bounded reliably. No spending limit is
+                  selected. Generate one {settings.preferences.imageSize}{' '}
                   {settings.preferences.imageQuality} image with{' '}
                   {settings.preferences.imageModel}?
                 </p>

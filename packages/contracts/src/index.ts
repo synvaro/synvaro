@@ -118,3 +118,52 @@ export interface ContentMedia {
 export interface ContentMediaResponse {
   attachments: ContentMedia[];
 }
+
+export type AiCapability =
+  | 'TEXT_GENERATION'
+  | 'IMAGE_GENERATION'
+  | 'IMAGE_EDITING'
+  | 'VIDEO_GENERATION'
+  | 'IMAGE_TO_VIDEO'
+  | 'SPEECH_GENERATION';
+export type AiProviderId = 'openai' | 'google' | 'elevenlabs';
+export interface AiModelBase {
+  provider: AiProviderId;
+  model: string;
+  verifiedAt: string;
+  reference: string;
+  cost: {
+    capability: 'CONSERVATIVE_BOUND' | 'ESTIMATE_ONLY' | 'UNAVAILABLE';
+    reference: string;
+  };
+}
+export type AiModelDefinition = AiModelBase &
+  (
+    | {
+        implemented: true;
+        capability: 'TEXT_GENERATION';
+        settings: {
+          outputFormats: readonly string[];
+          minOutputTokens: number;
+          maxOutputTokens: number;
+        };
+      }
+    | {
+        implemented: true;
+        capability: 'IMAGE_GENERATION';
+        settings: {
+          outputFormats: readonly string[];
+          sizes: readonly string[];
+          qualities: readonly string[];
+        };
+      }
+    | { implemented: false; capability: AiCapability }
+  );
+export type AiModel = AiModelDefinition & {
+  status: 'AVAILABLE' | 'NOT_CONFIGURED' | 'PLANNED';
+  configured: boolean;
+  unavailableReason: string | null;
+};
+export interface AiModelCatalog {
+  models: AiModel[];
+}

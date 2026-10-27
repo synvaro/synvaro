@@ -1,5 +1,8 @@
+import { TEXT_PROVIDER, type TextProvider } from './providers/contracts.js';
+import { PRICING_EXPIRES } from './providers/models.js';
 import {
   Injectable,
+  Inject,
   ConflictException,
   NotFoundException,
   BadRequestException,
@@ -7,7 +10,7 @@ import {
 } from '@nestjs/common';
 import type { Prisma } from '@synvaro/database';
 import { DatabaseService } from '../auth/database.service.js';
-import { MODEL, OpenAITextProvider } from './text-provider.js';
+import { MODEL } from './text-provider.js';
 import {
   IMAGE_MODEL,
   IMAGE_SIZES,
@@ -40,13 +43,12 @@ export const DEFAULTS: Preferences = {
 // USD micro-units; input includes the published 1.25x cache-write premium.
 export const estimate = (input: number, output: number) =>
   Math.ceil(input / 8 + output / 2);
-const PRICING_EXPIRES = new Date('2026-11-25T00:00:00Z');
 @Injectable()
 export class AiService {
   now = () => new Date();
   constructor(
     private readonly db: DatabaseService,
-    private readonly provider: OpenAITextProvider,
+    @Inject(TEXT_PROVIDER) private readonly provider: TextProvider,
   ) {}
   private async lock(tx: Prisma.TransactionClient, userId: string) {
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId}::uuid FOR UPDATE`;
@@ -205,6 +207,8 @@ export class AiService {
         throw new ConflictException(
           'Enable AI generation in preferences first.',
         );
+      if (p.model !== MODEL)
+        throw new BadRequestException('Unsupported text model');
       if (!this.provider.configured() || this.now() >= PRICING_EXPIRES)
         throw new ServiceUnavailableException();
       if (!content.brand.profile)

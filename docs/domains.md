@@ -31,3 +31,10 @@ Rows not explicitly marked implemented describe planned capabilities.
 AI draft contract: [AIG-001–005](contracts/ai-draft-generation.md).
 
 AI image contract: [IMG-001–007](contracts/ai-image-generation.md).
+
+### AI provider foundation — implemented, PR pending review
+
+SYN-AI-001 adds backend model/capability discovery and interface-based injection
+around existing OpenAI text/image adapters. Google text/image/video, ElevenLabs
+speech and image editing remain planned. No new generation capability is enabled.
+See [AIP-001–005](contracts/ai-provider-foundation.md).

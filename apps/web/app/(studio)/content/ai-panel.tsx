@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { ModelOptions, useModelCatalog } from './model-catalog';
 interface Preferences {
   enabled: boolean;
   model: string;
@@ -37,6 +38,7 @@ export function AiPanel({
   disabled: boolean;
   onApply: (text: string) => void;
 }) {
+  const catalog = useModelCatalog('TEXT_GENERATION');
   const [settings, setSettings] = useState<Settings | null>(null);
   const [prefs, setPrefs] = useState<Preferences | null>(null);
   const [instruction, setInstruction] = useState('');
@@ -173,11 +175,31 @@ export function AiPanel({
         Uses this draft’s saved text and Brand Profile. Unsaved edits are not
         sent. Media metadata only; images and videos are not analyzed.
       </p>
+      {catalog.message && <p role="status">{catalog.message}</p>}
+      {catalog.models
+        .filter((m) => m.unavailableReason)
+        .map((m) => (
+          <p key={m.model}>
+            {m.model}: {m.unavailableReason}
+          </p>
+        ))}
       <fieldset disabled={busy || disabled}>
         {prefs && settings && (
           <>
             <details>
               <summary>AI preferences</summary>
+              <details>
+                <summary>Planned integrations (not executable)</summary>
+                <ul>
+                  {catalog.planned.map((m) => (
+                    <li key={`${m.provider}/${m.model}/${m.capability}`}>
+                      {m.provider} · {m.model} ·{' '}
+                      {m.capability.toLowerCase().replaceAll('_', ' ')} —
+                      planned
+                    </li>
+                  ))}
+                </ul>
+              </details>
               <label>
                 <input
                   type="checkbox"
@@ -194,9 +216,7 @@ export function AiPanel({
                 value={prefs.model}
                 onChange={(e) => setPrefs({ ...prefs, model: e.target.value })}
               >
-                {settings.models.map((model) => (
-                  <option key={model}>{model}</option>
-                ))}
+                <ModelOptions models={catalog.models} />
               </select>
               <label htmlFor="ai-tokens">
                 Maximum output tokens (128–2048)
@@ -302,6 +322,11 @@ export function AiPanel({
               type="button"
               className="button"
               disabled={
+                !catalog.models.some(
+                  (m) =>
+                    m.model === settings.preferences.model &&
+                    m.status === 'AVAILABLE',
+                ) ||
                 !settings.available ||
                 !settings.preferences.enabled ||
                 !!preferencesDirty
@@ -317,10 +342,13 @@ export function AiPanel({
             {confirming && (
               <div className="discard-prompt">
                 <p>
-                  This sends saved brand context to OpenAI and may incur a
-                  charge. Maximum output: {settings.preferences.maxOutputTokens}{' '}
-                  tokens. The server checks your selected estimated budget
-                  before generation.
+                  This sends saved brand context to{' '}
+                  {catalog.models.find(
+                    (m) => m.model === settings.preferences.model,
+                  )?.provider ?? 'the configured provider'}{' '}
+                  and may incur a charge. Maximum output:{' '}
+                  {settings.preferences.maxOutputTokens} tokens. The server
+                  checks your selected estimated budget before generation.
                 </p>
                 <div className="form-actions">
                   <button

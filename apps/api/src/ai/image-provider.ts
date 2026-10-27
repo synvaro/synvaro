@@ -1,27 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
-export const IMAGE_MODEL = 'gpt-image-2.5-flare';
-export const IMAGE_SIZES = ['1024x1024', '1536x1024', '1024x1536'] as const;
-export const IMAGE_QUALITIES = ['low', 'medium', 'high'] as const;
-export const IMAGE_PRICING_EXPIRES = new Date('2026-11-25T00:00:00Z');
+import { IMAGE_MODEL_DEFINITION, PRICING_EXPIRES } from './providers/models.js';
+export const IMAGE_MODEL = IMAGE_MODEL_DEFINITION.model;
+export const IMAGE_SIZES = IMAGE_MODEL_DEFINITION.settings.sizes;
+export const IMAGE_QUALITIES = IMAGE_MODEL_DEFINITION.settings.qualities;
+export const IMAGE_PRICING_EXPIRES = PRICING_EXPIRES;
 export const IMAGE_COST_NOTICE =
   'Cost cannot be reliably bounded before generation. A selected monthly budget blocks image generation. Actual usage can be estimated afterward; this is not a provider billing cap.';
-export interface ImageRequest {
-  model: string;
-  size: (typeof IMAGE_SIZES)[number];
-  quality: (typeof IMAGE_QUALITIES)[number];
-  prompt: string;
-}
-export interface ImageResult {
-  bytes: Buffer;
-  inputTextTokens?: number;
-  inputImageTokens?: number;
-  outputTokens?: number;
-}
-export interface ImageProvider {
-  configured(): boolean;
-  generate(request: ImageRequest): Promise<ImageResult>;
-}
+import type {
+  ImageProvider,
+  ImageRequest,
+  ImageResult,
+} from './providers/contracts.js';
+export type {
+  ImageProvider,
+  ImageRequest,
+  ImageResult,
+} from './providers/contracts.js';
 // Bound JSON before the SDK buffers it, including error responses. No remote image URLs.
 export const boundedImageFetch: typeof fetch = async (input, init) => {
   const response = await fetch(input, init);
@@ -52,6 +47,14 @@ export class OpenAIImageProvider implements ImageProvider {
     return !!process.env.OPENAI_API_KEY?.trim();
   }
   async generate(request: ImageRequest): Promise<ImageResult> {
+    if (
+      request.model !== IMAGE_MODEL ||
+      !IMAGE_SIZES.includes(request.size as (typeof IMAGE_SIZES)[number]) ||
+      !IMAGE_QUALITIES.includes(
+        request.quality as (typeof IMAGE_QUALITIES)[number],
+      )
+    )
+      throw new Error('Unsupported image model or settings');
     const client = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
       baseURL: 'https://api.openai.com/v1',
@@ -62,8 +65,8 @@ export class OpenAIImageProvider implements ImageProvider {
     const result = await client.images.generate({
       model: request.model,
       prompt: request.prompt,
-      size: request.size,
-      quality: request.quality,
+      size: request.size as (typeof IMAGE_SIZES)[number],
+      quality: request.quality as (typeof IMAGE_QUALITIES)[number],
       n: 1,
       output_format: 'png',
       background: 'opaque',

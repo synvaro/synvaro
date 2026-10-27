@@ -234,3 +234,18 @@ Generated assets are clearly labeled conceptual AI imagery, not authentic produc
 photography. No uploaded image bytes are sent to this text-to-image API. Inspect
 outputs before use; prompt constraints cannot prove semantic authenticity. Existing
 production-registration hardening restrictions remain unchanged.
+
+## AI provider catalog (SYN-AI-001)
+
+`GET /ai/models` requires a session; Studio uses its same-origin proxy. The backend
+owns model IDs and selectable parameters. Existing OpenAI text/image selections,
+preferences and accounting are unchanged; no database migration is needed.
+`AVAILABLE` checks local adapter/key/storage/pricing prerequisites, not paid account
+access. `NOT_CONFIGURED` is an implemented integration missing prerequisites.
+`PLANNED` never executes. `GOOGLE_API_KEY` and `ELEVENLABS_API_KEY` in `.env.example`
+are future server-only placeholders; adding a key does not enable an adapter.
+Never add `NEXT_PUBLIC_` provider keys. Follow the
+[provider contract](contracts/ai-provider-foundation.md) when adding a capability;
+reverify official IDs, account access and capability-specific cost bounds first.
+Existing November 25 pricing review expiry is retained. A selected spending ceiling
+still blocks image generation; unknown charges remain uncertain in shared usage.
