@@ -30,14 +30,16 @@ opaque, moderation auto, three existing sizes and low/medium/high quality.
 [Text model](https://developers.openai.com/api/docs/models/gpt-6-luna) and
 [image model](https://developers.openai.com/api/docs/models/gpt-image-2.5-flare).
 
+Google `gemini-nano-banana-2.1` image generation/editing and ElevenLabs
+`eleven_multilingual_v2` speech are implemented adapters, subject to local
+configuration and the selected-budget fail-closed rules. See
+[Google images](google-image-generation-editing.md) and
+[ElevenLabs voice](elevenlabs-voice-generation.md).
+
 Reference-only planned combinations:
-- Google `gemini-nano-banana-2.1` image:
-  [official model catalog](https://ai.google.dev/gemini-api/docs/models).
 - Google `gemini-omni-1.1-flash` video and image-to-video:
   [official model](https://ai.google.dev/gemini-api/docs/models/gemini-omni-flash).
   Veo 3.1 preview was shut down October 22; it is not a supported selection.
-- ElevenLabs `eleven_multilingual_v2` speech with a selected voice:
-  [official models](https://elevenlabs.io/docs/overview/models).
 - OpenAI Flare image editing is reference-only. Other video providers remain
   future research, without speculative executable model identifiers.
 
@@ -50,15 +52,16 @@ Capability-specific TypeScript interfaces live under the API AI providers folder
 Nest injection tokens bind the existing concrete text/image SDK adapters through
 useExisting; business services depend on interfaces. Explicit supported-model
 checks prevent passing arbitrary identifiers to the SDK. No dynamic registry.
-Future image editing, speech/voice and asynchronous video contracts are types
-only: no fake adapters, API routes or polling loops. Video start returns a provider
+Future asynchronous video contracts are types only: no fake adapters, API routes
+or polling loops. Video start returns a provider
 operation ID; retrieval returns pending, failed or completed bounded bytes/usage.
 Future callers must authorize and reserve before start, preserve uncertain charges
 across interruption, and validate/store results privately. Provider operation IDs
 are server-side provenance, not authorization credentials.
 
-OPENAI_API_KEY and GOOGLE_API_KEY are consumed server-side by their implemented adapters.
-ELEVENLABS_API_KEY remains a planned placeholder.
+OPENAI_API_KEY, GOOGLE_API_KEY and ELEVENLABS_API_KEY are consumed server-side
+by their implemented adapters. The ElevenLabs speech adapter lists premade
+voices and makes one bounded, non-retried synchronous TTS call.
 No credentials in catalog, browser, database or logs. AVAILABLE means local
 prerequisites are present, not a paid health check or proof of provider entitlement.
 Catalog reads never contact providers and use no-store responses.
@@ -76,8 +79,8 @@ Pricing review expiry remains November 25; catalog verification does not extend 
 
 ## Limitations
 
-OpenAI text/image and Google text execute; Google image/video, ElevenLabs, editing,
-video and image-to-video are unimplemented. No database-managed credentials,
+OpenAI text/image, Google text/image/editing and ElevenLabs speech have
+implemented adapters; video and image-to-video are unimplemented. No database-managed credentials,
 voice cloning, billing system, automatic retries or live provider claims. Future
 adapters must implement their own validated pricing/reservation semantics before
 being admitted to budgeted execution. Existing development-only auth limitations

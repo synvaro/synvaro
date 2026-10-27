@@ -9,6 +9,7 @@ import sharp from 'sharp';
 const execute = promisify(execFile);
 export const MAX_FILE_BYTES = 20 * 1024 * 1024;
 export const MAX_REQUEST_BYTES = MAX_FILE_BYTES + 64 * 1024;
+export const MAX_GENERATED_AUDIO_BYTES = 5 * 1024 * 1024;
 const bad = () =>
   new BadRequestException(
     'Unsupported or malformed media. Use JPEG, PNG, static WebP or H.264 MP4.',
@@ -168,5 +169,78 @@ export async function inspectMedia(path: string) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT')
       throw new ServiceUnavailableException('MP4 validation requires ffprobe');
     throw bad();
+  }
+}
+
+/** Generated MP3 only. Upload validation remains image/MP4-only. */
+export async function inspectGeneratedAudio(path: string) {
+  const size = (await stat(path)).size;
+  if (size < 128 || size > MAX_GENERATED_AUDIO_BYTES)
+    throw new BadRequestException('Invalid generated audio');
+  const file = await open(path, 'r');
+  const head = Buffer.alloc(10);
+  try {
+    await file.read(head, 0, head.length, 0);
+  } finally {
+    await file.close();
+  }
+  if (
+    head.toString('ascii', 0, 3) !== 'ID3' &&
+    !(head[0] === 0xff && (head[1]! & 0xe0) === 0xe0)
+  )
+    throw new BadRequestException('Invalid generated audio');
+  try {
+    const { stdout, stderr } = await execute(
+      process.env.FFPROBE_PATH || 'ffprobe',
+      [
+        '-v',
+        'error',
+        '-max_alloc',
+        '67108864',
+        '-protocol_whitelist',
+        'file',
+        '-format_whitelist',
+        'mp3',
+        '-count_packets',
+        '-show_entries',
+        'stream=codec_name,codec_type,nb_read_packets:format=duration,format_name',
+        '-of',
+        'json',
+        path,
+      ],
+      { timeout: 10000, maxBuffer: 65536 },
+    );
+    if (stderr.trim()) throw new Error('Probe warning');
+    const data = JSON.parse(stdout) as {
+      streams: {
+        codec_name: string;
+        codec_type: string;
+        nb_read_packets?: string;
+      }[];
+      format: { duration: string; format_name: string };
+    };
+    const durationMs = Math.round(Number(data.format.duration) * 1000);
+    if (
+      !data.format.format_name.split(',').includes('mp3') ||
+      data.streams.length !== 1 ||
+      data.streams[0]?.codec_name !== 'mp3' ||
+      data.streams[0]?.codec_type !== 'audio' ||
+      !(Number(data.streams[0]?.nb_read_packets) > 0) ||
+      !Number.isSafeInteger(durationMs) ||
+      durationMs <= 0 ||
+      durationMs > 600_000
+    )
+      throw new Error('Invalid MP3');
+    return {
+      mimeType: 'audio/mpeg',
+      width: null,
+      height: null,
+      durationMs,
+      sizeBytes: size,
+    };
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT')
+      throw new ServiceUnavailableException('MP3 validation requires ffprobe');
+    throw new BadRequestException('Invalid generated audio');
   }
 }

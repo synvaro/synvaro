@@ -185,6 +185,13 @@ export function AttachedMedia({
                   src={`/api/media/${item.mediaAssetId}/file`}
                   aria-label={item.asset.originalFilename}
                 />
+              ) : item.asset.mimeType === 'audio/mpeg' ? (
+                <audio
+                  controls
+                  preload="metadata"
+                  src={`/api/media/${item.mediaAssetId}/file`}
+                  aria-label={item.asset.originalFilename}
+                />
               ) : (
                 // Authenticated originals must bypass public optimization caches.
                 // eslint-disable-next-line @next/next/no-img-element
@@ -199,16 +206,21 @@ export function AttachedMedia({
               </h3>
               <p>{item.asset.mimeType}</p>
               {(item.asset.origin === 'AI_GENERATED' ||
-                item.asset.origin === 'AI_EDITED') && (
+                item.asset.origin === 'AI_EDITED' ||
+                item.asset.origin === 'AI_VOICE') && (
                 <p>
                   <span className="badge">
                     {item.asset.origin === 'AI_EDITED'
                       ? 'AI EDITED'
-                      : 'AI GENERATED'}
+                      : item.asset.origin === 'AI_VOICE'
+                        ? 'AI VOICE'
+                        : 'AI GENERATED'}
                   </span>{' '}
                   {item.asset.origin === 'AI_EDITED'
                     ? 'Review against the original image before use.'
-                    : 'Conceptual visual, not authentic product photography.'}
+                    : item.asset.origin === 'AI_VOICE'
+                      ? 'Generated narration; review pronunciation before use.'
+                      : 'Conceptual visual, not authentic product photography.'}
                 </p>
               )}
               <div className="form-actions">

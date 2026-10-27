@@ -90,7 +90,7 @@ export interface MediaAsset {
   width: number | null;
   height: number | null;
   durationMs: number | null;
-  origin: 'UPLOADED' | 'AI_GENERATED' | 'AI_EDITED';
+  origin: 'UPLOADED' | 'AI_GENERATED' | 'AI_EDITED' | 'AI_VOICE';
   generation?: {
     id: string;
     provider: string;
@@ -100,6 +100,7 @@ export interface MediaAsset {
     imageAspectRatio: string | null;
     sourceMediaAssetId: string | null;
     providerGenerationId: string | null;
+    voiceId: string | null;
     createdAt: string;
   } | null;
   createdAt: string;
@@ -170,6 +171,14 @@ export type AiModelDefinition = AiModelBase &
           sizes: readonly string[];
           qualities: readonly string[];
           aspectRatios: readonly string[];
+        };
+      }
+    | {
+        implemented: true;
+        capability: 'SPEECH_GENERATION';
+        settings: {
+          outputFormats: readonly string[];
+          maxCharacters: number;
         };
       }
     | { implemented: false; capability: AiCapability }

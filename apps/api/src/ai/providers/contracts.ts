@@ -49,7 +49,10 @@ export interface ImageEditProvider {
   ): Promise<ImageResult>;
 }
 export interface SpeechProvider {
-  voices(): Promise<ReadonlyArray<{ id: string; name: string }>>;
+  configured(): boolean;
+  voices(): Promise<
+    ReadonlyArray<{ id: string; name: string; languages: string[] }>
+  >;
   generate(request: {
     model: string;
     text: string;
@@ -59,7 +62,8 @@ export interface SpeechProvider {
     bytes: Uint8Array;
     mimeType: string;
     model: string;
-    usage?: { characters: number; audioSeconds?: number };
+    providerGenerationId?: string;
+    characterCost?: number;
   }>;
 }
 export type VideoResult =

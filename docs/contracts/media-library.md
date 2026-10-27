@@ -1,5 +1,11 @@
 # Brand Media Library — SYN-005
 
+SYN-AI-004 also saves **generated** MP3 narration into the same private
+MediaStorage as `AI_VOICE` MediaAssets. This does not change the original
+upload endpoint's JPEG/PNG/WebP/MP4 allowlist or its 20 MiB limit. Generated
+audio has separate MP3 inspection and a 5 MiB limit; see
+[VOC-001–006](elevenlabs-voice-generation.md).
+
 ## Storage and upload security contract (defined before implementation)
 
 One MediaAsset belongs to one Brand; ownership follows Brand → Organization → User.

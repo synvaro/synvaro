@@ -38,9 +38,11 @@ export async function forwardApi(req: NextRequest, path: string) {
             path,
           )
             ? 131072
-            : /^\/brands\/[0-9a-f-]{36}\/profile$/i.test(path)
-              ? 65536
-              : 8192)
+            : /^\/contents\/[0-9a-f-]{36}\/speech-generations$/i.test(path)
+              ? 16384
+              : /^\/brands\/[0-9a-f-]{36}\/profile$/i.test(path)
+                ? 65536
+                : 8192)
         ) {
           await reader.cancel();
           return Response.json(
@@ -67,9 +69,11 @@ export async function forwardApi(req: NextRequest, path: string) {
       signal: AbortSignal.timeout(
         /^\/contents\/[0-9a-f-]{36}\/image-(?:generations|edits)$/i.test(path)
           ? 150_000
-          : /^\/contents\/[0-9a-f-]{36}\/ai-generations$/i.test(path)
-            ? 105_000
-            : 10_000,
+          : /^\/contents\/[0-9a-f-]{36}\/speech-generations$/i.test(path)
+            ? 75_000
+            : /^\/contents\/[0-9a-f-]{36}\/ai-generations$/i.test(path)
+              ? 105_000
+              : 10_000,
       ),
     });
     const outgoing = new Headers({

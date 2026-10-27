@@ -13,7 +13,7 @@ UTC timestamps are used; authentication secrets are hashes, not plaintext.
 | Brand | id, organizationId FK, name, slug, nullable description, createdAt, updatedAt; unique (organizationId, slug) |
 | BrandProfile | id, unique brandId FK, description, targetAudience, toneOfVoice, nullable defaultLanguage, contentGuidelines, createdAt, updatedAt |
 | Content | id, brandId FK, title (200), body text (empty allowed), status DRAFT, createdAt, updatedAt; index (brandId, updatedAt DESC, id DESC) |
-| MediaAsset | id, brandId FK (RESTRICT delete), originalFilename (255), unique opaque UUID storageKey, mimeType, sizeBytes Int (20 MiB max), nullable width/height/durationMs, origin UPLOADED, AI_GENERATED or AI_EDITED, createdAt; index (brandId, createdAt DESC, id DESC) |
+| MediaAsset | id, brandId FK (RESTRICT delete), originalFilename (255), unique opaque UUID storageKey, mimeType, sizeBytes Int (uploaded 20 MiB max; generated voice 5 MiB max), nullable width/height/durationMs, origin UPLOADED, AI_GENERATED, AI_EDITED or AI_VOICE, createdAt; index (brandId, createdAt DESC, id DESC) |
 
 | ContentMedia | composite PK (contentId, mediaAssetId), cascading FKs to Content and MediaAsset, position Int, createdAt; indexes (contentId, position, mediaAssetId), (mediaAssetId) |
 
@@ -48,6 +48,13 @@ object and metadata remain untouched; accepting an edit creates a new
 MediaAsset from its private preview. The generation record links both source
 and accepted output, without storing prompts or image bytes in PostgreSQL.
 See [IMG-G001/002](contracts/google-image-generation-editing.md).
+
+SYN-AI-004 adds `speechEnabled` (false) to AiPreference, `SPEECH` to
+AiGenerationKind, `AI_VOICE` to MediaOrigin, and nullable AiGeneration
+`voiceId`, `narrationCharacters`, `providerCharacterCost`. The existing
+preview/media relationships and shared usage ledger are reused. Narration
+text and provider credentials are not persisted. Accepted MP3 is a new
+brand-owned MediaAsset; ContentMedia can associate it without copying bytes.
 
 ## Remaining design draft (not migrated)
 

@@ -117,7 +117,7 @@ try {
   const catalog = await catalogResponse.json();
   assert.equal(
     catalog.models.filter((m) => m.status === 'AVAILABLE').length,
-    5,
+    6,
   );
   assert.ok(
     catalog.models.some(
@@ -541,6 +541,100 @@ try {
     (await (await product(`/contents/${draft.id}`)).json()).content.body,
     suggestion.text,
   );
+  // VOC-001–006: private, explicit voice preview/save/attach through Next and Nest.
+  const voicePrefs = (await (await product('/ai/preferences')).json())
+    .preferences;
+  assert.equal(
+    (
+      await product('/ai/preferences', 'PUT', {
+        ...voicePrefs,
+        speechEnabled: true,
+        monthlyBudgetUsd: 1,
+      })
+    ).status,
+    200,
+  );
+  const voiceRequest = {
+    requestId: randomUUID(),
+    model: 'eleven_multilingual_v2',
+    voiceId: 'JBFqnCBsd6RMkjVDRZzb',
+    text: 'Merhaba, bu varsayımsal bir test anlatımıdır.',
+    confirmed: true,
+  };
+  assert.equal(
+    (
+      await product(
+        `/contents/${draft.id}/speech-generations`,
+        'POST',
+        voiceRequest,
+      )
+    ).status,
+    409,
+  );
+  const voiceChoices = await (await product('/ai/voices')).json();
+  assert.equal(voiceChoices.voices[0].id, voiceRequest.voiceId);
+  assert.equal(
+    (
+      await product('/ai/preferences', 'PUT', {
+        ...voicePrefs,
+        speechEnabled: true,
+        monthlyBudgetUsd: null,
+      })
+    ).status,
+    200,
+  );
+  assert.equal(
+    (
+      await product(
+        `/contents/${draft.id}/speech-generations`,
+        'POST',
+        voiceRequest,
+        'https://evil.example',
+      )
+    ).status,
+    403,
+  );
+  const speechResponse = await product(
+    `/contents/${draft.id}/speech-generations`,
+    'POST',
+    voiceRequest,
+  );
+  assert.equal(speechResponse.status, 201);
+  const speech = await speechResponse.json();
+  const voicePreview = await fetch(
+    `${origin}/api/speech-generations/${speech.id}/file`,
+    { headers: { cookie } },
+  );
+  assert.equal(voicePreview.status, 200);
+  assert.equal(voicePreview.headers.get('content-type'), 'audio/mpeg');
+  const voiceBytes = Buffer.from(await voicePreview.arrayBuffer());
+  const savedVoice = await product(
+    `/speech-generations/${speech.id}/accept`,
+    'POST',
+    {},
+  );
+  assert.equal(savedVoice.status, 201);
+  const voiceAsset = await savedVoice.json();
+  assert.equal(voiceAsset.origin, 'AI_VOICE');
+  assert.equal(voiceAsset.generation.voiceId, voiceRequest.voiceId);
+  assert.equal(
+    (
+      await product(`/contents/${draft.id}/media`, 'POST', {
+        mediaAssetId: voiceAsset.id,
+      })
+    ).status,
+    201,
+  );
+  assert.deepEqual(
+    Buffer.from(
+      await (await product(`/media/${voiceAsset.id}/file`)).arrayBuffer(),
+    ),
+    voiceBytes,
+  );
+  assert.equal(
+    (await (await product(`/contents/${draft.id}`)).json()).content.body,
+    suggestion.text,
+  );
   const imagePrefs = (await (await product('/ai/preferences')).json())
     .preferences;
   assert.equal(
@@ -623,7 +717,7 @@ try {
     307,
   );
   console.info(
-    'SYN-008 + SYN-007 (mock providers) + SYN-006 + SYN-005 + SYN-004 + SYN-003 + SYN-002B + SYN-002A-A11 passed: real PostgreSQL, Next/Nest auth, organization, multiple brands, edit/reload, media upload/stream, CSRF and logout.',
+    'SYN-AI-004 (mock ElevenLabs) + prior slices passed: real PostgreSQL, Next/Nest auth, private voice preview/save/attach, media, CSRF and logout.',
   );
 } finally {
   for (const { child, exited } of children) {

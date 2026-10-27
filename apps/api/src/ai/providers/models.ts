@@ -1,4 +1,5 @@
 import type { AiModelDefinition } from '@synvaro/contracts';
+import { MAX_NARRATION, SPEECH_MODEL } from '../elevenlabs-provider.js';
 export const PRICING_EXPIRES = new Date('2026-11-25T00:00:00Z');
 const verifiedAt = '2026-10-27';
 const pricing = 'https://developers.openai.com/api/docs/pricing';
@@ -120,11 +121,15 @@ export const MODEL_DEFINITIONS: readonly AiModelDefinition[] = [
   })),
   {
     provider: 'elevenlabs',
-    model: 'eleven_multilingual_v2',
+    model: SPEECH_MODEL,
     capability: 'SPEECH_GENERATION',
-    implemented: false,
+    implemented: true,
     verifiedAt,
     reference: speechReference,
-    cost: { capability: 'UNAVAILABLE', reference: speechReference },
+    cost: {
+      capability: 'ESTIMATE_ONLY',
+      reference: 'https://elevenlabs.io/docs/api-reference/introduction',
+    },
+    settings: { outputFormats: ['audio/mpeg'], maxCharacters: MAX_NARRATION },
   },
 ];

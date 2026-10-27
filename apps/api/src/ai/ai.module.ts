@@ -1,5 +1,8 @@
 import { GoogleTextProvider } from './google-text-provider.js';
 import { GoogleImageProvider } from './google-image-provider.js';
+import { ElevenLabsProvider } from './elevenlabs-provider.js';
+import { SpeechService } from './speech.service.js';
+import { SpeechController } from './speech.controller.js';
 import { TEXT_PROVIDER, IMAGE_PROVIDER } from './providers/contracts.js';
 import { ModelCatalogService } from './providers/catalog.service.js';
 import { ModelCatalogController } from './providers/catalog.controller.js';
@@ -14,11 +17,18 @@ import { ImageService } from './image.service.js';
 import { OpenAIImageProvider } from './image-provider.js';
 @Module({
   imports: [AuthModule, MediaModule],
-  controllers: [AiController, ImageController, ModelCatalogController],
+  controllers: [
+    AiController,
+    ImageController,
+    SpeechController,
+    ModelCatalogController,
+  ],
   providers: [
     AiService,
     GoogleTextProvider,
     GoogleImageProvider,
+    ElevenLabsProvider,
+    SpeechService,
     OpenAITextProvider,
     ImageService,
     OpenAIImageProvider,
