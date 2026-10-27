@@ -474,3 +474,10 @@ independent provider usage/billing evidence before running
 after applying the migration and building the API/database packages. A zero
 charge requires explicit evidence. A further paid live request requires new
 owner authorization; the corrected flow has not passed live acceptance.
+
+The owner subsequently reported that no billing account was connected to the
+Synvaro Google project and its invoice was empty. This supports a zero-charge
+hypothesis but is not request-level usage/billing evidence; the owner described
+the conclusion as tentative. The historical reservation remains unchanged.
+The corrective PR's [CI](https://github.com/synvaro/synvaro/actions/runs/40508766641)
+passed with nine clean PostgreSQL migrations and all quality gates.

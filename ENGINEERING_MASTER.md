@@ -85,7 +85,7 @@ SYNVARO is an independent Apache-2.0 open-source AI content studio for preparing
 - **SYN-AI-001:** [Evidence](docs/testing.md#syn-ai-001-provider-foundation): 89 API + 1 worker tests, eight clean PostgreSQL migrations, format/lint/typecheck/Prisma/build/smoke and desktop/390px mock-provider flows passed. No live paid provider calls. PR CI is tracked separately.
 - **SYN-AI-002:** [Test evidence](docs/testing.md#syn-ai-002-google-gemini-text): real PostgreSQL, deterministic Google/OpenAI SDK and domain mocks, build/smoke and desktop/390px checks; no live Gemini request. PR CI tracked separately. Selected-budget Gemini remains blocked.
 - **SYN-AI-002A:** [Preflight and single live-attempt evidence](docs/testing.md#syn-ai-002a-live-google-acceptance--preflight-2026-10-27); backup and eight migrations, Free-tier model listing and Safari desktop/390px check verified. One Gemini request failed with unknown provider charge; original budget restored. Preview and Apply remain open.
-- **SYN-AI-002B:** [Correction evidence](docs/testing.md#syn-ai-002b-gemini-failure-correction--2026-10-27): deterministic delay/timeout/status tests and real PostgreSQL ledger/reconciliation tests; CI to be linked after PR checks. No paid Gemini retest; old charge remains uncertain.
+- **SYN-AI-002B:** [Correction evidence](docs/testing.md#syn-ai-002b-gemini-failure-correction--2026-10-27) and [PR CI](https://github.com/synvaro/synvaro/actions/runs/40508766641): deterministic delay/timeout/status tests, real PostgreSQL ledger/reconciliation tests and all quality gates passed. No paid Gemini retest; old charge remains uncertain.
 - CI success means checks ran successfully, **not** live provider integration, production readiness or deployment acceptance.
 
 ## 6. Roadmap and next decision gate
@@ -103,7 +103,7 @@ Before any new development slice:
 
 ## 7. Pending owner / maintainer items
 
-- Verify Google project usage/billing for 2026-10-27 12:23:28–12:23:57 UTC, then reconcile SYN-AI-002A's uncertain reservation only with evidence. A second live request needs new owner authorization; the first produced no suggestion. The owner's USD 1.00 preference remains unchanged. Preserve the SYN-008 budget limitation and arrange separately authorized image acceptance; mock tests cannot establish live provider success.
+- Verify Google project usage/billing for 2026-10-27 12:23:28–12:23:57 UTC, then reconcile SYN-AI-002A's uncertain reservation only with evidence. The owner reports no connected billing account and an empty invoice, but the conclusion of zero charge is tentative. A second live request needs new owner authorization; the owner's USD 1.00 preference remains unchanged. Preserve the SYN-008 budget limitation and arrange separately authorized image acceptance; mock tests cannot establish live provider success.
 - Keep authentication production hardening tracked before any public registration.
 - Select job queue only when background generation/publishing requires it; Redis remains an option, not an approved dependency.
 - Confirm vulnerability-reporting and main-branch ruleset settings via GitHub administration.
