@@ -308,3 +308,52 @@ documentation were checked; no provider configuration was changed.
   remains regression evidence only, not proof of live Gemini or current local setup.
   The current usage record combines candidate and thinking tokens as `outputTokens`;
   it does not independently persist the thinking-token breakdown.
+
+### Infrastructure continuation — 2026-10-27
+
+**Result: PARTIAL; zero generation requests.** The repository remained on the
+documentation-only SYN-AI-002A branch. The owner authorized local backup,
+forward-only migration, API restart and non-generating provider checks; the
+USD 1.00 monthly preference was not changed.
+
+- PostgreSQL 16 source `synvaro` had seven of eight committed migrations.
+  Before migration, a mode-0600 custom-format backup was written to
+  `/private/tmp/synvaro-2026-10-27T08-59-30-606Z.dump` (SHA-256
+  `e8fb766d317f0b266e615772eb05a3303fb18435aa25ffc056fecad30499ef3b`).
+  A full `pg_restore` into a disposable database succeeded; counts matched
+  across User 1, Session 3, Organization 1, Brand 3, BrandProfile 1,
+  Content 1, ContentMedia 0, MediaAsset 0, AiPreference 1, AiGeneration 2
+  and migration history 7. The disposable database was removed; the backup
+  remains local and was not committed.
+- `pnpm db:deploy` applied only `20261026161445_ai_image_generation`;
+  `prisma migrate status` now reports eight migrations and an up-to-date
+  schema. Post-migration Prisma reads succeeded. Existing record counts were
+  unchanged; AI preference remained `gpt-6-luna`, 512 output tokens,
+  `monthlyBudgetMicros=1000000`, confirmation enabled, image generation
+  disabled. No database reset or preference edit occurred.
+- The local `GOOGLE_API_KEY` matched the **masked suffix** of the Synvaro
+  project key shown in Google AI Studio, and did not match the other listed
+  project key. The key value was not printed or copied. With that key, the
+  non-generating Gemini `ListModels` call returned HTTP 200 and listed
+  `gemini-3.8-flash` with `generateContent` support. This establishes
+  key/model listing access, not a successful generation response.
+- Google AI Studio showed this Synvaro project on **Free tier**, with no
+  billing set up. Its model-specific rate-limit table showed Gemini 3.8 Flash
+  at 5 RPM, 250K input TPM and 20 RPD, with zero peak use in the displayed
+  28-day period. Google's [billing](https://ai.google.dev/gemini-api/docs/billing),
+  [pricing](https://ai.google.dev/gemini-api/docs/pricing) and
+  [rate-limit](https://ai.google.dev/gemini-api/docs/rate-limits) docs confirm
+  Free-tier input/output for this model, per-project quotas, and that
+  billing setup is required to enter a paid tier. Free-tier content may be
+  used to improve Google products. These observations are time-sensitive;
+  Free tier is not a SYNVARO budget guarantee and project spend caps are
+  not a billing hard cap.
+- The API was rebuilt and restarted from the repository-root `.env`;
+  `GET /health` returned 200 and the Nest startup log mapped
+  `GET /ai/models`. The Chrome Studio session was at `/login`, so the
+  authenticated catalog and editor walkthrough remain pending a normal
+  owner login. No database session token was extracted or substituted.
+
+The separate owner authorization for a live request and temporary budget
+change has **not** been given. No input/output/thinking usage, cost, preview,
+Apply or persisted Gemini result is claimed.
