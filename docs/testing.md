@@ -550,6 +550,9 @@ reported separately from the mocked API tests.
   preservation, concurrent request rejection, discard, expiry and malformed
   output. Deterministic HTTP adapter tests cover voice filtering, bounded MP3,
   timeout and provider errors.
+- [PR #24 CI at implementation commit](https://github.com/synvaro/synvaro/actions/runs/40528145948)
+  passed its PostgreSQL migration, test, build and smoke gates. CI uses
+  deterministic provider responses and no paid ElevenLabs key.
 - Built Next.js → NestJS → PostgreSQL smoke passed with a deterministic local
   audio provider. It checked selected-budget refusal before generation, Origin
   rejection, voice listing, protected preview, save to private Media Library,
