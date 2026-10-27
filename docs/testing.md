@@ -276,7 +276,7 @@ was attempted. [Contract](contracts/google-gemini-text.md) records the open boun
 
 ## SYN-AI-002A live Google acceptance — preflight 2026-10-27
 
-**Result: PARTIAL — live execution blocked; no real Gemini request was made.**
+**Preflight result: PARTIAL — no real Gemini request at this stage.**
 PR [#19](https://github.com/synvaro/synvaro/pull/19) merged at
 `febc64bcc099537e7e5bf837976cab12da9ad44f`; its [CI](https://github.com/synvaro/synvaro/actions/runs/40471372079)
 passed. Model `gemini-3.8-flash`, `@google/genai` 2.31.0, LOW thinking,
@@ -380,3 +380,46 @@ confirmation enabled and two existing AI generation records. API health
 remained 200. **Zero live Gemini generation requests** were sent; no usage,
 cost, preview, Apply or persisted Gemini result is claimed. Resume the
 approved one-request flow only after the computer-use approval limit clears.
+
+### Single live attempt — 2026-10-27
+
+**Current result: PARTIAL — one real Gemini generation attempt failed with
+uncertain provider usage; no suggestion or Apply.** After the owner requested
+a retry, Safari computer use worked again. A separate Studio tab preserved
+an existing OpenAI suggestion preview. The authenticated hypothetical
+`SYN007A Test Kitchen` draft had a `tr-TR` Brand Profile, tone and guidelines.
+Before the Gemini attempt, one additional successful OpenAI usage row was
+observed; it was not attributed to this acceptance.
+
+- The Studio saved `gemini-3.8-flash` with the monthly SYNVARO limit temporarily
+  unset, while paid-generation confirmation remained enabled and the
+  512-token output preference remained unchanged. The owner-approved
+  hypothetical Turkish breakfast instruction was entered. The Studio showed
+  its confirmation screen; **Confirm paid generation was clicked once**.
+  No automatic or manual retry followed.
+- The single `AiGeneration` row
+  `a7cd1e7e-5898-4c19-8acd-3b2b9d00826f` identifies provider `google`,
+  model `gemini-3.8-flash`, status `FAILED`, error code `PROVIDER_FAILED`
+  and `costUncertain=true`. It ran from 12:23:28 to 12:23:57 UTC.
+  Pre-request token counting recorded 319 input tokens; no actual
+  generation output or thinking usage was returned. The provider may have
+  processed the request before failure, so actual billing is **unknown**.
+  The existing USD 0.004319 reservation remains in `budgetChargeMicros`;
+  it was not cleared or represented as a billed cost. The elapsed time is
+  consistent with the configured 30-second timeout but does not establish
+  the provider-side cause.
+- Studio displayed a sanitized provider-unavailable/timeout message and
+  reported one uncertain-cost request. No suggestion preview was returned,
+  so Discard and Apply could not be tested. The draft title remained
+  `Weekend Breakfast Inspiration`; its body SHA-256 remained
+  `4f883fc8d1c0091087f98c19539c6f7d868ca07b79337f5468aa5dfd2a7cdb72`.
+  No publishing action occurred.
+- Immediately after the failed attempt, the Studio restored and PostgreSQL
+  confirmed the original preference: OpenAI `gpt-6-luna`, 512 output tokens,
+  `monthlyBudgetMicros=1000000`, paid confirmation enabled, and unchanged
+  image settings. The uncertain row now blocks budgeted generation until
+  operator reconciliation. Do not clear its reservation automatically or
+  issue another potentially charged request without new owner authorization.
+
+No provider response text, actual output/thinking tokens, billed USD amount,
+successful Apply or persisted Gemini draft can be claimed from this attempt.

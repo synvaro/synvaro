@@ -38,7 +38,7 @@ SYNVARO is an independent Apache-2.0 open-source AI content studio for preparing
 
 **SYN-AI-002 — Google Gemini Text:** Merged ([PR #19](https://github.com/synvaro/synvaro/pull/19), [contract](docs/contracts/google-gemini-text.md), [CI](https://github.com/synvaro/synvaro/actions/runs/40471372079)). Selected-budget Gemini requests remain blocked pending a verified upper bound.
 
-**SYN-AI-002A — Live Google acceptance:** **PARTIAL — infrastructure preflight advanced**; [evidence](docs/testing.md#syn-ai-002a-live-google-acceptance--preflight-2026-10-27). Local backup/restore, migration, Google Free-tier model listing, API restart and authenticated Safari desktop/390px catalog walkthrough passed. Owner retained the test key and authorized one live request, but computer-use approval review hit its usage limit before preference changes. No Gemini generation or owner acceptance.
+**SYN-AI-002A — Live Google acceptance:** **PARTIAL — one live Gemini attempt failed with uncertain usage**; [evidence](docs/testing.md#syn-ai-002a-live-google-acceptance--preflight-2026-10-27). Backup/migration, Free-tier model listing and authenticated Safari desktop/390px preflight passed. The one owner-authorized real request returned no suggestion; its reservation remains uncertain. Original USD 1.00 preference was restored. No Apply or owner acceptance.
 
 **Status vocabulary:** Planned → In development → PR ready → Merged → Owner accepted → Production verified (where applicable). Never infer a later state from an earlier one. `Implemented — PR pending review` denotes code on an open feature PR, not merge or acceptance. GitHub is the authority for current PR/merge/CI state; actual tests and deployment evidence must be checked separately.
 
@@ -82,7 +82,7 @@ SYNVARO is an independent Apache-2.0 open-source AI content studio for preparing
 - **SYN-008:** [PR #17](https://github.com/synvaro/synvaro/pull/17) / [implementation CI at 5c06668](https://github.com/synvaro/synvaro/actions/runs/40363544906) / [test evidence](docs/testing.md#syn-008-ai-image-generation). Evidence includes 84 API + 1 worker tests, eight clean PostgreSQL migrations and desktop/390px mock-provider walkthroughs. Follow-up budget regression is linked in the same test evidence; current-head CI belongs to the PR checks. Zero paid image requests; live quality/cost acceptance remains open.
 - **SYN-AI-001:** [Evidence](docs/testing.md#syn-ai-001-provider-foundation): 89 API + 1 worker tests, eight clean PostgreSQL migrations, format/lint/typecheck/Prisma/build/smoke and desktop/390px mock-provider flows passed. No live paid provider calls. PR CI is tracked separately.
 - **SYN-AI-002:** [Test evidence](docs/testing.md#syn-ai-002-google-gemini-text): real PostgreSQL, deterministic Google/OpenAI SDK and domain mocks, build/smoke and desktop/390px checks; no live Gemini request. PR CI tracked separately. Selected-budget Gemini remains blocked.
-- **SYN-AI-002A:** [Preflight and infrastructure evidence](docs/testing.md#syn-ai-002a-live-google-acceptance--preflight-2026-10-27); local backup/restore and eight migrations verified, Free-tier model listing and authenticated Safari desktop/390px check verified, zero live generation calls. Apply remains open.
+- **SYN-AI-002A:** [Preflight and single live-attempt evidence](docs/testing.md#syn-ai-002a-live-google-acceptance--preflight-2026-10-27); backup and eight migrations, Free-tier model listing and Safari desktop/390px check verified. One Gemini request failed with unknown provider charge; original budget restored. Preview and Apply remain open.
 - CI success means checks ran successfully, **not** live provider integration, production readiness or deployment acceptance.
 
 ## 6. Roadmap and next decision gate
@@ -100,7 +100,7 @@ Before any new development slice:
 
 ## 7. Pending owner / maintainer items
 
-- Resume the already authorized one-request SYN-AI-002A live Gemini acceptance after computer-use approval is available; restore the original USD 1.00 preference after the attempt. The owner retained the existing test key. Do not interpret planned providers as implemented. Preserve the SYN-008 budget limitation; require a verified reservation strategy before enabling budgeted image requests. Arrange separately authorized live image quality/cost acceptance. Do not infer either from mocked provider tests.
+- Reconcile SYN-AI-002A's uncertain Google usage/reservation before any further budgeted generation. A second live request needs new owner authorization; the first request produced no suggestion. The owner retained the test key and the original USD 1.00 preference is restored. Do not interpret planned providers as implemented. Preserve the SYN-008 budget limitation; require a verified reservation strategy before enabling budgeted image requests. Arrange separately authorized live image quality/cost acceptance. Do not infer either from mocked provider tests.
 - Keep authentication production hardening tracked before any public registration.
 - Select job queue only when background generation/publishing requires it; Redis remains an option, not an approved dependency.
 - Confirm vulnerability-reporting and main-branch ruleset settings via GitHub administration.
