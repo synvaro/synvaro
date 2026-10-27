@@ -295,9 +295,9 @@ documentation were checked; no provider configuration was changed.
   `20261026161445_ai_image_generation` migration is absent. A current Prisma read
   including image preference fields failed because those columns are absent. No
   migration, restart or database repair was performed.
-- A project named Synvaro appeared in Google AI Studio as Free tier. The local
-  key's association with that project was not verified, and applicable project-level
-  spending controls were not established. Do not infer the configured key's tier
+- Google AI Studio showed the Synvaro project on Free tier and its spend view
+  said billing is not set up. The local key's association with that project was
+  not verified, and applicable project-level spending controls were not established. Do not infer the configured key's tier
   from that display. No billing or project settings were modified.
 - There was no authorization in this preflight to unset the spending preference or
   send a paid request. There are no live input/output/thinking counts, estimated
