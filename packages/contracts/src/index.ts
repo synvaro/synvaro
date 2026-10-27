@@ -90,7 +90,13 @@ export interface MediaAsset {
   width: number | null;
   height: number | null;
   durationMs: number | null;
-  origin: 'UPLOADED' | 'AI_GENERATED' | 'AI_EDITED' | 'AI_VOICE' | 'AI_VIDEO';
+  origin:
+    | 'UPLOADED'
+    | 'AI_GENERATED'
+    | 'AI_EDITED'
+    | 'AI_VOICE'
+    | 'AI_VIDEO'
+    | 'REEL_ASSEMBLED';
   generation?: {
     id: string;
     provider: string;

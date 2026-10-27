@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ImagePanel } from './image-panel';
 import { VoicePanel } from './voice-panel';
 import { VideoPanel } from './video-panel';
+import { ReelPanel } from './reel-panel';
 import { AiPanel } from './ai-panel';
 import { AttachedMedia } from './attachments';
 import { useEffect, useRef, useState } from 'react';
@@ -251,6 +252,15 @@ export function DraftEditor({
       )}
       {content && (
         <VideoPanel
+          contentId={content.id}
+          brandId={brand.id}
+          brandName={brand.name}
+          disabled={busy || !!leaving}
+          onAttached={() => setAttachmentVersion((v) => v + 1)}
+        />
+      )}
+      {content && (
+        <ReelPanel
           contentId={content.id}
           brandId={brand.id}
           brandName={brand.name}

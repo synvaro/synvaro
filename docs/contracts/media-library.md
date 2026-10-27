@@ -6,6 +6,12 @@ upload endpoint's JPEG/PNG/WebP/MP4 allowlist or its 20 MiB limit. Generated
 audio has separate MP3 inspection and a 5 MiB limit; see
 [VOC-001–006](elevenlabs-voice-generation.md).
 
+SYN-AI-006 saves explicitly accepted local FFmpeg renders as private
+`REEL_ASSEMBLED` MP4 assets. Their preview expires after one hour unless saved;
+the same private object becomes the accepted asset without copying bytes. This
+does not alter original uploads or AI provider accounting. See
+[REEL-001–008](reels-assembly.md).
+
 ## Storage and upload security contract (defined before implementation)
 
 One MediaAsset belongs to one Brand; ownership follows Brand → Organization → User.
