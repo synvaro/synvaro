@@ -67,6 +67,35 @@ test('SYN-SOC-001 provider adapters parse bounded OAuth token and account discov
     const instagram = await adapter.complete('META', 'INSTAGRAM', 'code');
     assert.equal(instagram[0]?.externalId, 'ig-1');
     assert.equal(instagram[0]?.accountType, 'PROFESSIONAL');
+    assert.equal(instagram[0]?.credential.pageId, 'page-1');
+    const standardIg = new URL(adapter.authorize('META', 'INSTAGRAM', 'state'));
+    const publishingIg = new URL(
+      adapter.authorize('META', 'INSTAGRAM', 'state', undefined, true),
+    );
+    const publishingFb = new URL(
+      adapter.authorize('META', 'FACEBOOK', 'state', undefined, true),
+    );
+    assert.ok(
+      !standardIg.searchParams
+        .get('scope')
+        ?.includes('instagram_content_publish'),
+    );
+    assert.ok(
+      publishingIg.searchParams
+        .get('scope')
+        ?.includes('instagram_content_publish'),
+    );
+    assert.ok(
+      !publishingIg.searchParams.get('scope')?.includes('pages_manage_posts'),
+    );
+    assert.ok(
+      publishingFb.searchParams.get('scope')?.includes('pages_manage_posts'),
+    );
+    assert.ok(
+      !publishingFb.searchParams
+        .get('scope')
+        ?.includes('instagram_content_publish'),
+    );
     const linkedin = await adapter.complete('LINKEDIN', 'LINKEDIN', 'code');
     assert.equal(linkedin[0]?.externalId, 'member-1');
     const youtube = await adapter.complete(
