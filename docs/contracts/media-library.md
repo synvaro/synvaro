@@ -1,5 +1,7 @@
 # Brand Media Library — SYN-005
 
+Brand-owned MP4 assets may be explicitly selected for the separate [YouTube controlled upload](youtube-video-publishing.md). This does not make private library files publicly accessible or change their original bytes.
+
 SYN-AI-004 also saves **generated** MP3 narration into the same private
 MediaStorage as `AI_VOICE` MediaAssets. This does not change the original
 upload endpoint's JPEG/PNG/WebP/MP4 allowlist or its 20 MiB limit. Generated

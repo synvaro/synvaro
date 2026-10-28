@@ -92,7 +92,7 @@ export class SocialController {
         publishing: {
           type: 'boolean',
           description:
-            'Explicit Facebook Page, Instagram professional or LinkedIn member publishing reauthorization',
+            'Explicit Facebook Page, Instagram professional, LinkedIn member or YouTube channel publishing reauthorization',
         },
       },
       additionalProperties: false,

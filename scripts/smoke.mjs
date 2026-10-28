@@ -413,6 +413,32 @@ try {
   const linkedinReady = await product(`${linkedinPath}/readiness`);
   assert.equal(linkedinReady.status, 200);
   assert.deepEqual((await linkedinReady.json()).members, []);
+  // YTP-001/009: built Next -> Nest readiness and Origin protection do not
+  // start a Google session or upload private media.
+  const youtubePath = `/contents/${draft.id}/youtube-publications`;
+  assert.equal(
+    (await fetch(`${origin}/api${youtubePath}/readiness`)).status,
+    401,
+  );
+  const youtubeReady = await product(`${youtubePath}/readiness`);
+  assert.equal(youtubeReady.status, 200);
+  assert.deepEqual((await youtubeReady.json()).channels, []);
+  assert.equal(
+    (
+      await product(
+        youtubePath,
+        'POST',
+        {
+          socialAccountId: randomUUID(),
+          mediaAssetId: randomUUID(),
+          title: 'Smoke test',
+          requestId: randomUUID(),
+        },
+        'https://evil.example',
+      )
+    ).status,
+    403,
+  );
   assert.equal(
     (
       await product(

@@ -38,7 +38,12 @@ const requestedScopes = (
         : ['pages_show_list'];
   return provider === 'LINKEDIN'
     ? ['openid', 'profile', ...(publishing ? ['w_member_social'] : [])]
-    : ['https://www.googleapis.com/auth/youtube.readonly'];
+    : [
+        'https://www.googleapis.com/auth/youtube.readonly',
+        ...(publishing
+          ? ['https://www.googleapis.com/auth/youtube.upload']
+          : []),
+      ];
 };
 const settings = {
   META: ['META_APP_ID', 'META_APP_SECRET'],
