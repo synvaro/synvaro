@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes, randomUUID, createHash } from 'node:crypto';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
@@ -301,6 +301,51 @@ test(
             409,
           );
           meta.readiness = async () => ({ eligible: true, reason: null });
+          await db.socialAccount.update({
+            where: { id: a.accountId },
+            data: { status: 'DISCONNECTED' },
+          });
+          assert.equal(
+            (
+              await call(
+                path,
+                'POST',
+                {
+                  socialAccountId: a.accountId,
+                  mediaAssetId: a.mediaId,
+                  requestId: randomUUID(),
+                },
+                a.cookie,
+              )
+            ).status,
+            409,
+          );
+          await db.socialAccount.update({
+            where: { id: a.accountId },
+            data: {
+              status: 'CONNECTED',
+              accessExpiresAt: new Date(Date.now() - 1000),
+            },
+          });
+          assert.equal(
+            (
+              await call(
+                path,
+                'POST',
+                {
+                  socialAccountId: a.accountId,
+                  mediaAssetId: a.mediaId,
+                  requestId: randomUUID(),
+                },
+                a.cookie,
+              )
+            ).status,
+            409,
+          );
+          await db.socialAccount.update({
+            where: { id: a.accountId },
+            data: { accessExpiresAt: null },
+          });
         },
       );
       await t.test(
@@ -432,6 +477,14 @@ test(
           assert.equal(image.status, 200);
           assert.equal(image.headers.get('content-type'), 'image/jpeg');
           assert.deepEqual(Buffer.from(await image.arrayBuffer()), a.bytes);
+          assert.equal((await call(signed.pathname)).status, 200);
+          const actualNow = Date.now;
+          Date.now = () => Number(signed.pathname.split('/')[3]) * 1000 + 1000;
+          try {
+            assert.equal((await call(signed.pathname)).status, 404);
+          } finally {
+            Date.now = actualNow;
+          }
           assert.equal(
             (await call(signed.pathname.replace(/.$/, 'X'))).status,
             404,
@@ -517,6 +570,57 @@ test(
         },
       );
       await t.test(
+        'changed source JPEG is rejected before container creation',
+        async () => {
+          const storage = app.get(LocalMediaStorage);
+          const key = randomUUID();
+          await storage.stage(key, Readable.from([a.bytes]));
+          await storage.publish(key);
+          const asset = await db.mediaAsset.create({
+            data: {
+              brandId: a.brandId,
+              originalFilename: 'mutable-test.jpeg',
+              storageKey: key,
+              mimeType: 'image/jpeg',
+              sizeBytes: a.bytes.length,
+              width: 100,
+              height: 100,
+            },
+          });
+          const prepared = await call(
+            path,
+            'POST',
+            {
+              socialAccountId: a.accountId,
+              mediaAssetId: asset.id,
+              requestId: randomUUID(),
+            },
+            a.cookie,
+          );
+          assert.equal(prepared.status, 201);
+          const id = (
+            (await prepared.json()) as { publication: { id: string } }
+          ).publication.id;
+          await writeFile(
+            await storage.path(key),
+            Buffer.from('changed source'),
+          );
+          const before = created;
+          assert.equal(
+            (
+              await call(
+                `/instagram-publications/${id}/confirm`,
+                'POST',
+                { confirm: true },
+                a.cookie,
+              )
+            ).status,
+            409,
+          );
+          assert.equal(created, before);
+        },
+      );
+      await t.test(
         'final publish rejects a draft edited after container creation',
         async () => {
           const prepared = await call(
@@ -568,6 +672,68 @@ test(
             409,
           );
           assert.equal(published, before);
+        },
+      );
+      await t.test(
+        'failed and expired provider containers cannot publish',
+        async () => {
+          const statusFunction = meta.containerStatus;
+          for (const state of ['ERROR', 'EXPIRED'] as const) {
+            const prepared = await call(
+              path,
+              'POST',
+              {
+                socialAccountId: a.accountId,
+                mediaAssetId: a.mediaId,
+                requestId: randomUUID(),
+              },
+              a.cookie,
+            );
+            assert.equal(prepared.status, 201);
+            const id = (
+              (await prepared.json()) as { publication: { id: string } }
+            ).publication.id;
+            assert.equal(
+              (
+                await call(
+                  `/instagram-publications/${id}/confirm`,
+                  'POST',
+                  { confirm: true },
+                  a.cookie,
+                )
+              ).status,
+              201,
+            );
+            meta.containerStatus = async () => state;
+            const checked = await call(
+              `/instagram-publications/${id}/check`,
+              'POST',
+              { confirm: true },
+              a.cookie,
+            );
+            assert.equal(
+              (
+                (await checked.json()) as {
+                  publication: { status: string; errorCode: string };
+                }
+              ).publication.status,
+              'FAILED',
+            );
+            const before = published;
+            assert.equal(
+              (
+                await call(
+                  `/instagram-publications/${id}/publish`,
+                  'POST',
+                  { confirm: true },
+                  a.cookie,
+                )
+              ).status,
+              201,
+            );
+            assert.equal(published, before);
+            meta.containerStatus = statusFunction;
+          }
         },
       );
       await t.test(
@@ -686,6 +852,64 @@ test(
           );
         },
       );
+      await t.test(
+        'ambiguous container timeout stays uncertain without another create',
+        async () => {
+          const foreignPath = `/contents/${b.contentId}/instagram-publications`;
+          const prepared = await call(
+            foreignPath,
+            'POST',
+            {
+              socialAccountId: b.accountId,
+              mediaAssetId: b.mediaId,
+              requestId: randomUUID(),
+            },
+            b.cookie,
+          );
+          assert.equal(prepared.status, 201);
+          const id = (
+            (await prepared.json()) as { publication: { id: string } }
+          ).publication.id;
+          meta.createContainer = async () => {
+            created++;
+            throw new InstagramPublishError('TIMEOUT', true);
+          };
+          const before = created;
+          assert.equal(
+            (
+              await call(
+                `/instagram-publications/${id}/confirm`,
+                'POST',
+                { confirm: true },
+                b.cookie,
+              )
+            ).status,
+            201,
+          );
+          assert.equal(created, before + 1);
+          assert.equal(
+            (await db.publication.findUniqueOrThrow({ where: { id } })).status,
+            'UNCERTAIN',
+          );
+          assert.equal(
+            (
+              await call(
+                `/instagram-publications/${id}/confirm`,
+                'POST',
+                { confirm: true },
+                b.cookie,
+              )
+            ).status,
+            201,
+          );
+          assert.equal(created, before + 1);
+        },
+      );
+      assert.equal(
+        published,
+        2,
+        'only the two explicitly approved publish actions reached the mock Meta publisher',
+      );
     } finally {
       meta.readiness = original.ready;
       meta.createContainer = original.create;
@@ -795,6 +1019,94 @@ test(
         );
         assert.equal(calls, 1);
       }
+    } finally {
+      globalThis.fetch = original;
+    }
+  },
+);
+
+test(
+  'Instagram readiness requires live grants, linked Page task and matching ID',
+  { concurrency: false },
+  async () => {
+    const adapter = new InstagramPublisher();
+    const original = globalThis.fetch;
+    const grants = [
+      'pages_show_list',
+      'pages_read_engagement',
+      'instagram_basic',
+      'instagram_content_publish',
+    ];
+    let granted = [...grants],
+      linked = true,
+      task = true;
+    try {
+      globalThis.fetch = async (input) => {
+        const path = new URL(String(input)).pathname;
+        if (path.endsWith('/me/permissions'))
+          return Response.json({
+            data: granted.map((permission) => ({
+              permission,
+              status: 'granted',
+            })),
+          });
+        if (path.endsWith('/me/accounts'))
+          return Response.json({
+            data: [
+              {
+                id: '12345',
+                tasks: task ? ['CREATE_CONTENT'] : [],
+                instagram_business_account: { id: linked ? '67890' : '99999' },
+              },
+            ],
+          });
+        return Response.json({ id: '67890' });
+      };
+      assert.deepEqual(
+        await adapter.readiness(
+          '67890',
+          'private-user',
+          'private-page',
+          '12345',
+        ),
+        { eligible: true, reason: null },
+      );
+      granted = grants.filter((name) => name !== 'instagram_content_publish');
+      assert.deepEqual(
+        await adapter.readiness(
+          '67890',
+          'private-user',
+          'private-page',
+          '12345',
+        ),
+        { eligible: false, reason: 'PUBLISH_PERMISSION_MISSING' },
+      );
+      granted = [...grants];
+      linked = false;
+      assert.deepEqual(
+        await adapter.readiness(
+          '67890',
+          'private-user',
+          'private-page',
+          '12345',
+        ),
+        { eligible: false, reason: 'PAGE_LINK_OR_TASK_MISSING' },
+      );
+      linked = true;
+      task = false;
+      assert.deepEqual(
+        await adapter.readiness(
+          '67890',
+          'private-user',
+          'private-page',
+          '12345',
+        ),
+        { eligible: false, reason: 'PAGE_LINK_OR_TASK_MISSING' },
+      );
+      assert.deepEqual(
+        await adapter.readiness('67890', '', 'private-page', '12345'),
+        { eligible: false, reason: 'REAUTHORIZE' },
+      );
     } finally {
       globalThis.fetch = original;
     }
