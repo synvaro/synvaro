@@ -2,9 +2,9 @@
 
 **Open-source AI content studio — Create. Orchestrate. Publish.**
 
-SYNVARO helps teams prepare, review, schedule and publish brand-safe social content across Instagram, Facebook, LinkedIn and YouTube. AI text, image, video and voice generation use configurable providers and user-owned API credentials.
+SYNVARO is an independent Apache-2.0 open-source AI Content Studio in development for multi-brand social content. It brings together brand profiles, drafts, private media and controlled AI-assisted creation. [Explore the project page](https://spexop.com/synvaro/).
 
-**Status:** development foundation with session authentication and owner-scoped organization/brand management and persistent brand profiles (SYN-003). Content, AI and publishing capabilities remain planned, not released functionality.
+**Status:** brand and content management, AI creation adapters, social account connection adapters, and controlled Facebook Page, Instagram professional and LinkedIn member publishing code are merged. These are development slices, not a public product release or verified live platform integration. Meta, LinkedIn and Google app consent and real platform publication remain open. YouTube channel connection code is merged; YouTube video publishing has no merged public PR. Scheduling and broader analytics remain roadmap work. See the [engineering status](ENGINEERING_MASTER.md), [testing evidence](docs/testing.md) and [roadmap](docs/roadmap.md).
 
 ## Initial use cases
 - International Safety Inspection Services Türkiye (ISIS) corporate communications and delicatessen stores: verified product photos, offers and short videos.
@@ -18,7 +18,7 @@ SYNVARO helps teams prepare, review, schedule and publish brand-safe social cont
 
 Start with [Product](docs/product.md), [Architecture](docs/architecture.md), [Domains](docs/domains.md), [Data model](docs/data-model.md), [Decisions](docs/decisions.md), [Roadmap](docs/roadmap.md) and [Testing](docs/testing.md).
 
-Contributions welcome after initial governance and CI are established. License: [Apache-2.0](LICENSE).
+Contributions are welcome under the [contribution guide](CONTRIBUTING.md). License: [Apache-2.0](LICENSE).
 
 ## Development
 
