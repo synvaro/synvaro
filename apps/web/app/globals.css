@@ -663,3 +663,27 @@ fieldset .button,
 .social-list button {
   margin-top: 0.5rem;
 }
+.publish-review {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid #d6e2dd;
+  border-radius: 0.6rem;
+  min-width: 0;
+}
+.publish-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  background: #f5f7f2;
+  padding: 1rem;
+  border-radius: 0.4rem;
+}
+.brand-form-card select {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #647570;
+  border-radius: 0.4rem;
+  font: inherit;
+}

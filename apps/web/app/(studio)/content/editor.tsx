@@ -6,6 +6,7 @@ import { VideoPanel } from './video-panel';
 import { ReelPanel } from './reel-panel';
 import { AiPanel } from './ai-panel';
 import { AttachedMedia } from './attachments';
+import { PublishPanel } from './publish-panel';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { Content, ContentResponse } from '@synvaro/contracts';
@@ -266,6 +267,15 @@ export function DraftEditor({
           brandName={brand.name}
           disabled={busy || !!leaving}
           onAttached={() => setAttachmentVersion((v) => v + 1)}
+        />
+      )}
+      {content && (
+        <PublishPanel
+          contentId={content.id}
+          brandId={brand.id}
+          savedBody={saved.body}
+          dirty={dirty}
+          disabled={busy || !!leaving}
         />
       )}
       {pendingAI !== null && (

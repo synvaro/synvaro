@@ -109,7 +109,12 @@ export class SocialService {
     sessionToken: string,
     brandId: string,
     platform: SocialPlatform,
+    publishing = false,
   ) {
+    if (publishing && platform !== 'FACEBOOK')
+      throw new BadRequestException(
+        'Publishing authorization is Facebook Page only',
+      );
     await this.ownedBrand(userId, brandId);
     const provider = providerFor(platform);
     if (!this.providers.configured(provider) || !encryptionReady())
@@ -119,7 +124,13 @@ export class SocialService {
     const state = randomBytes(32).toString('base64url');
     const verifier =
       provider === 'GOOGLE' ? randomBytes(32).toString('base64url') : undefined;
-    const url = this.providers.authorize(provider, platform, state, verifier);
+    const url = this.providers.authorize(
+      provider,
+      platform,
+      state,
+      verifier,
+      publishing,
+    );
     await this.db.client.socialOauthAttempt.deleteMany({
       where: { expiresAt: { lt: this.now() } },
     });
@@ -129,6 +140,7 @@ export class SocialService {
         brandId,
         provider,
         platform,
+        publishing,
         stateHash: digest(state),
         sessionHash: digest(sessionToken),
         verifierEncrypted: verifier ? encryptSocial({ verifier }) : null,
@@ -219,6 +231,7 @@ export class SocialService {
       id: attempt.id,
       brandId: attempt.brandId,
       platform: attempt.platform,
+      publishing: attempt.publishing,
       status: attempt.expiresAt <= this.now() ? 'EXPIRED' : attempt.status,
       errorCode: attempt.errorCode,
       accounts:
@@ -357,15 +370,39 @@ export class SocialService {
         },
       });
       if (!row) throw missing();
+      if (
+        await tx.publication.count({
+          where: { socialAccountId: row.id, status: 'PUBLISHING' },
+        })
+      )
+        throw new ConflictException('A publication is still in progress');
       const others = await tx.socialAccount.count({
         where: { grantId: row.grantId, id: { not: row.id } },
       });
-      await tx.socialAccount.delete({ where: { id: row.id } });
+      const hasHistory = await tx.publication.count({
+        where: { socialAccountId: row.id },
+      });
+      if (hasHistory) {
+        await tx.socialAccount.update({
+          where: { id: row.id },
+          data: {
+            status: 'DISCONNECTED',
+            scopes: [],
+            credentialsEncrypted: encryptSocial({ accessToken: '' }),
+            accessExpiresAt: null,
+            refreshExpiresAt: null,
+          },
+        });
+      } else {
+        await tx.socialAccount.delete({ where: { id: row.id } });
+      }
       const otherMeta =
         row.platform === 'FACEBOOK' || row.platform === 'INSTAGRAM'
           ? await tx.socialAccount.count({
               where: {
                 platform: { in: ['FACEBOOK', 'INSTAGRAM'] },
+                id: { not: row.id },
+                status: 'CONNECTED',
                 brand: { organization: { ownerUserId: userId } },
               },
             })

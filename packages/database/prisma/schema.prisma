@@ -21,6 +21,7 @@ model User {
   aiGenerations AiGeneration[]
   reelRenders ReelRender[]
   socialAttempts SocialOauthAttempt[]
+  publications Publication[]
 }
 
 model Session {
@@ -62,6 +63,7 @@ model Brand {
   mediaAssets    MediaAsset[]
   socialAccounts SocialAccount[]
   socialAttempts SocialOauthAttempt[]
+  publications Publication[]
 
   @@unique([organizationId, slug])
 }
@@ -96,6 +98,7 @@ model Content {
   media ContentMedia[]
   aiGenerations AiGeneration[]
   reelRenders ReelRender[]
+  publications Publication[]
 
   @@index([brandId, updatedAt(sort: Desc), id(sort: Desc)])
 }
@@ -265,6 +268,7 @@ enum SocialConnectionStatus {
   REAUTH_REQUIRED
   EXPIRED
   ERROR
+  DISCONNECTED
 }
 
 enum SocialAttemptStatus {
@@ -282,6 +286,7 @@ model SocialOauthAttempt {
   brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
   provider SocialProvider
   platform SocialPlatform
+  publishing Boolean @default(false)
   stateHash String @unique @db.Char(64)
   sessionHash String @db.Char(64)
   verifierEncrypted String? @db.Text
@@ -314,10 +319,50 @@ model SocialAccount {
   lastValidatedAt DateTime? @db.Timestamptz(3)
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  publications Publication[]
 
   @@unique([platform, externalId])
   @@index([brandId, createdAt(sort: Desc)])
   @@index([grantId])
+}
+
+enum PublicationStatus {
+  READY
+  PUBLISHING
+  PUBLISHED
+  FAILED
+  UNCERTAIN
+}
+
+model Publication {
+  id String @id @default(uuid()) @db.Uuid
+  requestId String @db.Uuid
+  userId String @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  contentId String @db.Uuid
+  content Content @relation(fields: [contentId], references: [id], onDelete: Restrict)
+  brandId String @db.Uuid
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  socialAccountId String @db.Uuid
+  socialAccount SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Restrict)
+  platform SocialPlatform @default(FACEBOOK)
+  pageId String @db.VarChar(160)
+  pageName String @db.VarChar(200)
+  textSnapshot String @db.Text
+  draftUpdatedAt DateTime @db.Timestamptz(3)
+  status PublicationStatus @default(READY)
+  providerPostId String? @db.VarChar(160)
+  errorCode String? @db.VarChar(40)
+  reconciliationEvidence String? @db.VarChar(500)
+  reconciliationOperator String? @db.VarChar(120)
+  reconciledAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  confirmedAt DateTime? @db.Timestamptz(3)
+  completedAt DateTime? @db.Timestamptz(3)
+
+  @@unique([userId, requestId])
+  @@index([contentId, createdAt(sort: Desc)])
+  @@index([userId, status])
 }
 
 model ReelRender {
