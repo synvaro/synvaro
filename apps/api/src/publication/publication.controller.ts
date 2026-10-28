@@ -29,7 +29,11 @@ const uuid = (value: string) => {
   return value;
 };
 const prepareBody = z
-  .object({ socialAccountId: z.uuid(), requestId: z.uuid() })
+  .object({
+    socialAccountId: z.uuid(),
+    requestId: z.uuid(),
+    mediaAssetId: z.uuid().optional(),
+  })
   .strict();
 const confirmBody = z.object({ confirm: z.literal(true) }).strict();
 function parse<T>(schema: z.ZodType<T>, body: unknown): T {
@@ -75,7 +79,7 @@ export class PublicationController {
   @Post('contents/:id/facebook-publications')
   @ApiOperation({
     summary:
-      'Prepare a reviewed immutable Facebook Page text snapshot; does not publish',
+      'Prepare a reviewed immutable Facebook Page text or single-photo snapshot; does not publish',
   })
   @ApiBody({
     schema: {
@@ -84,6 +88,12 @@ export class PublicationController {
       properties: {
         socialAccountId: { type: 'string', format: 'uuid' },
         requestId: { type: 'string', format: 'uuid' },
+        mediaAssetId: {
+          type: 'string',
+          format: 'uuid',
+          description:
+            'Optional owned JPEG/PNG MediaAsset for a single-photo post',
+        },
       },
       additionalProperties: false,
     },
@@ -99,6 +109,7 @@ export class PublicationController {
       uuid(id),
       input.socialAccountId,
       input.requestId,
+      input.mediaAssetId,
     );
   }
 

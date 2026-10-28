@@ -129,6 +129,7 @@ model MediaAsset {
   generation AiGeneration?
   sourceForGenerations AiGeneration[] @relation("ImageEditSource")
   contents ContentMedia[]
+  publications Publication[]
   reelOutput ReelRender? @relation("ReelOutput")
   reelNarrations ReelRender[] @relation("ReelNarration")
 
@@ -334,6 +335,11 @@ enum PublicationStatus {
   UNCERTAIN
 }
 
+enum PublicationKind {
+  TEXT
+  IMAGE
+}
+
 model Publication {
   id String @id @default(uuid()) @db.Uuid
   requestId String @db.Uuid
@@ -349,6 +355,12 @@ model Publication {
   pageId String @db.VarChar(160)
   pageName String @db.VarChar(200)
   textSnapshot String @db.Text
+  kind PublicationKind @default(TEXT)
+  mediaAssetId String? @db.Uuid
+  mediaAsset MediaAsset? @relation(fields: [mediaAssetId], references: [id], onDelete: Restrict)
+  mediaSha256 String? @db.Char(64)
+  mediaMimeType String? @db.VarChar(40)
+  mediaSizeBytes Int?
   draftUpdatedAt DateTime @db.Timestamptz(3)
   status PublicationStatus @default(READY)
   providerPostId String? @db.VarChar(160)
@@ -363,6 +375,7 @@ model Publication {
   @@unique([userId, requestId])
   @@index([contentId, createdAt(sort: Desc)])
   @@index([userId, status])
+  @@index([mediaAssetId])
 }
 
 model ReelRender {

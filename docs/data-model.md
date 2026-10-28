@@ -91,9 +91,9 @@ state, safe error category, provider post ID and timestamps. Unique
 `(userId, requestId)` supports one-send admission. An uncertain publication
 has one-time operator reconciliation fields. Disconnect removes active
 credentials; a SocialAccount with publication history remains as a redacted
-`DISCONNECTED` record so the FK and historical destination remain intact.
+`DISCONNECTED` record so the FK and historical destination remain intact. SYN-SOC-003 adds a `TEXT`/`IMAGE` kind and optional MediaAsset FK, MIME, size and SHA-256 source snapshot to the same Publication entity; existing text rows retain the default `TEXT` kind.
 See [SOC-001–008](contracts/social-account-connections.md) and
-[PUB-001–008](contracts/facebook-page-publishing.md).
+[PUB-001–008](contracts/facebook-page-publishing.md) and [PUB-IMG-001–008](contracts/facebook-page-image-publishing.md).
 
 ## Remaining design draft (not migrated)
 

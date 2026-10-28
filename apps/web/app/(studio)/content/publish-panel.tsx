@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 type Page = {
@@ -16,11 +17,19 @@ type Publication = {
   pageName: string;
   pageId: string;
   textSnapshot: string;
+  kind: 'TEXT' | 'IMAGE';
+  mediaAssetId: string | null;
   status: string;
   providerPostId: string | null;
   errorCode: string | null;
   reconciledAt: string | null;
   createdAt: string;
+};
+type Photo = {
+  id: string;
+  originalFilename: string;
+  mimeType: string;
+  sizeBytes: number;
 };
 async function json(path: string, options?: RequestInit) {
   const response = await fetch(path, { cache: 'no-store', ...options });
@@ -49,6 +58,8 @@ export function PublishPanel({
   const [pages, setPages] = useState<Page[]>([]);
   const [history, setHistory] = useState<Publication[]>([]);
   const [selected, setSelected] = useState('');
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [selectedPhoto, setSelectedPhoto] = useState('');
   const [review, setReview] = useState<Publication | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -56,13 +67,21 @@ export function PublishPanel({
   const active = useRef(false);
   const pendingRequestId = useRef<string | null>(null);
   const reload = useCallback(async () => {
-    const [readiness, records] = await Promise.all([
+    const [readiness, records, media] = await Promise.all([
       json(`/api/contents/${contentId}/facebook-publications/readiness`),
       json(`/api/contents/${contentId}/facebook-publications`),
+      json(`/api/brands/${brandId}/media`),
     ]);
     setPages(readiness.pages as Page[]);
     setHistory(records.publications as Publication[]);
-  }, [contentId]);
+    setPhotos(
+      ((media.assets ?? media.media ?? media) as Photo[]).filter(
+        (asset) =>
+          ['image/jpeg', 'image/png'].includes(asset.mimeType) &&
+          asset.sizeBytes <= 10_000_000,
+      ),
+    );
+  }, [contentId, brandId]);
   useEffect(() => {
     void Promise.resolve()
       .then(reload)
@@ -100,12 +119,15 @@ export function PublishPanel({
           body: JSON.stringify({
             socialAccountId: selected,
             requestId: pendingRequestId.current,
+            ...(selectedPhoto ? { mediaAssetId: selectedPhoto } : {}),
           }),
         },
       );
       setReview(result.publication as Publication);
       pendingRequestId.current = null;
-      setNotice('Review the exact saved text and Page before publishing.');
+      setNotice(
+        'Review the exact saved text, image and Page before publishing.',
+      );
       await reload();
     } catch (caught) {
       setError(
@@ -139,7 +161,7 @@ export function PublishPanel({
         next.status === 'PUBLISHED'
           ? 'Facebook returned a Page post ID.'
           : next.status === 'UNCERTAIN'
-            ? 'Outcome uncertain. Do not send this text again until reconciled.'
+            ? 'Outcome uncertain. Do not publish this snapshot again until reconciled.'
             : next.status === 'FAILED'
               ? 'Facebook rejected the post. Review the connection before another attempt.'
               : 'Checking publication status.',
@@ -164,8 +186,8 @@ export function PublishPanel({
     <section className="brand-form-card" aria-labelledby="publish-title">
       <h2 id="publish-title">Publish to Facebook Page</h2>
       <p>
-        Only saved draft text can be published. Publishing makes the post
-        visible on the selected Facebook Page.
+        Only saved draft text and an optional brand image can be published.
+        Publishing makes the post visible on the selected Facebook Page.
       </p>
       {dirty && (
         <p role="alert">
@@ -203,13 +225,41 @@ export function PublishPanel({
           for Pages that are not ready.
         </p>
       )}
+      <label htmlFor="publish-photo">Single photo (optional)</label>
+      <select
+        id="publish-photo"
+        value={selectedPhoto}
+        disabled={busy || disabled}
+        onChange={(event) => {
+          setSelectedPhoto(event.target.value);
+          pendingRequestId.current = null;
+          setReview(null);
+        }}
+      >
+        <option value="">Text only</option>
+        {photos.map((photo) => (
+          <option key={photo.id} value={photo.id}>
+            {photo.originalFilename}
+          </option>
+        ))}
+      </select>
+      {selectedPhoto && (
+        <Image
+          alt="Selected private brand photo"
+          className="publish-photo-preview"
+          src={`/api/media/${selectedPhoto}/file`}
+          width={320}
+          height={320}
+          unoptimized
+        />
+      )}
       <button
         type="button"
         className="secondary-button"
         disabled={busy || disabled || dirty || !selected || !savedBody.trim()}
         onClick={() => void prepare()}
       >
-        Review saved text
+        Review saved {selectedPhoto ? 'text and photo' : 'text'}
       </button>
       {review && (
         <div className="publish-review">
@@ -225,6 +275,21 @@ export function PublishPanel({
             <strong>Text to publish:</strong>
           </p>
           <pre className="publish-text">{review.textSnapshot}</pre>
+          {review.kind === 'IMAGE' && review.mediaAssetId && (
+            <div>
+              <p>
+                <strong>Single photo:</strong> private brand media
+              </p>
+              <Image
+                alt="Photo selected for Facebook Page post"
+                className="publish-photo-preview"
+                src={`/api/media/${review.mediaAssetId}/file`}
+                width={320}
+                height={320}
+                unoptimized
+              />
+            </div>
+          )}
           <p>
             Status: {review.status}
             {review.errorCode ? ` · ${review.errorCode}` : ''}
@@ -242,7 +307,11 @@ export function PublishPanel({
               }
               onClick={() => void confirm()}
             >
-              {busy ? 'Publishing…' : 'Publish to Facebook'}
+              {busy
+                ? 'Publishing…'
+                : review.kind === 'IMAGE'
+                  ? 'Publish image to Facebook'
+                  : 'Publish to Facebook'}
             </button>
           )}
           {review.status === 'READY' && review.textSnapshot !== savedBody && (
@@ -267,7 +336,8 @@ export function PublishPanel({
         <ul className="social-list">
           {history.map((item) => (
             <li key={item.id}>
-              <strong>{item.pageName}</strong> · {item.status} ·{' '}
+              <strong>{item.pageName}</strong> ·{' '}
+              {item.kind === 'IMAGE' ? 'Photo' : 'Text'} · {item.status} ·{' '}
               {new Date(item.createdAt).toLocaleString()}
               {item.providerPostId ? ` · ${item.providerPostId}` : ''}
               {item.status === 'UNCERTAIN' && (

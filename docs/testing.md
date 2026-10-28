@@ -18,6 +18,14 @@
 
 Every test must cite behavior/acceptance IDs, expected result, actual result, environment and evidence. A mocked integration test is **not** proof of successful production publishing.
 
+## SYN-SOC-003 Facebook Page image publishing — 2026-10-28
+
+**Environment:** isolated local PostgreSQL 16 `synvaro_photo_test`, all 17 forward-only migrations applied from empty. Deterministic Meta responses and owner-scoped synthetic Page/Brand/media; no real Meta OAuth grant or post. Existing owner data was not migrated or reset.
+
+**Actual result:** The final full suite passed 130 API tests and 1 worker test. A stale expected history count in the new fixture was corrected, then the focused suite and full suite passed. Format checks on task files, lint, typecheck, Prisma validation, build and smoke passed. Repository-wide `pnpm format:check` is blocked locally by unrelated untracked Prisma skill files; they were preserved and excluded from the PR. Nest HTTP and real PostgreSQL tests cover PUB-IMG-001–008: foreign media rejection, private source-byte integrity, immutable image snapshot, explicit double-click confirmation with one mock provider call, stale/missing image rejection and text publishing regression. The adapter test verifies the fixed `/photos` endpoint, multipart `source`, exact saved caption, `published=true`, required `post_id`, timeout uncertainty and sanitized error. These tests do not prove real Meta publication.
+
+**Studio and external acceptance:** The built Next.js → NestJS → PostgreSQL test flow passed through session login, SSR editor, protected image retrieval, Page readiness, photo review, explicit mock publication and persisted history. Browser-control tool timed out twice, so no desktop or 390px visual acceptance is claimed. GitHub Actions status is tracked on the PR. A real Page grant and one owner-approved harmless image post remain open. The provider reference was reviewed via Meta's Page Photos Graph API documentation; direct Meta developer access returned HTTP 429 in this environment, so live acceptance must re-check the endpoint and app-review settings. No external post was made.
+
 ## SYN-SOC-002 Facebook Page text publishing — 2026-10-28
 
 **Environment:** isolated local PostgreSQL 16 `synvaro_publish_test`, fresh 16-migration sequence; built Next.js 16.4.3 and NestJS 12.2.0 on loopback ports 43400/43401; synthetic owner, Brand, draft and Page. Meta eligibility and post responses were deterministic test replacements. No live Meta OAuth grant or Facebook post was used. The owner's existing database was not migrated or reset for this test.

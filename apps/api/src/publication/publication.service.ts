@@ -6,7 +6,10 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { Prisma } from '@synvaro/database';
+import { createHash } from 'node:crypto';
+import sharp from 'sharp';
 import { DatabaseService } from '../auth/database.service.js';
+import { LocalMediaStorage } from '../media/storage.js';
 import { decryptSocial } from '../social/crypto.js';
 import {
   FacebookPublisher,
@@ -25,6 +28,11 @@ const safe = {
   pageId: true,
   pageName: true,
   textSnapshot: true,
+  kind: true,
+  mediaAssetId: true,
+  mediaSha256: true,
+  mediaMimeType: true,
+  mediaSizeBytes: true,
   draftUpdatedAt: true,
   status: true,
   providerPostId: true,
@@ -40,7 +48,60 @@ export class PublicationService {
   constructor(
     private readonly db: DatabaseService,
     private readonly facebook: FacebookPublisher,
+    private readonly storage: LocalMediaStorage,
   ) {}
+
+  private async photo(userId: string, brandId: string, id: string) {
+    const asset = await this.db.client.mediaAsset.findFirst({
+      where: { id, brandId, brand: { organization: { ownerUserId: userId } } },
+    });
+    if (!asset) throw new NotFoundException('Media not found');
+    if (
+      !['image/jpeg', 'image/png'].includes(asset.mimeType) ||
+      asset.sizeBytes > 10_000_000 ||
+      asset.sizeBytes < 1
+    )
+      throw new BadRequestException(
+        'Facebook photo must be JPEG or PNG and at most 10 MB',
+      );
+    let bytes: Buffer;
+    try {
+      const chunks: Buffer[] = [];
+      let size = 0;
+      for await (const chunk of await this.storage.read(asset.storageKey)) {
+        const part = Buffer.from(chunk);
+        size += part.length;
+        if (size > 10_000_000) throw new Error('size');
+        chunks.push(part);
+      }
+      bytes = Buffer.concat(chunks);
+      if (bytes.length !== asset.sizeBytes) throw new Error('size');
+      const image = sharp(bytes, {
+        failOn: 'warning',
+        limitInputPixels: 16_000_000,
+        animated: false,
+      });
+      const metadata = await image.metadata();
+      if (
+        metadata.format !==
+          (asset.mimeType === 'image/jpeg' ? 'jpeg' : 'png') ||
+        metadata.width !== asset.width ||
+        metadata.height !== asset.height ||
+        (metadata.pages ?? 1) !== 1
+      )
+        throw new Error('image');
+      await image.stats();
+    } catch {
+      throw new ConflictException(
+        'Source image is missing or invalid; review media again',
+      );
+    }
+    return {
+      asset,
+      bytes,
+      sha256: createHash('sha256').update(bytes).digest('hex'),
+    };
+  }
 
   private async content(userId: string, id: string) {
     const row = await this.db.client.content.findFirst({
@@ -107,6 +168,7 @@ export class PublicationService {
     contentId: string,
     socialAccountId: string,
     requestId: string,
+    mediaAssetId?: string,
   ) {
     const content = await this.content(userId, contentId);
     if (!content.body.trim())
@@ -125,11 +187,15 @@ export class PublicationService {
     if (previous) {
       if (
         previous.contentId !== contentId ||
-        previous.socialAccountId !== socialAccountId
+        previous.socialAccountId !== socialAccountId ||
+        previous.mediaAssetId !== (mediaAssetId ?? null)
       )
         throw new ConflictException('Request ID already used');
       return { publication: previous };
     }
+    const photo = mediaAssetId
+      ? await this.photo(userId, content.brandId, mediaAssetId)
+      : null;
     const ready = await this.eligibility(account);
     if (!ready.eligible)
       throw new ConflictException(
@@ -140,6 +206,11 @@ export class PublicationService {
         contentId,
         socialAccountId,
         textSnapshot: content.body,
+        kind: photo ? 'IMAGE' : 'TEXT',
+        mediaAssetId: photo?.asset.id ?? null,
+        mediaSha256: photo?.sha256 ?? null,
+        mediaMimeType: photo?.asset.mimeType ?? null,
+        mediaSizeBytes: photo?.asset.sizeBytes ?? null,
         status: { in: ['PUBLISHING', 'UNCERTAIN'] },
       },
     });
@@ -158,6 +229,11 @@ export class PublicationService {
           pageId: account.externalId,
           pageName: account.displayName,
           textSnapshot: content.body,
+          kind: photo ? 'IMAGE' : 'TEXT',
+          mediaAssetId: photo?.asset.id,
+          mediaSha256: photo?.sha256,
+          mediaMimeType: photo?.asset.mimeType,
+          mediaSizeBytes: photo?.asset.sizeBytes,
           draftUpdatedAt: content.updatedAt,
         },
         select: safe,
@@ -218,6 +294,17 @@ export class PublicationService {
       row.brandId,
       row.socialAccountId,
     );
+    const photo = row.mediaAssetId
+      ? await this.photo(userId, row.brandId, row.mediaAssetId)
+      : null;
+    if (
+      row.kind === 'IMAGE' &&
+      (!photo ||
+        photo.sha256 !== row.mediaSha256 ||
+        photo.asset.mimeType !== row.mediaMimeType ||
+        photo.asset.sizeBytes !== row.mediaSizeBytes)
+    )
+      throw new ConflictException('Source image changed. Review it again.');
     const ready = await this.eligibility(account);
     if (!ready.eligible)
       throw new ConflictException(
@@ -242,6 +329,9 @@ export class PublicationService {
           contentId: row.contentId,
           socialAccountId: row.socialAccountId,
           textSnapshot: row.textSnapshot,
+          kind: row.kind,
+          mediaAssetId: row.mediaAssetId,
+          mediaSha256: row.mediaSha256,
           id: { not: id },
           status: { in: ['PUBLISHING', 'UNCERTAIN'] },
         },
@@ -262,6 +352,19 @@ export class PublicationService {
         (grant.accessExpiresAt && grant.accessExpiresAt <= new Date())
       )
         throw new ConflictException('Facebook Page authorization changed');
+      if (photo) {
+        const stored = await tx.mediaAsset.findUnique({
+          where: { id: photo.asset.id },
+        });
+        if (
+          !stored ||
+          stored.brandId !== row.brandId ||
+          stored.storageKey !== photo.asset.storageKey ||
+          stored.sizeBytes !== row.mediaSizeBytes ||
+          stored.mimeType !== row.mediaMimeType
+        )
+          throw new ConflictException('Source image changed. Review it again.');
+      }
       const updated = await tx.publication.updateMany({
         where: { id, status: 'READY' },
         data: { status: 'PUBLISHING', confirmedAt: new Date() },
@@ -283,11 +386,15 @@ export class PublicationService {
       );
     }
     try {
-      const postId = await this.facebook.publish(
-        row.pageId,
-        pageToken,
-        row.textSnapshot,
-      );
+      const postId = photo
+        ? await this.facebook.publishPhoto(
+            row.pageId,
+            pageToken,
+            row.textSnapshot,
+            photo.bytes,
+            photo.asset.mimeType as 'image/jpeg' | 'image/png',
+          )
+        : await this.facebook.publish(row.pageId, pageToken, row.textSnapshot);
       await this.db.client.publication.update({
         where: { id },
         data: {

@@ -678,6 +678,15 @@ fieldset .button,
   padding: 1rem;
   border-radius: 0.4rem;
 }
+
+.publish-photo-preview {
+  display: block;
+  max-width: min(100%, 320px);
+  max-height: 320px;
+  object-fit: contain;
+  margin: 0.75rem 0;
+  border-radius: 0.5rem;
+}
 .brand-form-card select {
   box-sizing: border-box;
   width: 100%;
