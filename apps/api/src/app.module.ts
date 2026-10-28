@@ -1,6 +1,7 @@
 import { AiModule } from './ai/ai.module.js';
 import { ReelModule } from './reels/reel.module.js';
 import { SocialModule } from './social/social.module.js';
+import { PublicationModule } from './publication/publication.module.js';
 import { MediaModule } from './media/media.module.js';
 import { ContentModule } from './content/content.module.js';
 import { OrganizationBrandModule } from './organization-brand/organization-brand.module.js';
@@ -20,6 +21,7 @@ import { HttpExceptionFilter } from './common/http-exception.filter.js';
     AiModule,
     ReelModule,
     SocialModule,
+    PublicationModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: HttpExceptionFilter }],
 })

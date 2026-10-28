@@ -34,7 +34,9 @@ const uuid = (value: string) => {
   return value;
 };
 const platform = z.enum(['FACEBOOK', 'INSTAGRAM', 'LINKEDIN', 'YOUTUBE']);
-const bodyPlatform = z.object({ platform }).strict();
+const bodyPlatform = z
+  .object({ platform, publishing: z.boolean().optional() })
+  .strict();
 const bodyAccount = z
   .object({ externalId: z.string().min(1).max(160) })
   .strict();
@@ -85,7 +87,13 @@ export class SocialController {
     schema: {
       type: 'object',
       required: ['platform'],
-      properties: { platform: { type: 'string', enum: platform.options } },
+      properties: {
+        platform: { type: 'string', enum: platform.options },
+        publishing: {
+          type: 'boolean',
+          description: 'Explicit Facebook Page publishing reauthorization',
+        },
+      },
       additionalProperties: false,
     },
   })
@@ -94,11 +102,13 @@ export class SocialController {
     @Param('id') id: string,
     @Body() body: unknown,
   ) {
+    const input = parse(bodyPlatform, body);
     return this.social.start(
       req.user!.id,
       token(req),
       uuid(id),
-      parse(bodyPlatform, body).platform,
+      input.platform,
+      input.publishing,
     );
   }
 

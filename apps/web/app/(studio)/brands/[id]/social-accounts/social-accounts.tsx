@@ -34,6 +34,7 @@ type Attempt = {
   id: string;
   brandId: string;
   platform: Platform;
+  publishing?: boolean;
   status: string;
   errorCode: string | null;
   accounts: Candidate[];
@@ -90,7 +91,7 @@ export function SocialAccounts({
       );
   }, [attemptId, brandId]);
 
-  async function start(platform: Platform) {
+  async function start(platform: Platform, publishing = false) {
     setBusy(true);
     setError('');
     setNotice('');
@@ -98,7 +99,10 @@ export function SocialAccounts({
       const result = await json(`/api/brands/${brandId}/social/oauth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ platform }),
+        body: JSON.stringify({
+          platform,
+          ...(publishing ? { publishing: true } : {}),
+        }),
       });
       const authorizationUrl = result.authorizationUrl;
       if (
@@ -128,7 +132,11 @@ export function SocialAccounts({
         body: JSON.stringify({ externalId }),
       });
       await reload();
-      setNotice('Account connected to this brand.');
+      setNotice(
+        attempt.publishing
+          ? 'Page reconnected. Publishing readiness is checked again before each post.'
+          : 'Account connected to this brand.',
+      );
       setAttempt(null);
       router.replace(`/brands/${brandId}/social-accounts`);
     } catch (caught) {
@@ -195,8 +203,8 @@ export function SocialAccounts({
       <p className="eyebrow">{brandName}</p>
       <h1>Social accounts</h1>
       <p>
-        Connect a platform account to this brand. Connecting does not enable
-        publishing.
+        Connect a platform account to this brand. Facebook Page publishing
+        requires a separate permission request and live readiness check.
       </p>
       <p>
         <Link className="auth-link" href="/brands">
@@ -268,7 +276,8 @@ export function SocialAccounts({
               </p>
               <p>
                 Provider consent and account eligibility are checked during
-                authorization. Publishing access is not requested.
+                authorization. Standard connection does not request publishing
+                access.
               </p>
               <button
                 className="button"
@@ -302,6 +311,15 @@ export function SocialAccounts({
                 eligibility has not been verified.
               </p>
               <div className="form-actions">
+                {account.platform === 'FACEBOOK' && (
+                  <button
+                    className="secondary-button"
+                    disabled={busy}
+                    onClick={() => void start('FACEBOOK', true)}
+                  >
+                    Reconnect with publishing permission
+                  </button>
+                )}
                 {account.platform === 'YOUTUBE' &&
                   account.status !== 'CONNECTED' && (
                     <button

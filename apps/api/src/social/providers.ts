@@ -18,15 +18,18 @@ export type DiscoveredAccount = {
   credential: SocialCredential;
 };
 type Token = SocialCredential & { expiresIn?: number; scope?: string };
-const META_VERSION = 'v26.0';
+export const META_VERSION = 'v26.0';
 const requestedScopes = (
   provider: SocialProvider,
   platform: SocialPlatform,
+  publishing = false,
 ) => {
   if (provider === 'META')
     return platform === 'INSTAGRAM'
       ? ['pages_show_list', 'pages_read_engagement', 'instagram_basic']
-      : ['pages_show_list'];
+      : publishing
+        ? ['pages_show_list', 'pages_read_engagement', 'pages_manage_posts']
+        : ['pages_show_list'];
   return provider === 'LINKEDIN'
     ? ['openid', 'profile']
     : ['https://www.googleapis.com/auth/youtube.readonly'];
@@ -98,6 +101,7 @@ export class SocialProviders {
     platform: SocialPlatform,
     state: string,
     verifier?: string,
+    publishing = false,
   ) {
     if (!this.configured(provider))
       throw new Error('Provider is not configured');
@@ -114,8 +118,10 @@ export class SocialProviders {
     url.searchParams.set('state', state);
     url.searchParams.set(
       'scope',
-      requestedScopes(provider, platform).join(' '),
+      requestedScopes(provider, platform, publishing).join(' '),
     );
+    if (publishing && provider === 'META')
+      url.searchParams.set('auth_type', 'rerequest');
     if (provider === 'GOOGLE') {
       url.searchParams.set('access_type', 'offline');
       url.searchParams.set('prompt', 'consent');

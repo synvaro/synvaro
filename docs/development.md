@@ -341,7 +341,28 @@ Register the exact callback URLs derived from `WEB_ORIGIN`:
 and `/api/social/oauth/google/callback`. Use HTTPS outside loopback. Configure
 provider app consent/test users and any required review before live OAuth.
 The browser sees only safe account metadata; tokens remain encrypted in
-PostgreSQL. No publishing scopes are requested. See
+PostgreSQL. Standard connection does not request publishing scopes. See
 [SOC-001–008](contracts/social-account-connections.md) for platform-specific
 prerequisites. Real OAuth acceptance requires separately configured provider
 applications; deterministic CI does not prove external authorization.
+
+### Facebook Page text publishing (SYN-SOC-002)
+
+From an owned saved draft, select a connected Facebook Page and review the
+exact saved text. Facebook-only **Reconnect with publishing permission** starts
+fresh Meta consent for `pages_manage_posts` alongside Page discovery scopes;
+the returned Page must be explicitly associated again with the Brand. The API
+checks current grant, Page creation task and Page token before preparing and
+confirming. `POST /v26.0/{page-id}/feed` uses one bounded request without
+automatic retries. No Meta Page post is made by local setup, tests or CI.
+The existing `META_APP_ID`, `META_APP_SECRET` and social encryption keyring are
+used; no new secrets are required. Meta app review/permissions and controlled
+Page authorization remain external prerequisites.
+
+An ambiguous outcome remains `UNCERTAIN` and blocks another intent for the
+same draft/Page/text. After independent Page activity evidence, an operator may
+run `node --env-file=.env scripts/reconcile-facebook-publication.mjs <id>
+PUBLISHED <page_post_id> <evidence_ref> <operator>` or use `FAILED -` only when
+the evidence proves no post. Preserve the audit reference. Do not reconcile a
+timeout merely because the browser showed an error. See
+[PUB-001–008](contracts/facebook-page-publishing.md).
