@@ -14,6 +14,7 @@ import {
   YouTubePublisher,
   YouTubePublishError,
 } from '../social/youtube-publisher.js';
+import { releaseAbandonedYouTubeTransfer } from '../publication/reconciliation.js';
 
 const fixture = new URL(
   '../../src/test/fixtures/media/sample.mp4',
@@ -70,6 +71,12 @@ test(
       initiateFailure: YouTubePublishError | null = null,
       probeFailure: YouTubePublishError | null = null,
       probeCompleted = false,
+      probeOffset = 0,
+      probeBarrier: Promise<void> | null = null,
+      probeStarted: (() => void) | null = null,
+      uploadBarrier: Promise<void> | null = null,
+      uploadStarted: (() => void) | null = null,
+      verifyFailure = false,
       processing: 'processing' | 'succeeded' = 'succeeded';
     publisher.readiness = async (channel) => channel.startsWith('UCtest');
     publisher.initiate = async () => {
@@ -79,22 +86,29 @@ test(
     };
     publisher.probe = async () => {
       probes++;
+      probeStarted?.();
+      if (probeBarrier) await probeBarrier;
       if (probeFailure) throw probeFailure;
       if (probeCompleted) return { kind: 'COMPLETE', videoId: 'abcdefghijk' };
-      return { kind: 'INCOMPLETE', offset: 0 };
+      return { kind: 'INCOMPLETE', offset: probeOffset };
     };
     publisher.upload = async (_session, token, stream, start, end, size) => {
       uploads++;
       assert.equal(token, 'private-youtube-token');
-      assert.equal(start, 0);
       assert.equal(end + 1, size);
       const parts: Buffer[] = [];
       for await (const part of stream) parts.push(Buffer.from(part));
-      assert.deepEqual(Buffer.concat(parts), await readFile(fixture));
+      assert.deepEqual(
+        Buffer.concat(parts),
+        (await readFile(fixture)).subarray(start),
+      );
+      uploadStarted?.();
+      if (uploadBarrier) await uploadBarrier;
       if (failUpload) throw new YouTubePublishError('TIMEOUT', true);
       return { kind: 'COMPLETE', videoId: 'abcdefghijk' };
     };
     publisher.verify = async (_id, channel, privacy) => {
+      if (verifyFailure) throw new YouTubePublishError('NETWORK', true);
       assert.ok(channel.startsWith('UCtest'));
       assert.ok(['private', 'public'].includes(privacy));
       return processing;
@@ -703,6 +717,349 @@ test(
             a.bytes.length,
           );
           assert.equal(initiations, before + 4);
+        },
+      );
+      await t.test(
+        'YT-FIX-001 slow active PUT never becomes resumable across app instances',
+        async () => {
+          const second = await createApp();
+          const secondPublisher = second.get(YouTubePublisher);
+          secondPublisher.readiness = publisher.readiness;
+          secondPublisher.initiate = publisher.initiate;
+          secondPublisher.probe = publisher.probe;
+          secondPublisher.upload = publisher.upload;
+          secondPublisher.verify = publisher.verify;
+          await second.listen(0, '127.0.0.1');
+          try {
+            const secondBase = await second.getUrl();
+            const intent = (await (
+              await prepare(a.cookie, { title: 'Slow active PUT' })
+            ).json()) as Result;
+            let signal!: () => void;
+            const started = new Promise<void>((resolve) => {
+              signal = resolve;
+            });
+            let release!: () => void;
+            uploadBarrier = new Promise<void>((resolve) => {
+              release = resolve;
+            });
+            uploadStarted = signal;
+            const before = { initiations, uploads, probes };
+            const first = call(
+              `/youtube-publications/${intent.publication.id}/confirm`,
+              'POST',
+              { confirm: true },
+              a.cookie,
+            );
+            await started;
+            await db.publication.update({
+              where: { id: intent.publication.id },
+              data: {
+                confirmedAt: new Date(Date.now() - 301_000),
+                youtubeTransferLeaseUntil: new Date(Date.now() - 1_000),
+              },
+            });
+            const read = await fetch(
+              `${secondBase}/youtube-publications/${intent.publication.id}`,
+              {
+                headers: { origin: config.origin, cookie: a.cookie },
+              },
+            );
+            assert.equal(
+              ((await read.json()) as Result).publication.status,
+              'PUBLISHING',
+            );
+            const premature = await fetch(
+              `${secondBase}/youtube-publications/${intent.publication.id}/resume`,
+              {
+                method: 'POST',
+                headers: {
+                  origin: config.origin,
+                  cookie: a.cookie,
+                  'content-type': 'application/json',
+                },
+                body: JSON.stringify({ confirm: true }),
+              },
+            );
+            assert.equal(
+              ((await premature.json()) as Result).publication.status,
+              'PUBLISHING',
+            );
+            assert.equal(initiations, before.initiations + 1);
+            assert.equal(uploads, before.uploads + 1);
+            assert.equal(probes, before.probes);
+            release();
+            assert.equal(
+              ((await (await first).json()) as Result).publication.status,
+              'PUBLISHED',
+            );
+            uploadBarrier = null;
+            uploadStarted = null;
+          } finally {
+            await second.close();
+          }
+        },
+      );
+      await t.test(
+        'YT-FIX-001 abandoned transfer needs audited release and resumes confirmed offset',
+        async () => {
+          probeCompleted = false;
+          const intent = (await (
+            await prepare(a.cookie, { title: 'Abandoned process' })
+          ).json()) as Result;
+          const session =
+            'https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&upload_id=mockupload123';
+          await db.publication.update({
+            where: { id: intent.publication.id },
+            data: {
+              status: 'PUBLISHING',
+              confirmedAt: new Date(Date.now() - 600_000),
+              youtubeTransferOwner: randomUUID(),
+              youtubeTransferLeaseUntil: new Date(Date.now() - 300_000),
+              youtubeSessionEncrypted: encryptSocial({ uri: session }),
+            },
+          });
+          assert.equal(
+            (
+              (await (
+                await call(
+                  `/youtube-publications/${intent.publication.id}`,
+                  'GET',
+                  undefined,
+                  a.cookie,
+                )
+              ).json()) as Result
+            ).publication.status,
+            'PUBLISHING',
+          );
+          const before = { initiations, uploads, probes };
+          assert.equal(
+            (
+              (await (
+                await call(
+                  `/youtube-publications/${intent.publication.id}/resume`,
+                  'POST',
+                  { confirm: true },
+                  a.cookie,
+                )
+              ).json()) as Result
+            ).publication.status,
+            'PUBLISHING',
+          );
+          assert.deepEqual({ initiations, uploads, probes }, before);
+          await assert.rejects(
+            releaseAbandonedYouTubeTransfer(db, {
+              id: intent.publication.id,
+              evidence: '',
+              operator: 'test',
+            }),
+          );
+          const auditId = await releaseAbandonedYouTubeTransfer(db, {
+            id: intent.publication.id,
+            evidence: 'Fixture process terminated; no upload request exists',
+            operator: 'test',
+          });
+          assert.match(auditId, /^[0-9a-f-]{36}$/);
+          probeOffset = 256;
+          const resumed = (await (
+            await call(
+              `/youtube-publications/${intent.publication.id}/resume`,
+              'POST',
+              { confirm: true },
+              a.cookie,
+            )
+          ).json()) as Result;
+          assert.equal(resumed.publication.status, 'PUBLISHED');
+          assert.equal(initiations, before.initiations);
+          assert.equal(probes, before.probes + 1);
+          assert.equal(uploads, before.uploads + 1);
+          probeOffset = 0;
+          const stored = await db.publication.findUniqueOrThrow({
+            where: { id: intent.publication.id },
+          });
+          assert.match(stored.reconciliationEvidence!, new RegExp(auditId));
+          assert.equal(stored.youtubeTransferOwner, null);
+        },
+      );
+      await t.test(
+        'YT-FIX-003 concurrent resumes claim once and send one PUT',
+        async () => {
+          probeCompleted = false;
+          failUpload = true;
+          const intent = (await (
+            await prepare(a.cookie, { title: 'Concurrent resume' })
+          ).json()) as Result;
+          const first = (await (
+            await call(
+              `/youtube-publications/${intent.publication.id}/confirm`,
+              'POST',
+              { confirm: true },
+              a.cookie,
+            )
+          ).json()) as Result;
+          assert.equal(first.publication.status, 'UNCERTAIN');
+          failUpload = false;
+          let signal!: () => void;
+          const started = new Promise<void>((resolve) => {
+            signal = resolve;
+          });
+          let release!: () => void;
+          probeBarrier = new Promise<void>((resolve) => {
+            release = resolve;
+          });
+          probeStarted = signal;
+          const before = { initiations, uploads, probes };
+          const path = `/youtube-publications/${intent.publication.id}/resume`;
+          const one = call(path, 'POST', { confirm: true }, a.cookie);
+          await started;
+          const two = (await (
+            await call(path, 'POST', { confirm: true }, a.cookie)
+          ).json()) as Result;
+          assert.equal(two.publication.status, 'PUBLISHING');
+          assert.equal(probes, before.probes + 1);
+          assert.equal(uploads, before.uploads);
+          release();
+          assert.equal(
+            ((await (await one).json()) as Result).publication.status,
+            'PUBLISHED',
+          );
+          assert.deepEqual(
+            { initiations, uploads, probes },
+            {
+              initiations: before.initiations,
+              uploads: before.uploads + 1,
+              probes: before.probes + 1,
+            },
+          );
+          probeBarrier = null;
+          probeStarted = null;
+        },
+      );
+      await t.test(
+        'YT-FIX-002 known ID survives verification outage and check never uploads',
+        async () => {
+          const intent = (await (
+            await prepare(a.cookie, { title: 'Known ID outage' })
+          ).json()) as Result;
+          verifyFailure = true;
+          const before = { initiations, uploads, probes };
+          const first = (await (
+            await call(
+              `/youtube-publications/${intent.publication.id}/confirm`,
+              'POST',
+              { confirm: true },
+              a.cookie,
+            )
+          ).json()) as Result;
+          assert.equal(first.publication.status, 'UNCERTAIN');
+          assert.equal(first.publication.providerPostId, 'abcdefghijk');
+          const resumed = (await (
+            await call(
+              `/youtube-publications/${intent.publication.id}/resume`,
+              'POST',
+              { confirm: true },
+              a.cookie,
+            )
+          ).json()) as Result;
+          assert.equal(resumed.publication.status, 'UNCERTAIN');
+          assert.deepEqual(
+            { initiations, uploads, probes },
+            {
+              initiations: before.initiations + 1,
+              uploads: before.uploads + 1,
+              probes: before.probes,
+            },
+          );
+          assert.equal(
+            (
+              await call(
+                `/youtube-publications/${intent.publication.id}/check`,
+                'POST',
+                {},
+                a.cookie,
+              )
+            ).status,
+            409,
+          );
+          verifyFailure = false;
+          const checked = (await (
+            await call(
+              `/youtube-publications/${intent.publication.id}/check`,
+              'POST',
+              {},
+              a.cookie,
+            )
+          ).json()) as Result;
+          assert.equal(checked.publication.status, 'PUBLISHED');
+          assert.deepEqual(
+            { initiations, uploads, probes },
+            {
+              initiations: before.initiations + 1,
+              uploads: before.uploads + 1,
+              probes: before.probes,
+            },
+          );
+        },
+      );
+      await t.test(
+        'YT-FIX-002 pre-migration known ID is checkable without another upload',
+        async () => {
+          const intent = (await (
+            await prepare(a.cookie, { title: 'Legacy known ID' })
+          ).json()) as Result;
+          await db.publication.update({
+            where: { id: intent.publication.id },
+            data: {
+              status: 'PUBLISHING',
+              providerPostId: 'abcdefghijk',
+              confirmedAt: new Date(Date.now() - 600_000),
+            },
+          });
+          const before = { initiations, uploads, probes };
+          const checked = (await (
+            await call(
+              `/youtube-publications/${intent.publication.id}/check`,
+              'POST',
+              {},
+              a.cookie,
+            )
+          ).json()) as Result;
+          assert.equal(checked.publication.status, 'PUBLISHED');
+          assert.deepEqual({ initiations, uploads, probes }, before);
+        },
+      );
+      await t.test(
+        'YT-FIX-001 fenced worker cannot persist progress or send another PUT',
+        async () => {
+          const intent = (await (
+            await prepare(a.cookie, { title: 'Fenced transfer' })
+          ).json()) as Result;
+          const normalUpload = publisher.upload;
+          const before = uploads;
+          publisher.upload = async () => {
+            uploads++;
+            await db.publication.update({
+              where: { id: intent.publication.id },
+              data: { youtubeTransferOwner: randomUUID(), status: 'UNCERTAIN' },
+            });
+            return { kind: 'INCOMPLETE', offset: 128 };
+          };
+          try {
+            const result = (await (
+              await call(
+                `/youtube-publications/${intent.publication.id}/confirm`,
+                'POST',
+                { confirm: true },
+                a.cookie,
+              )
+            ).json()) as Result;
+            assert.equal(result.publication.status, 'UNCERTAIN');
+            assert.equal(result.publication.youtubeUploadedBytes, 0);
+            assert.equal(uploads, before + 1);
+            assert.equal(result.publication.providerPostId, null);
+          } finally {
+            publisher.upload = normalUpload;
+          }
         },
       );
     } finally {

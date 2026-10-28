@@ -18,6 +18,14 @@
 
 Every test must cite behavior/acceptance IDs, expected result, actual result, environment and evidence. A mocked integration test is **not** proof of successful production publishing.
 
+## SYN-SOC-006A YouTube resumable upload safety — 2026-10-28
+
+**Environment:** dedicated, empty local PostgreSQL 16 `synvaro_youtube_fix_test`; 21 forward-only migrations applied and status verified. The owner database was not reset. The regression uses Nest HTTP, two independent API instances sharing PostgreSQL, a private synthetic MP4, and deterministic YouTube provider responses. No real OAuth or upload request was sent.
+
+**YT-FIX-001–003 subjects:** delayed in-flight upload after a simulated >300-second claim/lease, second-instance status read and premature resume without another PUT; fenced worker denied progress and next PUT; concurrent resumes claimed once; abandoned claim blocked until audited operator release, followed by same encrypted session probe and confirmed-offset upload; final video ID retained across verification outage, repeated resume makes zero writes, later read-only check settles the status. A pre-migration `PUBLISHING` record with a known ID is checkable without upload. Existing channel, Brand, authentication, CSRF, upload-error and media tests remain in the full suite. The operator release test uses synthetic evidence for a fixture process; actual recovery requires independently verified process termination and no in-flight provider request.
+
+**Local result:** format check passed for all changed format-supported files; lint, typecheck, Prisma validation and migration status, **165 API + 1 worker tests**, build and real Next→Nest→PostgreSQL smoke passed. The local whole-tree format check is blocked by 63 unrelated, pre-existing untracked Prisma skill files, which were preserved. Final-head GitHub Actions runs repository-wide format in a clean checkout; its result is recorded in the PR delivery comment after the run. Browser UI was not changed; desktop/390px visual acceptance is **NOT VERIFIED** for this backend correction.
+
 ## SYN-SOC-006 YouTube video publishing — 2026-10-28
 
 **Environment:** isolated local PostgreSQL 16 `synvaro_youtube_test`; all **20** forward-only migrations applied from empty and status verified. The existing owner database was not reset or migrated for these tests. A private synthetic MP4 fixture, deterministic YouTube OAuth/upload/status responses and the real Nest HTTP service exercise [YTP-001–009](contracts/youtube-video-publishing.md). External Google OAuth and YouTube uploads: **0**.
