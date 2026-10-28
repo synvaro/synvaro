@@ -6,6 +6,7 @@ export type SocialCredential = {
   accessToken: string;
   refreshToken?: string;
   userToken?: string;
+  pageId?: string;
 };
 export type DiscoveredAccount = {
   platform: SocialPlatform;
@@ -26,7 +27,12 @@ const requestedScopes = (
 ) => {
   if (provider === 'META')
     return platform === 'INSTAGRAM'
-      ? ['pages_show_list', 'pages_read_engagement', 'instagram_basic']
+      ? [
+          'pages_show_list',
+          'pages_read_engagement',
+          'instagram_basic',
+          ...(publishing ? ['instagram_content_publish'] : []),
+        ]
       : publishing
         ? ['pages_show_list', 'pages_read_engagement', 'pages_manage_posts']
         : ['pages_show_list'];
@@ -276,6 +282,7 @@ export class SocialProviders {
             credential: {
               accessToken: pageToken,
               userToken: token.accessToken,
+              pageId,
             },
           });
         }

@@ -7,6 +7,7 @@ import { ReelPanel } from './reel-panel';
 import { AiPanel } from './ai-panel';
 import { AttachedMedia } from './attachments';
 import { PublishPanel } from './publish-panel';
+import { InstagramPublishPanel } from './instagram-publish-panel';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { Content, ContentResponse } from '@synvaro/contracts';
@@ -271,6 +272,15 @@ export function DraftEditor({
       )}
       {content && (
         <PublishPanel
+          contentId={content.id}
+          brandId={brand.id}
+          savedBody={saved.body}
+          dirty={dirty}
+          disabled={busy || !!leaving}
+        />
+      )}
+      {content && (
+        <InstagramPublishPanel
           contentId={content.id}
           brandId={brand.id}
           savedBody={saved.body}

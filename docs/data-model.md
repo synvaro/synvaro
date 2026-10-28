@@ -92,8 +92,17 @@ state, safe error category, provider post ID and timestamps. Unique
 has one-time operator reconciliation fields. Disconnect removes active
 credentials; a SocialAccount with publication history remains as a redacted
 `DISCONNECTED` record so the FK and historical destination remain intact. SYN-SOC-003 adds a `TEXT`/`IMAGE` kind and optional MediaAsset FK, MIME, size and SHA-256 source snapshot to the same Publication entity; existing text rows retain the default `TEXT` kind.
-See [SOC-001–008](contracts/social-account-connections.md) and
-[PUB-001–008](contracts/facebook-page-publishing.md) and [PUB-IMG-001–008](contracts/facebook-page-image-publishing.md).
+SYN-SOC-004 reuses `Publication` for an Instagram single-image intent, retaining
+the existing immutable caption, owner, Brand, SocialAccount, MediaAsset and
+SHA-256 snapshot. Its forward-only migration adds `PROCESSING`, provider
+container ID/status and signed-delivery expiry. The legacy `pageId`/`pageName`
+columns hold the destination Instagram account ID/name for these rows; their
+meaning is selected by `platform`. `providerPostId` is set only from a distinct
+`media_publish` response. No old publication rows or MediaAsset bytes change.
+See [SOC-001–008](contracts/social-account-connections.md),
+[PUB-001–008](contracts/facebook-page-publishing.md),
+[PUB-IMG-001–008](contracts/facebook-page-image-publishing.md) and
+[IGP-001–009](contracts/instagram-professional-publishing.md).
 
 ## Remaining design draft (not migrated)
 

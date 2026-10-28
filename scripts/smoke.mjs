@@ -378,6 +378,31 @@ try {
     (await fetch(`${origin}/api/media/${media.id}/file`)).status,
     401,
   );
+  // IGP-001/009: new Instagram routes cross Next -> Nest with session/Origin
+  // protection; smoke never contacts Meta or creates a publication.
+  const instagramPath = `/contents/${draft.id}/instagram-publications`;
+  assert.equal(
+    (await fetch(`${origin}/api${instagramPath}/readiness`)).status,
+    401,
+  );
+  const instagramReady = await product(`${instagramPath}/readiness`);
+  assert.equal(instagramReady.status, 200);
+  assert.deepEqual((await instagramReady.json()).accounts, []);
+  assert.equal(
+    (
+      await product(
+        instagramPath,
+        'POST',
+        {
+          socialAccountId: randomUUID(),
+          mediaAssetId: media.id,
+          requestId: randomUUID(),
+        },
+        'https://evil.example',
+      )
+    ).status,
+    403,
+  );
   // CMA-001–005: existing media relationships through the real Next proxy.
   const attachmentPath = `/contents/${draft.id}/media`;
   assert.deepEqual(await (await product(attachmentPath)).json(), {
