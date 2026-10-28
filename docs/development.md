@@ -366,3 +366,7 @@ PUBLISHED <page_post_id> <evidence_ref> <operator>` or use `FAILED -` only when
 the evidence proves no post. Preserve the audit reference. Do not reconcile a
 timeout merely because the browser showed an error. See
 [PUB-001–008](contracts/facebook-page-publishing.md).
+
+### Facebook Page single-image publishing (SYN-SOC-003)
+
+The existing review/confirm flow accepts an optional owned JPEG/PNG MediaAsset of at most 10 MB. The API validates private bytes and records a source digest before allowing one `POST /v26.0/{page-id}/photos` multipart upload with `caption` set to the saved text. The Page must still grant publishing scopes and a content-creation task. A photo ID without a Page post ID is uncertain; do not retry automatically. No new environment variables are needed. See [PUB-IMG-001–008](contracts/facebook-page-image-publishing.md). Live posting needs a separate owner-approved test and eligible Meta app/Page grant.

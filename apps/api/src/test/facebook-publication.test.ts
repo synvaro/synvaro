@@ -1,6 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { Readable } from 'node:stream';
+import sharp from 'sharp';
 import { createDatabase } from '@synvaro/database';
 import { createApp } from '../app.js';
 import { loadAuthConfig } from '../auth/auth.config.js';
@@ -10,6 +15,7 @@ import {
   FacebookPublishError,
 } from '../social/facebook-publisher.js';
 import { reconcileFacebookPublication } from '../publication/reconciliation.js';
+import { LocalMediaStorage } from '../media/storage.js';
 
 test(
   'SYN-SOC-002: Facebook Page publishing through Nest and real PostgreSQL',
@@ -17,6 +23,9 @@ test(
   async (t) => {
     const config = loadAuthConfig();
     assert.ok(new URL(config.databaseUrl).pathname.endsWith('_test'));
+    const previousRoot = process.env.MEDIA_STORAGE_ROOT;
+    const root = await mkdtemp(join(tmpdir(), 'synvaro-publish-photo-'));
+    process.env.MEDIA_STORAGE_ROOT = root;
     process.env.SOCIAL_TOKEN_KEYS_JSON = JSON.stringify({
       test: randomBytes(32).toString('base64'),
     });
@@ -26,6 +35,7 @@ test(
     const publisher = app.get(FacebookPublisher);
     const originalReady = publisher.readiness.bind(publisher);
     const originalPublish = publisher.publish.bind(publisher);
+    const originalPublishPhoto = publisher.publishPhoto.bind(publisher);
     publisher.readiness = async () => ({ eligible: true, reason: null });
     let posts = 0;
     publisher.publish = async (_id, token, text) => {
@@ -336,6 +346,195 @@ test(
           assert.equal(stored.textSnapshot, 'Saved Facebook text 1');
         },
       );
+      await t.test(
+        'single photo snapshot, ownership, explicit send and unchanged source',
+        async () => {
+          const storage = app.get(LocalMediaStorage);
+          const bytes = await sharp({
+            create: { width: 4, height: 4, channels: 3, background: '#66aa88' },
+          })
+            .png()
+            .toBuffer();
+          const storageKey = randomUUID();
+          await storage.stage(storageKey, Readable.from([bytes]));
+          await storage.publish(storageKey);
+          const asset = await db.mediaAsset.create({
+            data: {
+              brandId: a.brandId,
+              originalFilename: 'photo.png',
+              storageKey,
+              mimeType: 'image/png',
+              sizeBytes: bytes.length,
+              width: 4,
+              height: 4,
+            },
+          });
+          const foreign = await db.mediaAsset.create({
+            data: {
+              brandId: b.brandId,
+              originalFilename: 'foreign.png',
+              storageKey: randomUUID(),
+              mimeType: 'image/png',
+              sizeBytes: bytes.length,
+              width: 4,
+              height: 4,
+            },
+          });
+          assert.equal(
+            (
+              await call(
+                path,
+                'POST',
+                {
+                  socialAccountId: a.accountId,
+                  requestId: randomUUID(),
+                  mediaAssetId: foreign.id,
+                },
+                a.cookie,
+              )
+            ).status,
+            404,
+          );
+          for (const [mimeType, sizeBytes] of [
+            ['image/webp', bytes.length],
+            ['image/png', 10_000_001],
+          ] as const) {
+            const unsupported = await db.mediaAsset.create({
+              data: {
+                brandId: a.brandId,
+                originalFilename: 'unsupported',
+                storageKey: randomUUID(),
+                mimeType,
+                sizeBytes,
+                width: 4,
+                height: 4,
+              },
+            });
+            assert.equal(
+              (
+                await call(
+                  path,
+                  'POST',
+                  {
+                    socialAccountId: a.accountId,
+                    requestId: randomUUID(),
+                    mediaAssetId: unsupported.id,
+                  },
+                  a.cookie,
+                )
+              ).status,
+              400,
+            );
+          }
+          let photoPosts = 0;
+          publisher.publishPhoto = async (
+            _page,
+            token,
+            caption,
+            sent,
+            mime,
+          ) => {
+            photoPosts++;
+            assert.equal(token, 'private-page-token');
+            assert.equal(caption, 'Saved edited copy');
+            assert.equal(mime, 'image/png');
+            assert.deepEqual(sent, bytes);
+            return '12345_98765';
+          };
+          const prepared = await call(
+            path,
+            'POST',
+            {
+              socialAccountId: a.accountId,
+              requestId: randomUUID(),
+              mediaAssetId: asset.id,
+            },
+            a.cookie,
+          );
+          assert.equal(prepared.status, 201);
+          const row = (
+            (await prepared.json()) as {
+              publication: { id: string; kind: string; mediaSha256: string };
+            }
+          ).publication;
+          assert.equal(row.kind, 'IMAGE');
+          assert.equal(row.mediaSha256.length, 64);
+          assert.equal(photoPosts, 0);
+          const [one, two] = await Promise.all([
+            call(
+              `/facebook-publications/${row.id}/confirm`,
+              'POST',
+              { confirm: true },
+              a.cookie,
+            ),
+            call(
+              `/facebook-publications/${row.id}/confirm`,
+              'POST',
+              { confirm: true },
+              a.cookie,
+            ),
+          ]);
+          assert.equal(one.status, 201);
+          assert.equal(two.status, 201);
+          assert.equal(photoPosts, 1);
+          assert.equal(
+            (await db.publication.findUniqueOrThrow({ where: { id: row.id } }))
+              .status,
+            'PUBLISHED',
+          );
+          const savedChunks: Buffer[] = [];
+          for await (const chunk of await storage.read(storageKey))
+            savedChunks.push(Buffer.from(chunk));
+          const saved = Buffer.concat(savedChunks);
+          assert.deepEqual(saved, bytes);
+          const stale = await call(
+            path,
+            'POST',
+            {
+              socialAccountId: a.accountId,
+              requestId: randomUUID(),
+              mediaAssetId: asset.id,
+            },
+            a.cookie,
+          );
+          assert.equal(stale.status, 201);
+          const staleId = (
+            (await stale.json()) as { publication: { id: string } }
+          ).publication.id;
+          await writeFile(
+            await storage.path(storageKey),
+            Buffer.from('changed'),
+          );
+          assert.equal(
+            (
+              await call(
+                `/facebook-publications/${staleId}/confirm`,
+                'POST',
+                { confirm: true },
+                a.cookie,
+              )
+            ).status,
+            409,
+          );
+          assert.equal(photoPosts, 1);
+          await storage.remove(storageKey);
+          assert.equal(
+            (
+              await call(
+                path,
+                'POST',
+                {
+                  socialAccountId: a.accountId,
+                  requestId: randomUUID(),
+                  mediaAssetId: asset.id,
+                },
+                a.cookie,
+              )
+            ).status,
+            409,
+          );
+        },
+      );
       let uncertainId = '';
       await t.test(
         'uncertain timeout is durable and never retried',
@@ -488,15 +687,19 @@ test(
             await db.publication.count({
               where: { socialAccountId: a.accountId },
             }),
-            4,
+            6,
           );
         },
       );
     } finally {
       publisher.readiness = originalReady;
       publisher.publish = originalPublish;
+      publisher.publishPhoto = originalPublishPhoto;
       await app.close();
       await db.$disconnect();
+      if (previousRoot === undefined) delete process.env.MEDIA_STORAGE_ROOT;
+      else process.env.MEDIA_STORAGE_ROOT = previousRoot;
+      await rm(root, { recursive: true, force: true });
     }
   },
 );

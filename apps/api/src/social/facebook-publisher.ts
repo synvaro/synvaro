@@ -85,12 +85,18 @@ export class FacebookPublisher {
       const granted = (await json(permissions)).data;
       if (
         !Array.isArray(granted) ||
-        !granted.some(
-          (entry) =>
-            entry &&
-            typeof entry === 'object' &&
-            entry.permission === 'pages_manage_posts' &&
-            entry.status === 'granted',
+        ![
+          'pages_show_list',
+          'pages_read_engagement',
+          'pages_manage_posts',
+        ].every((permission) =>
+          granted.some(
+            (entry) =>
+              entry &&
+              typeof entry === 'object' &&
+              entry.permission === permission &&
+              entry.status === 'granted',
+          ),
         )
       )
         return {
@@ -169,5 +175,49 @@ export class FacebookPublisher {
     if (typeof result.id !== 'string' || !/^\d{1,32}_\d{1,32}$/.test(result.id))
       throw new FacebookPublishError('MALFORMED', true);
     return result.id;
+  }
+
+  async publishPhoto(
+    externalId: string,
+    pageToken: string,
+    caption: string,
+    bytes: Buffer,
+    mimeType: 'image/jpeg' | 'image/png',
+  ): Promise<string> {
+    const id = pageId(externalId);
+    const form = new FormData();
+    form.set(
+      'source',
+      new Blob([new Uint8Array(bytes)], { type: mimeType }),
+      'photo',
+    );
+    form.set('caption', caption);
+    form.set('published', 'true');
+    let response: Response;
+    try {
+      response = await fetch(`${graph}/${id}/photos`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${pageToken}` },
+        body: form,
+        redirect: 'error',
+        signal: AbortSignal.timeout(15_000),
+      });
+    } catch (error) {
+      throw new FacebookPublishError(
+        error instanceof Error && error.name === 'TimeoutError'
+          ? 'TIMEOUT'
+          : 'NETWORK',
+        true,
+      );
+    }
+    if (!response.ok) throw classify(response.status);
+    const result = await json(response);
+    // A photo ID alone does not prove that the Page feed post was published.
+    if (
+      typeof result.post_id !== 'string' ||
+      !/^\d{1,32}_\d{1,32}$/.test(result.post_id)
+    )
+      throw new FacebookPublishError('MALFORMED', true);
+    return result.post_id;
   }
 }
