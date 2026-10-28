@@ -92,8 +92,15 @@ become `AI_VIDEO` MediaAssets. The existing authenticated MP4 range endpoint
 and ContentMedia association apply; source images remain unchanged. See
 [VID-001–006](ai-video-generation.md).
 
-No editing, processing/transcoding, derivatives, AI, tagging, folders, deletion,
-content attachments, public URLs, provider integration or publishing. List pagination,
+The MED-001–004 Library API itself still has no public asset URL. SYN-SOC-004
+adds a separate [Instagram delivery exception](instagram-professional-publishing.md):
+one reviewed JPEG may be fetched through a 30-minute signed HTTPS route while
+its publication is processing. This does not expose general MediaAsset IDs or
+change private `/media/:id/file` authorization.
+
+The original MED-001–004 slice did not add editing, processing/transcoding,
+derivatives, AI, tagging, folders, deletion, content attachments, provider
+integration or publishing. List pagination,
 quotas, malware scanning and distributed concurrency controls remain deferred.
 Parsing validates supported structures, not every possible malicious payload or all
 video decode artifacts; deploy with a least-privilege account and OS resource limits.
