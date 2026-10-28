@@ -11,7 +11,7 @@ Logical modules inside one modular monolith; **not** separate services.
 | Content Production | Implemented: owner-scoped manual drafts (create/list/read/update), immutable brand assignment, DRAFT only; same-brand media attach/list/reorder/detach. Revisions and channel variants remain planned. | SYN-006 development |
 | Media Library | Implemented: private original uploads, per-brand lists, authenticated image/video previews and UPLOADED provenance. Draft attachment reuse is implemented; accepted AI-generated PNG provenance and private previews are implemented; no editing. | SYN-008 development |
 | AI Generation | Implemented: explicit OpenAI text suggestions from saved draft/brand context, review/apply, user preferences and conservative usage estimates. Explicit conceptual image preview/save/attach with shared preferences and uncertainty-aware cost accounting is implemented. No autonomous jobs, image editing or publishing. | SYN-008 development |
-| Publishing | Facebook Page text/single-image and Instagram professional single-JPEG publishing merged. SYN-SOC-005 adds controlled LinkedIn member text/single-image publishing on a review branch. No live Meta or LinkedIn post is verified. Scheduling and organization posting remain planned. | SYN-SOC-002/003/004 merged; SYN-SOC-005 review |
+| Publishing | Facebook Page text/single-image, Instagram professional single-JPEG and LinkedIn member text/single-image publishing merged. SYN-SOC-006 adds controlled YouTube MP4/Reel upload on a review branch. No live provider post or upload is verified. Scheduling and organization posting remain planned. | SYN-SOC-002–005 merged; SYN-SOC-006 review |
 | Review & Approval | revision-bound approvals | MVP |
 | Product Catalog | verified products, facts, offers | Pilot/MVP decision |
 | Notifications & Audit | errors, traceability | MVP/basic |
@@ -20,7 +20,7 @@ Logical modules inside one modular monolith; **not** separate services.
 | Engagement | comments and replies | R2 |
 
 See [Publishing contract](contracts/publishing.md). Each new domain contract should specify ownership, inputs, outputs, rules, behaviors, acceptance criteria, test subjects and unresolved decisions.
-The implemented slices are [Facebook Page text publishing](contracts/facebook-page-publishing.md), [Facebook single-image publishing](contracts/facebook-page-image-publishing.md), [Instagram professional single-image publishing](contracts/instagram-professional-publishing.md) and [LinkedIn member text/single-image publishing](contracts/linkedin-member-publishing.md) (PR pending review); the broader contract remains a future design draft.
+The implemented slices are [Facebook Page text publishing](contracts/facebook-page-publishing.md), [Facebook single-image publishing](contracts/facebook-page-image-publishing.md), [Instagram professional single-image publishing](contracts/instagram-professional-publishing.md), [LinkedIn member text/single-image publishing](contracts/linkedin-member-publishing.md) and [YouTube video publishing](contracts/youtube-video-publishing.md) (PR pending review); the broader contract remains a future design draft.
 
 Current behavior contract: [Organization & Brand](contracts/organization-brand.md).
 Brand profile contract: [BRP-001](contracts/brand-profile.md).

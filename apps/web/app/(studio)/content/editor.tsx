@@ -9,6 +9,7 @@ import { AttachedMedia } from './attachments';
 import { PublishPanel } from './publish-panel';
 import { InstagramPublishPanel } from './instagram-publish-panel';
 import { LinkedInPublishPanel } from './linkedin-publish-panel';
+import { YouTubePublishPanel } from './youtube-publish-panel';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { Content, ContentResponse } from '@synvaro/contracts';
@@ -294,6 +295,15 @@ export function DraftEditor({
           contentId={content.id}
           brandId={brand.id}
           savedBody={saved.body}
+          dirty={dirty}
+          disabled={busy || !!leaving}
+        />
+      )}
+      {content && (
+        <YouTubePublishPanel
+          contentId={content.id}
+          brandId={brand.id}
+          savedTitle={saved.title}
           dirty={dirty}
           disabled={busy || !!leaving}
         />

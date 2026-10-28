@@ -13,6 +13,9 @@ import { InstagramPublisher } from '../social/instagram-publisher.js';
 import { LinkedInPublisher } from '../social/linkedin-publisher.js';
 import { LinkedInPublicationController } from './linkedin.controller.js';
 import { LinkedInPublicationService } from './linkedin.service.js';
+import { YouTubePublisher } from '../social/youtube-publisher.js';
+import { YouTubePublicationController } from './youtube.controller.js';
+import { YouTubePublicationService } from './youtube.service.js';
 
 @Module({
   imports: [AuthModule, MediaModule],
@@ -21,6 +24,7 @@ import { LinkedInPublicationService } from './linkedin.service.js';
     InstagramPublicationController,
     InstagramDeliveryController,
     LinkedInPublicationController,
+    YouTubePublicationController,
   ],
   providers: [
     FacebookPublisher,
@@ -29,6 +33,8 @@ import { LinkedInPublicationService } from './linkedin.service.js';
     InstagramPublicationService,
     LinkedInPublisher,
     LinkedInPublicationService,
+    YouTubePublisher,
+    YouTubePublicationService,
   ],
 })
 export class PublicationModule {}

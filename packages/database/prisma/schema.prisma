@@ -339,6 +339,7 @@ enum PublicationStatus {
 enum PublicationKind {
   TEXT
   IMAGE
+  VIDEO
 }
 
 model Publication {
@@ -362,6 +363,15 @@ model Publication {
   mediaSha256 String? @db.Char(64)
   mediaMimeType String? @db.VarChar(40)
   mediaSizeBytes Int?
+  youtubeTitle String? @db.VarChar(100)
+  youtubePrivacy String? @db.VarChar(16)
+  youtubeSessionEncrypted String? @db.Text
+  youtubeUploadedBytes Int @default(0)
+  youtubeWidth Int?
+  youtubeHeight Int?
+  youtubeDurationMs Int?
+  youtubeProcessingStatus String? @db.VarChar(32)
+  youtubeLastProbeAt DateTime? @db.Timestamptz(3)
   draftUpdatedAt DateTime @db.Timestamptz(3)
   status PublicationStatus @default(READY)
   providerPostId String? @db.VarChar(160)

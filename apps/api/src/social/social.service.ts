@@ -111,7 +111,10 @@ export class SocialService {
     platform: SocialPlatform,
     publishing = false,
   ) {
-    if (publishing && !['FACEBOOK', 'INSTAGRAM', 'LINKEDIN'].includes(platform))
+    if (
+      publishing &&
+      !['FACEBOOK', 'INSTAGRAM', 'LINKEDIN', 'YOUTUBE'].includes(platform)
+    )
       throw new BadRequestException(
         'Publishing authorization is unavailable for this platform',
       );
@@ -284,6 +287,19 @@ export class SocialService {
             throw new ConflictException(
               'Account is already connected elsewhere',
             );
+          // Google can omit refresh_token on a later consent. Preserve only
+          // the same channel's already encrypted credential; never infer a
+          // grant scope from the earlier token.
+          const credential =
+            candidate.platform === 'YOUTUBE' &&
+            !candidate.credential.refreshToken
+              ? {
+                  ...candidate.credential,
+                  refreshToken: decryptSocial<SocialCredential>(
+                    existing.credentialsEncrypted,
+                  ).refreshToken,
+                }
+              : candidate.credential;
           const account = await tx.socialAccount.update({
             where: { id: existing.id },
             data: {
@@ -291,13 +307,16 @@ export class SocialService {
               displayName: candidate.displayName,
               accountType: candidate.accountType,
               scopes: candidate.scopes,
-              credentialsEncrypted: encryptSocial(candidate.credential),
+              credentialsEncrypted: encryptSocial(credential),
               accessExpiresAt: candidate.accessExpiresAt
                 ? new Date(candidate.accessExpiresAt)
                 : null,
               refreshExpiresAt: candidate.refreshExpiresAt
                 ? new Date(candidate.refreshExpiresAt)
-                : null,
+                : candidate.platform === 'YOUTUBE' &&
+                    !candidate.credential.refreshToken
+                  ? existing.refreshExpiresAt
+                  : null,
               status: 'CONNECTED',
               lastValidatedAt: this.now(),
             },

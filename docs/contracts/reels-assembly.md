@@ -1,5 +1,7 @@
 # Reels Assembly — SYN-AI-006
 
+An accepted `REEL_ASSEMBLED` MP4 can be selected as the private source for the separate [YTP-001–009 YouTube upload workflow](youtube-video-publishing.md). Assembly itself never uploads or publishes the Reel.
+
 An owner assembles existing media for one saved draft into a private 1080×1920
 MP4. This is local FFmpeg processing, not AI generation or publishing. Original
 assets and draft text stay unchanged. One active render per owner is allowed.

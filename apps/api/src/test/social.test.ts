@@ -462,9 +462,26 @@ test(
             const reauth = await call(
               `/brands/${a.brandId}/social/oauth`,
               'POST',
-              { platform },
+              {
+                platform,
+                ...(platform === 'YOUTUBE' ? { publishing: true } : {}),
+              },
               a.cookie,
             );
+            if (platform === 'YOUTUBE') {
+              const completeWithRefresh = provider.complete;
+              provider.complete = async (...args) =>
+                (await completeWithRefresh(...args)).map((candidate) => ({
+                  ...candidate,
+                  scopes: [
+                    'https://www.googleapis.com/auth/youtube.readonly',
+                    'https://www.googleapis.com/auth/youtube.upload',
+                  ],
+                  credential: {
+                    accessToken: candidate.credential.accessToken,
+                  },
+                }));
+            }
             const reauthState = new URL(
               ((await reauth.json()) as { authorizationUrl: string })
                 .authorizationUrl,
@@ -488,6 +505,22 @@ test(
               ).status,
               201,
             );
+            if (platform === 'YOUTUBE') {
+              const reauthorized = await db.socialAccount.findUniqueOrThrow({
+                where: { id: account.id },
+              });
+              assert.ok(
+                reauthorized.scopes.includes(
+                  'https://www.googleapis.com/auth/youtube.upload',
+                ),
+              );
+              assert.equal(
+                decryptSocial<{ refreshToken: string }>(
+                  reauthorized.credentialsEncrypted,
+                ).refreshToken,
+                'refresh-secret',
+              );
+            }
             assert.equal(
               await db.socialAccount.count({
                 where: {
