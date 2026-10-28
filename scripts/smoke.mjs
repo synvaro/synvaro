@@ -403,6 +403,30 @@ try {
     ).status,
     403,
   );
+  // LIP-001/009: the authenticated LinkedIn readiness proxy and Origin gate
+  // work through Next -> Nest without contacting LinkedIn or creating a post.
+  const linkedinPath = `/contents/${draft.id}/linkedin-publications`;
+  assert.equal(
+    (await fetch(`${origin}/api${linkedinPath}/readiness`)).status,
+    401,
+  );
+  const linkedinReady = await product(`${linkedinPath}/readiness`);
+  assert.equal(linkedinReady.status, 200);
+  assert.deepEqual((await linkedinReady.json()).members, []);
+  assert.equal(
+    (
+      await product(
+        linkedinPath,
+        'POST',
+        {
+          socialAccountId: randomUUID(),
+          requestId: randomUUID(),
+        },
+        'https://evil.example',
+      )
+    ).status,
+    403,
+  );
   // CMA-001–005: existing media relationships through the real Next proxy.
   const attachmentPath = `/contents/${draft.id}/media`;
   assert.deepEqual(await (await product(attachmentPath)).json(), {

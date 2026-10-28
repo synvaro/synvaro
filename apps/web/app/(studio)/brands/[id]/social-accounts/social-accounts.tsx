@@ -204,8 +204,8 @@ export function SocialAccounts({
       <h1>Social accounts</h1>
       <p>
         Connect a platform account to this brand. Facebook Page and Instagram
-        publishing require separate permission requests and live readiness
-        checks.
+        and LinkedIn member publishing require separate permission requests and
+        live readiness checks.
       </p>
       <p>
         <Link className="auth-link" href="/brands">
@@ -313,7 +313,8 @@ export function SocialAccounts({
               </p>
               <div className="form-actions">
                 {(account.platform === 'FACEBOOK' ||
-                  account.platform === 'INSTAGRAM') && (
+                  account.platform === 'INSTAGRAM' ||
+                  account.platform === 'LINKEDIN') && (
                   <button
                     className="secondary-button"
                     disabled={busy}

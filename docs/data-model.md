@@ -152,3 +152,6 @@ The provider catalog is typed backend configuration, not a new database entity.
 Existing AiPreference model strings and AiGeneration provider/kind/usage/reservation
 records are retained without migration or backfill. Planned provider references
 create no records and cannot execute. See [provider foundation](contracts/ai-provider-foundation.md).
+## LinkedIn member publishing (SYN-SOC-005)
+
+`Publication` remains the durable intent and history record for Facebook, Instagram and LinkedIn. LinkedIn member text/image rows use `platform=LINKEDIN`, the existing immutable saved text and media snapshot, and `pageId`/`pageName` as the destination member ID/name for backward compatibility. Nullable `providerImageUrn` and `imageUploadStage` record Images API progress; `providerPostId` stores a verified LinkedIn post URN only after a valid Posts API response. The forward-only `20261028150000_linkedin_member_publication` migration adds only those two columns; existing rows are unaffected. A remote image asset is not a visible publication.

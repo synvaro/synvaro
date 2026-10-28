@@ -366,6 +366,8 @@ model Publication {
   status PublicationStatus @default(READY)
   providerPostId String? @db.VarChar(160)
   providerContainerId String? @db.VarChar(160)
+  providerImageUrn String? @db.VarChar(160)
+  imageUploadStage String? @db.VarChar(32)
   containerStatus String? @db.VarChar(32)
   deliveryExpiresAt DateTime? @db.Timestamptz(3)
   errorCode String? @db.VarChar(40)
