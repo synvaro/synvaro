@@ -366,6 +366,8 @@ model Publication {
   youtubeTitle String? @db.VarChar(100)
   youtubePrivacy String? @db.VarChar(16)
   youtubeSessionEncrypted String? @db.Text
+  youtubeTransferOwner String? @db.Uuid
+  youtubeTransferLeaseUntil DateTime? @db.Timestamptz(3)
   youtubeUploadedBytes Int @default(0)
   youtubeWidth Int?
   youtubeHeight Int?

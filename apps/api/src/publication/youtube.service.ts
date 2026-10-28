@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@synvaro/database';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { stat } from 'node:fs/promises';
 import { DatabaseService } from '../auth/database.service.js';
 import { inspectMedia, MAX_FILE_BYTES } from '../media/inspect.js';
@@ -317,18 +317,9 @@ export class YouTubePublicationService {
     return row;
   }
   async read(userId: string, id: string) {
-    let row = await this.owned(userId, id);
-    if (
-      row.status === 'PUBLISHING' &&
-      row.confirmedAt &&
-      Date.now() - row.confirmedAt.getTime() > 300_000
-    ) {
-      await this.db.client.publication.updateMany({
-        where: { id, status: 'PUBLISHING' },
-        data: { status: 'UNCERTAIN', errorCode: 'INTERRUPTED' },
-      });
-      row = await this.owned(userId, id);
-    }
+    // A slow but live PUT may exceed five minutes. Reading status must never
+    // transfer ownership or make the same session resumable.
+    const row = await this.owned(userId, id);
     return {
       publication: {
         ...row,
@@ -403,6 +394,7 @@ export class YouTubePublicationService {
       throw new ConflictException(
         `Reconnect YouTube with upload permission: ${ready.reason}`,
       );
+    const owner = randomUUID();
     const claimed = await this.db.client.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "Content" WHERE id = ${row.contentId}::uuid FOR UPDATE`;
       const content = await tx.content.findUnique({
@@ -458,15 +450,60 @@ export class YouTubePublicationService {
       )
         throw new ConflictException('Source video changed. Review it again.');
       const updated = await tx.publication.updateMany({
-        where: { id: row.id, status: resume ? 'UNCERTAIN' : 'READY' },
-        data: { status: 'PUBLISHING', confirmedAt: new Date() },
+        where: {
+          id: row.id,
+          status: resume ? 'UNCERTAIN' : 'READY',
+          providerPostId: null,
+          youtubeTransferOwner: null,
+        },
+        data: {
+          status: 'PUBLISHING',
+          confirmedAt: new Date(),
+          youtubeTransferOwner: owner,
+          // Diagnostic only. Expiry never grants automatic takeover: an HTTP
+          // PUT may still be in flight when this timestamp passes.
+          youtubeTransferLeaseUntil: new Date(Date.now() + 300_000),
+        },
       });
       return updated.count === 1
         ? decryptSocial<SocialCredential>(grant.credentialsEncrypted)
             .accessToken
         : null;
     });
-    return { claimed: !!claimed, token: claimed ?? '', source: sourceCheck };
+    return {
+      claimed: !!claimed,
+      token: claimed ?? '',
+      source: sourceCheck,
+      owner,
+    };
+  }
+  private async assertOwner(id: string, owner: string) {
+    const current = await this.db.client.publication.findUnique({
+      where: { id },
+      select: {
+        youtubeTransferOwner: true,
+        status: true,
+        providerPostId: true,
+      },
+    });
+    if (
+      current?.youtubeTransferOwner !== owner ||
+      current.status !== 'PUBLISHING' ||
+      current.providerPostId
+    )
+      throw new ConflictException('Upload ownership changed');
+  }
+  private async ownedUpdate(
+    id: string,
+    owner: string,
+    data: Prisma.PublicationUpdateManyMutationInput,
+  ) {
+    const result = await this.db.client.publication.updateMany({
+      where: { id, youtubeTransferOwner: owner, status: 'PUBLISHING' },
+      data,
+    });
+    if (result.count !== 1)
+      throw new ConflictException('Upload ownership changed');
   }
   private async settle(
     id: string,
@@ -474,19 +511,67 @@ export class YouTubePublicationService {
     token: string,
     channel: string,
     privacy: string,
+    owner?: string,
   ) {
-    const publication = await this.db.client.publication.update({
+    const where = { id, youtubeTransferOwner: owner ?? null };
+    const publication = await this.db.client.publication.findUniqueOrThrow({
       where: { id },
-      data: { providerPostId: video, youtubeLastProbeAt: new Date() },
+      select: { mediaSizeBytes: true },
     });
-    const processing = await this.publisher.verify(
-      video,
-      channel,
-      privacy,
-      token,
-    );
-    await this.db.client.publication.update({
-      where: { id },
+    // Commit the provider ID and release the write owner before the read-only
+    // verification call. A crash here must leave a checkable, non-resumable row.
+    const persisted = owner
+      ? await this.db.client.publication.updateMany({
+          where: { ...where, status: 'PUBLISHING', providerPostId: null },
+          data: {
+            providerPostId: video,
+            youtubeUploadedBytes: publication.mediaSizeBytes ?? 0,
+            youtubeLastProbeAt: new Date(),
+            status: 'UNCERTAIN',
+            errorCode: 'VERIFICATION_PENDING',
+            youtubeTransferOwner: null,
+            youtubeTransferLeaseUntil: null,
+          },
+        })
+      : await this.db.client.publication.updateMany({
+          where: {
+            ...where,
+            providerPostId: video,
+            status: { in: ['PUBLISHING', 'UNCERTAIN', 'PROCESSING'] },
+          },
+          data: {
+            youtubeLastProbeAt: new Date(),
+            status: 'UNCERTAIN',
+            errorCode: 'VERIFICATION_PENDING',
+          },
+        });
+    if (persisted.count !== 1)
+      throw new ConflictException('Upload ownership changed');
+    let processing: 'succeeded' | 'processing' | 'failed';
+    try {
+      processing = await this.publisher.verify(video, channel, privacy, token);
+    } catch (error) {
+      await this.db.client.publication.updateMany({
+        where: {
+          id,
+          providerPostId: video,
+          status: 'UNCERTAIN',
+          youtubeTransferOwner: null,
+        },
+        data: {
+          errorCode:
+            error instanceof YouTubePublishError ? error.category : 'NETWORK',
+        },
+      });
+      throw error;
+    }
+    const updated = await this.db.client.publication.updateMany({
+      where: {
+        id,
+        youtubeTransferOwner: null,
+        providerPostId: video,
+        status: 'UNCERTAIN',
+      },
       data: {
         providerPostId: video,
         youtubeUploadedBytes: publication.mediaSizeBytes ?? 0,
@@ -499,8 +584,12 @@ export class YouTubePublicationService {
               : 'PROCESSING',
         errorCode: processing === 'failed' ? 'PROCESSING_FAILED' : null,
         completedAt: processing === 'processing' ? null : new Date(),
+        youtubeTransferOwner: null,
+        youtubeTransferLeaseUntil: null,
       },
     });
+    if (updated.count !== 1)
+      throw new ConflictException('Upload ownership changed');
   }
   private async transfer(
     id: string,
@@ -510,9 +599,11 @@ export class YouTubePublicationService {
     channel: string,
     privacy: string,
     offset: number,
+    owner: string,
   ) {
     const size = source.asset.sizeBytes;
     while (offset < size) {
+      await this.assertOwner(id, owner);
       const end = Math.min(offset + chunkSize, size) - 1;
       const stream = await this.storage.read(
         source.asset.storageKey,
@@ -529,23 +620,13 @@ export class YouTubePublicationService {
           size,
         );
         if (result.kind === 'COMPLETE') {
-          await this.db.client.publication.update({
-            where: { id },
-            data: {
-              providerPostId: result.videoId,
-              youtubeUploadedBytes: size,
-            },
-          });
-          await this.settle(id, result.videoId, token, channel, privacy);
+          await this.settle(id, result.videoId, token, channel, privacy, owner);
           return;
         }
         if (result.offset <= offset || result.offset > end + 1)
           throw new YouTubePublishError('MALFORMED', true);
         offset = result.offset;
-        await this.db.client.publication.update({
-          where: { id },
-          data: { youtubeUploadedBytes: offset },
-        });
+        await this.ownedUpdate(id, owner, { youtubeUploadedBytes: offset });
       } finally {
         stream.destroy();
       }
@@ -558,13 +639,18 @@ export class YouTubePublicationService {
     row: Awaited<ReturnType<YouTubePublicationService['owned']>>,
     resume: boolean,
   ) {
-    const { claimed, token, source } = await this.claim(userId, row, resume);
+    const { claimed, token, source, owner } = await this.claim(
+      userId,
+      row,
+      resume,
+    );
     if (!claimed) return this.read(userId, row.id);
     let sessionKnown = resume;
     try {
       let session: string;
       let offset = 0;
       if (resume) {
+        await this.assertOwner(row.id, owner);
         const current = await this.db.client.publication.findUniqueOrThrow({
           where: { id: row.id },
         });
@@ -575,14 +661,14 @@ export class YouTubePublicationService {
         session = decryptSocial<{ uri: string }>(
           current.youtubeSessionEncrypted,
         ).uri;
+        await this.assertOwner(row.id, owner);
         const progress = await this.publisher.probe(
           session,
           token,
           source.asset.sizeBytes,
         );
-        await this.db.client.publication.update({
-          where: { id: row.id },
-          data: { youtubeLastProbeAt: new Date() },
+        await this.ownedUpdate(row.id, owner, {
+          youtubeLastProbeAt: new Date(),
         });
         if (progress.kind === 'COMPLETE') {
           await this.settle(
@@ -591,15 +677,14 @@ export class YouTubePublicationService {
             token,
             row.pageId,
             row.youtubePrivacy!,
+            owner,
           );
           return this.read(userId, row.id);
         }
         offset = progress.offset;
-        await this.db.client.publication.update({
-          where: { id: row.id },
-          data: { youtubeUploadedBytes: offset },
-        });
+        await this.ownedUpdate(row.id, owner, { youtubeUploadedBytes: offset });
       } else {
+        await this.assertOwner(row.id, owner);
         session = await this.publisher.initiate(
           token,
           {
@@ -609,12 +694,12 @@ export class YouTubePublicationService {
           },
           source.asset.sizeBytes,
         );
-        await this.db.client.publication.update({
-          where: { id: row.id },
-          data: { youtubeSessionEncrypted: encryptSocial({ uri: session }) },
+        await this.ownedUpdate(row.id, owner, {
+          youtubeSessionEncrypted: encryptSocial({ uri: session }),
         });
         sessionKnown = true;
       }
+      await this.assertOwner(row.id, owner);
       await this.transfer(
         row.id,
         session,
@@ -623,6 +708,7 @@ export class YouTubePublicationService {
         row.pageId,
         row.youtubePrivacy!,
         offset,
+        owner,
       );
     } catch (error) {
       const failure =
@@ -630,10 +716,16 @@ export class YouTubePublicationService {
           ? error
           : new YouTubePublishError('NETWORK', true);
       await this.db.client.publication.updateMany({
-        where: { id: row.id, status: 'PUBLISHING' },
+        where: {
+          id: row.id,
+          status: 'PUBLISHING',
+          youtubeTransferOwner: owner,
+        },
         data: {
           status: !failure.uncertain && !sessionKnown ? 'FAILED' : 'UNCERTAIN',
           errorCode: failure.category,
+          youtubeTransferOwner: null,
+          youtubeTransferLeaseUntil: null,
         },
       });
     }
@@ -650,6 +742,8 @@ export class YouTubePublicationService {
     const current = await this.db.client.publication.findUniqueOrThrow({
       where: { id },
     });
+    if (current.providerPostId || current.youtubeTransferOwner)
+      return this.read(userId, id);
     if (!current.youtubeSessionEncrypted)
       throw new ConflictException(
         'Upload session is unknown; operator evidence required',
@@ -661,9 +755,13 @@ export class YouTubePublicationService {
     if (
       !row.providerPostId ||
       !videoId(row.providerPostId) ||
-      !['PROCESSING', 'UNCERTAIN'].includes(row.status)
+      !['PUBLISHING', 'PROCESSING', 'UNCERTAIN'].includes(row.status)
     )
       return this.read(userId, id);
+    const current = await this.db.client.publication.findUniqueOrThrow({
+      where: { id },
+    });
+    if (current.youtubeTransferOwner) return this.read(userId, id);
     const account = await this.account(
       userId,
       row.brandId,
