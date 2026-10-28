@@ -10,6 +10,9 @@ import {
 } from './instagram.controller.js';
 import { InstagramPublicationService } from './instagram.service.js';
 import { InstagramPublisher } from '../social/instagram-publisher.js';
+import { LinkedInPublisher } from '../social/linkedin-publisher.js';
+import { LinkedInPublicationController } from './linkedin.controller.js';
+import { LinkedInPublicationService } from './linkedin.service.js';
 
 @Module({
   imports: [AuthModule, MediaModule],
@@ -17,12 +20,15 @@ import { InstagramPublisher } from '../social/instagram-publisher.js';
     PublicationController,
     InstagramPublicationController,
     InstagramDeliveryController,
+    LinkedInPublicationController,
   ],
   providers: [
     FacebookPublisher,
     PublicationService,
     InstagramPublisher,
     InstagramPublicationService,
+    LinkedInPublisher,
+    LinkedInPublicationService,
   ],
 })
 export class PublicationModule {}

@@ -111,9 +111,9 @@ export class SocialService {
     platform: SocialPlatform,
     publishing = false,
   ) {
-    if (publishing && !['FACEBOOK', 'INSTAGRAM'].includes(platform))
+    if (publishing && !['FACEBOOK', 'INSTAGRAM', 'LINKEDIN'].includes(platform))
       throw new BadRequestException(
-        'Publishing authorization is available only for Meta accounts',
+        'Publishing authorization is unavailable for this platform',
       );
     await this.ownedBrand(userId, brandId);
     const provider = providerFor(platform);

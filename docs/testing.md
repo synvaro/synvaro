@@ -18,6 +18,14 @@
 
 Every test must cite behavior/acceptance IDs, expected result, actual result, environment and evidence. A mocked integration test is **not** proof of successful production publishing.
 
+## SYN-SOC-005 LinkedIn member publishing — 2026-10-28
+
+**Environment:** isolated local PostgreSQL 16 `synvaro_linkedin_test`, all **19** forward-only migrations applied from empty; deterministic LinkedIn OAuth/Posts/Images adapter responses. Existing owner database was not reset or migrated for this feature test. The real LinkedIn app's Share on LinkedIn product entitlement and OAuth grant were **not** tested; external LinkedIn writes: **0**.
+
+**LIP-001–009:** `apps/api/src/test/linkedin-publisher.test.ts` checks ordinary versus explicit `w_member_social` scopes, versioned Posts headers/body, 201 post URN, sanitized 400/401/403/429/5xx and timeout classifications, image initialization, fixed HTTPS upload host, private bytes, availability and exactly one mocked visible post call. `apps/api/src/test/linkedin-publication.test.ts` runs Nest HTTP against real PostgreSQL and private test storage. It covers session/Origin, cross-owner member/media access, strict input, absent grant, immutable saved text and image SHA-256, stale draft rejection, one claim under concurrent confirmations, no duplicate sends, partial upload uncertainty, uncertain post timeout, history and audited operator reconciliation. Its deterministic mock counted **one** text post call for two concurrent confirmations, **one** image post call and **one** timeout post call; repeats caused no additional send. Image upload failures caused **zero** visible post calls. This is local behavior evidence, not LinkedIn entitlement or a real published post.
+
+Local `pnpm lint`, `pnpm typecheck`, `pnpm db:validate`, `pnpm test` (**150 API + 1 worker, zero failures**), `pnpm build` and built Next→Nest→PostgreSQL `pnpm smoke` passed on the feature branch. The fresh 19-migration sequence and migration status passed. Scoped formatting for changed task files passed; repository-wide local formatting is obstructed by unrelated untracked skill files, preserved outside this PR. Final-head GitHub Actions evidence is recorded in the PR delivery report. Browser-control reported `The browser access host is unavailable`, so desktop and 390px visual acceptance are **NOT VERIFIED**; live LinkedIn OAuth/posting are likewise **NOT VERIFIED**. The exact text/image acceptance and image-read fallback require a controlled authorized account; mocks cannot prove the app's API product access.
+
 ## SYN-SOC-003 Facebook Page image publishing — 2026-10-28
 
 **Environment:** isolated local PostgreSQL 16 `synvaro_photo_test`, all 17 forward-only migrations applied from empty. Deterministic Meta responses and owner-scoped synthetic Page/Brand/media; no real Meta OAuth grant or post. Existing owner data was not migrated or reset.

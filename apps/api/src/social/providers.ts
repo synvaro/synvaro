@@ -37,7 +37,7 @@ const requestedScopes = (
         ? ['pages_show_list', 'pages_read_engagement', 'pages_manage_posts']
         : ['pages_show_list'];
   return provider === 'LINKEDIN'
-    ? ['openid', 'profile']
+    ? ['openid', 'profile', ...(publishing ? ['w_member_social'] : [])]
     : ['https://www.googleapis.com/auth/youtube.readonly'];
 };
 const settings = {

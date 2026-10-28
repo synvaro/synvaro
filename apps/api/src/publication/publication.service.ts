@@ -186,6 +186,7 @@ export class PublicationService {
     });
     if (previous) {
       if (
+        previous.platform !== 'FACEBOOK' ||
         previous.contentId !== contentId ||
         previous.socialAccountId !== socialAccountId ||
         previous.mediaAssetId !== (mediaAssetId ?? null)
@@ -250,7 +251,12 @@ export class PublicationService {
   }
   private async owned(userId: string, id: string) {
     const row = await this.db.client.publication.findFirst({
-      where: { id, userId, brand: { organization: { ownerUserId: userId } } },
+      where: {
+        id,
+        userId,
+        platform: 'FACEBOOK',
+        brand: { organization: { ownerUserId: userId } },
+      },
       select: safe,
     });
     if (!row) throw missing();
@@ -279,7 +285,7 @@ export class PublicationService {
     await this.content(userId, contentId);
     return {
       publications: await this.db.client.publication.findMany({
-        where: { userId, contentId },
+        where: { userId, contentId, platform: 'FACEBOOK' },
         select: safe,
         orderBy: { createdAt: 'desc' },
         take: 30,

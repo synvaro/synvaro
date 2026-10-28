@@ -67,41 +67,49 @@ export async function forwardApi(req: NextRequest, path: string) {
       cache: 'no-store',
       redirect: 'error',
       signal: AbortSignal.timeout(
-        /^\/instagram-publications\/[0-9a-f-]{36}\/(?:confirm|publish)$/i.test(
-          path,
-        )
-          ? 90_000
-          : /^\/instagram-publications\/[0-9a-f-]{36}\/check$/i.test(path)
-            ? 25_000
-            : /^\/contents\/[0-9a-f-]{36}\/instagram-publications(?:\/readiness)?$/i.test(
+        /^\/linkedin-publications\/[0-9a-f-]{36}\/confirm$/i.test(path)
+          ? 135_000
+          : /^\/contents\/[0-9a-f-]{36}\/linkedin-publications(?:\/readiness)?$/i.test(
+                path,
+              )
+            ? 45_000
+            : /^\/instagram-publications\/[0-9a-f-]{36}\/(?:confirm|publish)$/i.test(
                   path,
                 )
-              ? 60_000
-              : /^\/facebook-publications\/[0-9a-f-]{36}\/confirm$/i.test(path)
-                ? 70_000
-                : /^\/contents\/[0-9a-f-]{36}\/facebook-publications(?:\/readiness)?$/i.test(
+              ? 90_000
+              : /^\/instagram-publications\/[0-9a-f-]{36}\/check$/i.test(path)
+                ? 25_000
+                : /^\/contents\/[0-9a-f-]{36}\/instagram-publications(?:\/readiness)?$/i.test(
                       path,
                     )
-                  ? 50_000
-                  : /^\/contents\/[0-9a-f-]{36}\/image-(?:generations|edits)$/i.test(
+                  ? 60_000
+                  : /^\/facebook-publications\/[0-9a-f-]{36}\/confirm$/i.test(
                         path,
                       )
-                    ? 150_000
-                    : /^\/contents\/[0-9a-f-]{36}\/video-generations$/i.test(
+                    ? 70_000
+                    : /^\/contents\/[0-9a-f-]{36}\/facebook-publications(?:\/readiness)?$/i.test(
                           path,
                         )
-                      ? 75_000
-                      : /^\/video-generations\/[0-9a-f-]{36}$/i.test(path)
-                        ? 110_000
-                        : /^\/contents\/[0-9a-f-]{36}\/speech-generations$/i.test(
+                      ? 50_000
+                      : /^\/contents\/[0-9a-f-]{36}\/image-(?:generations|edits)$/i.test(
+                            path,
+                          )
+                        ? 150_000
+                        : /^\/contents\/[0-9a-f-]{36}\/video-generations$/i.test(
                               path,
                             )
                           ? 75_000
-                          : /^\/contents\/[0-9a-f-]{36}\/ai-generations$/i.test(
-                                path,
-                              )
-                            ? 105_000
-                            : 10_000,
+                          : /^\/video-generations\/[0-9a-f-]{36}$/i.test(path)
+                            ? 110_000
+                            : /^\/contents\/[0-9a-f-]{36}\/speech-generations$/i.test(
+                                  path,
+                                )
+                              ? 75_000
+                              : /^\/contents\/[0-9a-f-]{36}\/ai-generations$/i.test(
+                                    path,
+                                  )
+                                ? 105_000
+                                : 10_000,
       ),
     });
     const outgoing = new Headers({
