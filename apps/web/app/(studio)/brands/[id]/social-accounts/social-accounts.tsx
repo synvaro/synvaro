@@ -134,7 +134,7 @@ export function SocialAccounts({
       await reload();
       setNotice(
         attempt.publishing
-          ? 'Page reconnected. Publishing readiness is checked again before each post.'
+          ? 'Account reconnected. Publishing readiness is checked again before each post.'
           : 'Account connected to this brand.',
       );
       setAttempt(null);
@@ -203,8 +203,9 @@ export function SocialAccounts({
       <p className="eyebrow">{brandName}</p>
       <h1>Social accounts</h1>
       <p>
-        Connect a platform account to this brand. Facebook Page publishing
-        requires a separate permission request and live readiness check.
+        Connect a platform account to this brand. Facebook Page and Instagram
+        publishing require separate permission requests and live readiness
+        checks.
       </p>
       <p>
         <Link className="auth-link" href="/brands">
@@ -311,11 +312,12 @@ export function SocialAccounts({
                 eligibility has not been verified.
               </p>
               <div className="form-actions">
-                {account.platform === 'FACEBOOK' && (
+                {(account.platform === 'FACEBOOK' ||
+                  account.platform === 'INSTAGRAM') && (
                   <button
                     className="secondary-button"
                     disabled={busy}
-                    onClick={() => void start('FACEBOOK', true)}
+                    onClick={() => void start(account.platform, true)}
                   >
                     Reconnect with publishing permission
                   </button>

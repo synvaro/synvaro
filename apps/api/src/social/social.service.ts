@@ -111,9 +111,9 @@ export class SocialService {
     platform: SocialPlatform,
     publishing = false,
   ) {
-    if (publishing && platform !== 'FACEBOOK')
+    if (publishing && !['FACEBOOK', 'INSTAGRAM'].includes(platform))
       throw new BadRequestException(
-        'Publishing authorization is Facebook Page only',
+        'Publishing authorization is available only for Meta accounts',
       );
     await this.ownedBrand(userId, brandId);
     const provider = providerFor(platform);
@@ -372,7 +372,10 @@ export class SocialService {
       if (!row) throw missing();
       if (
         await tx.publication.count({
-          where: { socialAccountId: row.id, status: 'PUBLISHING' },
+          where: {
+            socialAccountId: row.id,
+            status: { in: ['PROCESSING', 'PUBLISHING'] },
+          },
         })
       )
         throw new ConflictException('A publication is still in progress');

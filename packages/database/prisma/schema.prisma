@@ -329,6 +329,7 @@ model SocialAccount {
 
 enum PublicationStatus {
   READY
+  PROCESSING
   PUBLISHING
   PUBLISHED
   FAILED
@@ -364,6 +365,9 @@ model Publication {
   draftUpdatedAt DateTime @db.Timestamptz(3)
   status PublicationStatus @default(READY)
   providerPostId String? @db.VarChar(160)
+  providerContainerId String? @db.VarChar(160)
+  containerStatus String? @db.VarChar(32)
+  deliveryExpiresAt DateTime? @db.Timestamptz(3)
   errorCode String? @db.VarChar(40)
   reconciliationEvidence String? @db.VarChar(500)
   reconciliationOperator String? @db.VarChar(120)

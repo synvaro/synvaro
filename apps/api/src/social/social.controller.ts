@@ -91,7 +91,8 @@ export class SocialController {
         platform: { type: 'string', enum: platform.options },
         publishing: {
           type: 'boolean',
-          description: 'Explicit Facebook Page publishing reauthorization',
+          description:
+            'Explicit Facebook Page or Instagram professional publishing reauthorization',
         },
       },
       additionalProperties: false,
