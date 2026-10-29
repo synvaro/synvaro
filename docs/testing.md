@@ -60,6 +60,12 @@ Local `pnpm lint`, `pnpm typecheck`, `pnpm db:validate`, `pnpm test` (**150 API 
 
 **External acceptance open:** Configure and review a Meta app for `pages_manage_posts`, authorize a controlled Page with content-creation task, verify current Page token/grant and obtain explicit owner approval for one harmless test post. Meta developer docs returned HTTP 429 during this implementation; re-check the live Page feed reference and app-review requirements before acceptance. Do not label a mock post ID as a real publication.
 
+## SYN-SOC-007 OAuth callback redirect regression — 2026-10-30
+
+The Next.js OAuth callback route processed a provider response and then threw `TypeError: immutable` while setting headers on `Response.redirect()`. The resulting HTTP 500 caused Safari to download an empty `callback` file. This repair constructs the HTTP 303 response with its headers at creation time. A valid-format state with an invalid code reproduced the old HTTP 500 without making a provider request.
+
+The built Next.js → NestJS smoke test on an isolated real PostgreSQL database now asserts HTTP 303, the fixed error destination, `no-store` and `no-referrer`. A normal Safari window followed the locally built callback redirect without a download. The test database applied all 21 migrations from empty; format, lint, typecheck, Prisma validation, build, smoke, **165 API tests and 1 worker test** passed. No production environment, account identifiers, credentials or deployment configuration are included in this evidence. The repair remains under PR review; a success-path provider redirect requires separate acceptance after release.
+
 ## SYN-SOC-001 social account connections — 2026-10-27
 
 **Environment:** isolated local PostgreSQL 16 database `synvaro_soc_clean_test` (14 forward-only migrations from empty), loopback Next.js/NestJS on ports 43400/43401, synthetic test owner and brand. No existing SYNVARO user database was reset or modified for this acceptance. Provider credentials were absent; no live OAuth or publishing request occurred.
@@ -68,7 +74,7 @@ Local `pnpm lint`, `pnpm typecheck`, `pnpm db:validate`, `pnpm test` (**150 API 
 
 **Browser:** Chrome on a dedicated local test database showed Brand → Social accounts navigation, four `App configuration required` states, disabled Connect buttons, the empty connection list and no publishing claim. A 390px viewport showed all four cards with document width 390px and no horizontal overflow. Logout returned to the sign-in screen. The existing `pnpm smoke` passed Next → Nest → PostgreSQL regression paths for prior AI/media/auth slices; it does not exercise a real social-provider callback.
 
-**External acceptance still open:** Meta app credentials/review and Facebook Page plus linked professional Instagram consent; LinkedIn OIDC app consent for member identity (organization access needs separately approved permissions); Google OAuth consent/project and YouTube channel authorization. No live authorization, refresh, revocation or eligibility has been claimed for any platform. Current `AVAILABLE` means locally configured only.
+**External acceptance still open:** Meta app credentials/review and Facebook Page plus linked professional Instagram consent; LinkedIn OIDC app consent for member identity (organization access needs separately approved permissions); Google OAuth consent/project and YouTube channel authorization. Provider-specific acceptance is retained in private operational records. `AVAILABLE` means locally configured only.
 
 ## Implemented SYN-002B verification
 

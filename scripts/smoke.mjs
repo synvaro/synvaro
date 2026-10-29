@@ -92,6 +92,20 @@ try {
     service: 'synvaro-api',
   });
   await ready(`${origin}/login`, web);
+  // SOC-002: a failed provider callback still returns a browser redirect.
+  // Response.redirect() has immutable headers in Next's runtime; attempting
+  // to set no-store/no-referrer after creation used to turn this into a 500.
+  const oauthCallback = await fetch(
+    `${origin}/api/social/oauth/meta/callback?state=${'A'.repeat(43)}&code=invalid`,
+    { redirect: 'manual' },
+  );
+  assert.equal(oauthCallback.status, 303);
+  assert.equal(
+    oauthCallback.headers.get('location'),
+    `${origin}/brands?social=error`,
+  );
+  assert.equal(oauthCallback.headers.get('cache-control'), 'no-store');
+  assert.equal(oauthCallback.headers.get('referrer-policy'), 'no-referrer');
   const anonymous = await fetch(`${origin}/brands`, { redirect: 'manual' });
   assert.equal(anonymous.status, 307);
   assert.equal(anonymous.headers.get('location'), '/login');
