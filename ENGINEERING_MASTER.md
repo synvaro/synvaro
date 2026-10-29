@@ -66,6 +66,8 @@ SYNVARO is an independent Apache-2.0 open-source AI content studio for preparing
 
 **Owner bootstrap and runtime hardening:** **Implemented — PR pending review** ([PR #40](https://github.com/synvaro/synvaro/pull/40)). A terminal-only, one-time owner bootstrap, native login form POST, patched runtime dependencies and deterministic encrypted-token tamper test are proposed for review. No deployment scripts or environment-specific evidence are included. Local verification is recorded in [testing](docs/testing.md#owner-bootstrap-and-runtime-hardening--2026-10-30). Operational deployment records are private.
 
+**AUTH-MFA-001 — Owner TOTP:** **Implemented — PR pending review** ([PR #41](https://github.com/synvaro/synvaro/pull/41)). [Contract](docs/contracts/owner-mfa.md) · [test evidence](docs/testing.md#auth-mfa-001-owner-totp--2026-10-30). A pending password session requires TOTP setup or verification before a rotated full session; encrypted secrets and one-time recovery codes are covered by real-PostgreSQL tests. The forward-only migration revokes older sessions. External owner enrollment is recorded privately; no deployment artifacts are included.
+
 **Status vocabulary:** Planned → In development → PR ready → Merged → Owner accepted → Production verified (where applicable). Never infer a later state from an earlier one. `Implemented — PR pending review` denotes code on an open feature PR, not merge or acceptance. GitHub is the authority for current PR/merge/CI state; actual tests and deployment evidence must be checked separately.
 
 ## 3. Architecture and decisions
