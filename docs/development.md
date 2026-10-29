@@ -6,7 +6,7 @@ Existing specifications and ADR statuses remain authoritative.
 
 ## Local setup
 
-Use Node **22.23.3** (`nvm use`) and **pnpm 10.34.9**. Node 22 is a supported
+Use Node **22.23.4** (`nvm use`) and **pnpm 10.34.9**. Node 22 is a supported
 maintenance LTS line; the pinned version matches local and CI verification.
 Install pnpm with your preferred package manager or Corepack.
 No Docker, Redis or global Nest/Prisma CLI is required.

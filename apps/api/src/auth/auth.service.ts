@@ -11,7 +11,7 @@ import { DatabaseService } from './database.service.js';
 import { SESSION_TTL_MS } from './auth.config.js';
 import { tokenHash } from './auth-security.js';
 
-const hashOptions = {
+export const hashOptions = {
   type: argon2.argon2id,
   memoryCost: 19456,
   timeCost: 2,

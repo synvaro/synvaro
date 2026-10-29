@@ -52,7 +52,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
           ? 'Start with your email and a strong password.'
           : 'Sign in to your studio.'}
       </p>
-      <form onSubmit={submit}>
+      <form method="post" onSubmit={submit}>
         <label htmlFor="email">Email</label>
         <input
           id="email"
