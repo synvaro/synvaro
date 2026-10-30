@@ -48,8 +48,12 @@ export async function GET(
   } catch {
     // The browser sees only a fixed, safe destination.
   }
-  const redirect = Response.redirect(destination, 303);
-  redirect.headers.set('Cache-Control', 'no-store');
-  redirect.headers.set('Referrer-Policy', 'no-referrer');
-  return redirect;
+  return new Response(null, {
+    status: 303,
+    headers: {
+      Location: destination.toString(),
+      'Cache-Control': 'no-store',
+      'Referrer-Policy': 'no-referrer',
+    },
+  });
 }
