@@ -23,7 +23,7 @@ Contributions are welcome under the [contribution guide](CONTRIBUTING.md). Licen
 ## Development
 
 See [Foundation development](docs/development.md) for setup, environment variables,
-verification commands, behavior IDs and migration conventions. Use Node 22.23.3
+verification commands, behavior IDs and migration conventions. Use Node 22.23.4
 and pnpm 10.34.9. No Docker is required.
 
 NestJS-owned authentication is accepted for the current development stage. See

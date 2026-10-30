@@ -1,5 +1,9 @@
 # Test strategy v0.1
 
+## Owner bootstrap and runtime hardening — 2026-10-30
+
+The proposed terminal-only owner bootstrap admits one account under a PostgreSQL advisory transaction lock; repeated and concurrent attempts must not create a second owner. The login form declares native POST so an unhydrated form cannot place credentials in a URL. The encrypted-token tamper test modifies decoded authentication bytes before re-encoding, avoiding an ineffective Base64URL character substitution. Runtime dependency and Node pin updates are covered by the repository quality gates. Environment-specific deployment records, hostnames and account details are maintained outside this public repository. Current-head CI is tracked on PR #40.
+
 ## Test levels
 1. Domain: behavior and invariant checks.
 2. Integration: PostgreSQL, storage, queues, provider adapter contracts with mocked provider responses.
