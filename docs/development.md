@@ -2,6 +2,11 @@
 
 This development build includes session authentication, owner-scoped organizations and brands, brand profiles, manual content drafts and the SYN-005 private Media Library. AI generation and publishing remain planned.
 For current authentication setup and security boundaries, read [Authentication spike](auth-spike.md).
+Production owner TOTP is described in the [MFA contract](contracts/owner-mfa.md).
+Set a private 32-byte base64 `AUTH_TOTP_KEY` before production startup; optional
+`MFA_REQUIRED=true` exercises the same flow in development and tests. The first
+password login permits only MFA enrollment, and the Studio opens after a fresh
+code. Store the one-time recovery codes offline.
 Existing specifications and ADR statuses remain authoritative.
 
 ## Local setup

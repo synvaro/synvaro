@@ -54,7 +54,12 @@ export class AuthService implements OnModuleInit {
     // Same status/body for duplicates; never update the existing password.
     return { message: REGISTRATION_MESSAGE };
   }
-  async login(email: string, password: string, previousToken?: string) {
+  async login(
+    email: string,
+    password: string,
+    previousToken?: string,
+    mfaRequired = false,
+  ) {
     const user = await this.db.client.user.findUnique({ where: { email } });
     const valid = await this.boundedHash(() =>
       argon2.verify(user?.passwordHash ?? this.dummyHash, password),
@@ -62,6 +67,11 @@ export class AuthService implements OnModuleInit {
     if (!user || !valid)
       throw new UnauthorizedException('Invalid email or password');
     const token = randomBytes(32).toString('base64url');
+    const configured = await this.db.client.userMfa.findUnique({
+      where: { userId: user.id },
+      select: { userId: true },
+    });
+    const pending = mfaRequired || !!configured;
     await this.db.client.$transaction(async (tx) => {
       if (previousToken)
         await tx.session.updateMany({
@@ -72,13 +82,21 @@ export class AuthService implements OnModuleInit {
         data: {
           userId: user.id,
           tokenHash: tokenHash(token),
-          expiresAt: new Date(Date.now() + SESSION_TTL_MS),
+          stage: pending ? 'PENDING_MFA' : 'FULL',
+          expiresAt: new Date(
+            Date.now() + (pending ? 5 * 60 * 1000 : SESSION_TTL_MS),
+          ),
         },
       });
     });
-    return { token, user: { id: user.id, email: user.email } };
+    return {
+      token,
+      user: { id: user.id, email: user.email },
+      mfaRequired: pending,
+      setupRequired: pending && !configured,
+    };
   }
-  async authenticate(token?: string) {
+  async authenticate(token?: string, allowPending = false) {
     if (!token) throw new UnauthorizedException('Authentication required');
     const session = await this.db.client.session.findUnique({
       where: { tokenHash: tokenHash(token) },
@@ -87,7 +105,8 @@ export class AuthService implements OnModuleInit {
     if (
       !session ||
       session.revokedAt ||
-      session.expiresAt.getTime() <= Date.now()
+      session.expiresAt.getTime() <= Date.now() ||
+      (!allowPending && session.stage !== 'FULL')
     )
       throw new UnauthorizedException('Authentication required');
     return session.user;

@@ -25,7 +25,10 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
           password: data.get('password'),
         }),
       });
-      const result = (await response.json()) as { message?: string };
+      const result = (await response.json()) as {
+        message?: string;
+        mfaRequired?: boolean;
+      };
       if (!response.ok) {
         setMessage(result.message ?? 'Please try again.');
         return;
@@ -34,7 +37,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
       if (register) {
         setMessage('Registration received. You can now try signing in.');
       } else {
-        router.replace('/');
+        router.replace(result.mfaRequired ? '/mfa' : '/');
         router.refresh();
       }
     } catch {

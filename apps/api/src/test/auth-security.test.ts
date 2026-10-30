@@ -31,7 +31,9 @@ test('SYN-002A-A10: production requires HTTPS and host-only Secure/HttpOnly/Stri
     NODE_ENV: 'production',
     DATABASE_URL: database,
     WEB_ORIGIN: 'https://studio.example.test',
+    AUTH_TOTP_KEY: Buffer.alloc(32, 7).toString('base64'),
   });
+  assert.equal(config.mfaRequired, true);
   let header = '';
   const response = {
     setHeader: (_name: string, value: string) => {

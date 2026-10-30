@@ -1,8 +1,12 @@
 # Test strategy v0.1
 
+## AUTH-MFA-001 owner TOTP — 2026-10-30
+
+An isolated real-PostgreSQL database applied the forward-only MFA migration. Deterministic Nest HTTP tests cover pending-session isolation, encrypted setup, TOTP activation, session rotation, replay rejection, one-time recovery codes, concurrent recovery use, attempt limits, expiry and Origin checks. The local suite previously passed 166 API tests together with format, lint, typecheck, Prisma validation, build and smoke checks. A synthetic desktop and 390 px browser walkthrough exercised setup, recovery and sign-in; this is not evidence of a real owner's enrollment. Current-head CI is tracked on PR #41. Host-specific deployment and account records are maintained outside the public repository.
+
 ## Owner bootstrap and runtime hardening — 2026-10-30
 
-The proposed terminal-only owner bootstrap admits one account under a PostgreSQL advisory transaction lock; repeated and concurrent attempts must not create a second owner. The login form declares native POST so an unhydrated form cannot place credentials in a URL. The encrypted-token tamper test modifies decoded authentication bytes before re-encoding, avoiding an ineffective Base64URL character substitution. Runtime dependency and Node pin updates are covered by the repository quality gates. Environment-specific deployment records, hostnames and account details are maintained outside this public repository. Current-head CI is tracked on PR #40.
+The terminal-only owner bootstrap admits one account under a PostgreSQL advisory transaction lock; repeated and concurrent attempts must not create a second owner. The login form declares native POST so an unhydrated form cannot place credentials in a URL. The encrypted-token tamper test modifies decoded authentication bytes before re-encoding, avoiding an ineffective Base64URL character substitution. Runtime dependency and Node pin updates passed the repository quality gates on [PR #40](https://github.com/synvaro/synvaro/pull/40). Its final CI also rejected tracked deployment files and passed. Environment-specific deployment records, hostnames and account details are maintained outside this public repository.
 
 ## Test levels
 1. Domain: behavior and invariant checks.

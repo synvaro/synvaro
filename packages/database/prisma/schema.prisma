@@ -16,6 +16,8 @@ model User {
   createdAt    DateTime  @default(now()) @db.Timestamptz(3)
   updatedAt    DateTime  @updatedAt @db.Timestamptz(3)
   sessions     Session[]
+  mfa          UserMfa?
+  recoveryCodes MfaRecoveryCode[]
   organization Organization?
   aiPreference AiPreference?
   aiGenerations AiGeneration[]
@@ -32,9 +34,35 @@ model Session {
   createdAt DateTime  @default(now()) @db.Timestamptz(3)
   expiresAt DateTime  @db.Timestamptz(3)
   revokedAt DateTime? @db.Timestamptz(3)
+  stage     SessionStage @default(PENDING_MFA)
+  mfaAttempts Int @default(0)
+  pendingMfaSecret String? @db.Text
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+enum SessionStage {
+  PENDING_MFA
+  FULL
+}
+
+model UserMfa {
+  userId String @id @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  secretEncrypted String @db.Text
+  lastCounter BigInt @default(-1)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+}
+
+model MfaRecoveryCode {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash String @db.Char(64)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([userId, codeHash])
 }
 
 model Organization {
