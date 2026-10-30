@@ -9,8 +9,10 @@ test('SYN-002B security: production public registration stays closed', async () 
   assert.ok(new URL(databaseUrl).pathname.endsWith('_test'));
   const savedEnvironment = process.env.NODE_ENV;
   const savedOrigin = process.env.WEB_ORIGIN;
+  const savedMfaKey = process.env.AUTH_TOTP_KEY;
   process.env.NODE_ENV = 'production';
   process.env.WEB_ORIGIN = 'https://studio.example.test';
+  process.env.AUTH_TOTP_KEY = Buffer.alloc(32, 7).toString('base64');
   const app = await createApp();
   const db = createDatabase(databaseUrl);
   const email = `production-denied-${randomUUID()}@example.test`;
@@ -34,5 +36,7 @@ test('SYN-002B security: production public registration stays closed', async () 
     else process.env.NODE_ENV = savedEnvironment;
     if (savedOrigin === undefined) delete process.env.WEB_ORIGIN;
     else process.env.WEB_ORIGIN = savedOrigin;
+    if (savedMfaKey === undefined) delete process.env.AUTH_TOTP_KEY;
+    else process.env.AUTH_TOTP_KEY = savedMfaKey;
   }
 });

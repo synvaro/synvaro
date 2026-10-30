@@ -10,7 +10,9 @@ import { requireSameOrigin, sessionToken } from './auth-security.js';
 
 export const MultipartUpload = () => SetMetadata('synvaro:multipart', true);
 const PUBLIC = 'synvaro:public';
+const PENDING = 'synvaro:pending-mfa';
 export const Public = () => SetMetadata(PUBLIC, true);
+export const PendingMfa = () => SetMetadata(PENDING, true);
 export type AuthRequest = Request & { user?: AuthUser };
 
 @Injectable()
@@ -38,7 +40,10 @@ export class AuthGuard implements CanActivate {
       ])
     )
       return true;
-    req.user = await this.auth.authenticate(sessionToken(req, this.config));
+    req.user = await this.auth.authenticate(
+      sessionToken(req, this.config),
+      this.reflector.get<boolean>(PENDING, context.getHandler()) === true,
+    );
     return true;
   }
 }

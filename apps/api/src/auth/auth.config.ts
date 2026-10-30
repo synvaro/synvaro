@@ -3,6 +3,13 @@ export const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 
 export function loadAuthConfig(env: NodeJS.ProcessEnv = process.env) {
   const production = env.NODE_ENV === 'production';
+  const mfaRequired = production || env.MFA_REQUIRED === 'true';
+  if (mfaRequired) {
+    const encoded = env.AUTH_TOTP_KEY ?? '';
+    const key = Buffer.from(encoded, 'base64');
+    if (key.length !== 32 || key.toString('base64') !== encoded)
+      throw new Error('AUTH_TOTP_KEY must be 32-byte base64');
+  }
   const origin = env.WEB_ORIGIN ?? (production ? '' : 'http://127.0.0.1:3000');
   let url: URL;
   try {
@@ -36,6 +43,7 @@ export function loadAuthConfig(env: NodeJS.ProcessEnv = process.env) {
   return {
     origin,
     registrationEnabled: !production,
+    mfaRequired,
     databaseUrl: databaseUrl!,
     secure: production || url.protocol === 'https:',
     cookieName:
