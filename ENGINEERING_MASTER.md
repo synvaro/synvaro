@@ -1,6 +1,6 @@
 # SYNVARO Engineering Master
 
-**Version:** 0.9 · **Updated:** 2026-10-30 · **Status:** Working engineering index
+**Version:** 0.10 · **Updated:** 2026-10-30 · **Status:** Working engineering index
 
 > **Purpose:** One human-readable entry point for owners, contributors and AI agents. This is an **index, not a second specification**. The linked source documents, code, migrations, CI and PRs remain authoritative for their respective subjects. If sources disagree, raise the conflict; do not silently resolve it here.
 
@@ -82,6 +82,8 @@ The [roadmap](docs/roadmap.md) is the milestone view: **M0 foundation merged, M1
 
 **Status vocabulary:** Planned → In development → PR ready → Merged → Owner accepted → Production verified (where applicable). Never infer a later state from an earlier one. `Implemented — PR pending review` denotes code on an open feature PR, not merge or acceptance. GitHub is the authority for current PR/merge/CI state; actual tests and deployment evidence must be checked separately.
 
+**Roadmap synchronization (2026-10-30):** The [milestone roadmap](docs/roadmap.md) distinguishes merged development from owner-accepted/live provider capabilities. PRs #39, #40, #41, #42, #43 and #44 are merged. The first Qos Facebook Page **text** publication has live evidence; subsequent Meta OAuth return/permissions changes and other platform publications require separate live acceptance. This status is not a public launch approval.
+
 ## 3. Architecture and decisions
 
 - **Architecture:** TypeScript + pnpm, Next.js/React Studio, NestJS modular monolith API, Prisma/PostgreSQL, independently runnable worker; private local filesystem media; future S3-compatible storage (Cloudflare R2 first cloud candidate) and FFmpeg. No Docker requirement, microservices or Kubernetes in MVP.
@@ -134,7 +136,7 @@ The [roadmap](docs/roadmap.md) is the milestone view: **M0 foundation merged, M1
 - **SYN-SOC-004:** [Instagram JPEG evidence](docs/testing.md#syn-soc-004-instagram-professional-single-image-publishing--2026-10-28): 141 API + 1 worker tests on real PostgreSQL, clean 18-migration sequence, lint/typecheck/Prisma/build/smoke and deterministic Meta adapter tests. Browser-control host was unavailable, so desktop/390px rendered acceptance is open. Public HTTPS delivery and live Meta posting require separate configuration and owner-approved acceptance. PR current-head CI is tracked on the PR.
 - **SYN-SOC-005:** [LinkedIn member evidence](docs/testing.md#syn-soc-005-linkedin-member-publishing--2026-10-28): isolated real PostgreSQL, clean 19-migration sequence, deterministic OAuth/Posts/Images adapter and publication integration tests. Full local gate and final-head CI details belong in the test evidence and PR report. No live LinkedIn OAuth or post; rendered browser acceptance remains separate.
 - **SYN-SOC-006:** [YouTube evidence](docs/testing.md#syn-soc-006-youtube-video-publishing--2026-10-28): isolated PostgreSQL 16, clean 20-migration sequence, deterministic OAuth/resumable/processing tests and private MP4 streaming. Final local gates, CI and browser evidence are tracked in testing evidence and the PR delivery report. No real Google OAuth or upload.
-- **SYN-SOC-006A:** [Safety evidence](docs/testing.md#syn-soc-006a-youtube-resumable-upload-safety--2026-10-28): fresh 21-migration PostgreSQL sequence, two-instance delayed-upload and audited-recovery tests; final CI pending. No real YouTube upload.
+- **SYN-SOC-006A:** [Safety evidence](docs/testing.md#syn-soc-006a-youtube-resumable-upload-safety--2026-10-28): fresh 21-migration PostgreSQL sequence, two-instance delayed-upload and audited-recovery tests; [final-head CI](https://github.com/synvaro/synvaro/actions/runs/40726279216) passed. No real YouTube upload.
 - CI success means checks ran successfully, **not** live provider integration, production readiness or deployment acceptance.
 
 ## 6. Roadmap and next decision gate
