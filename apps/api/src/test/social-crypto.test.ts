@@ -28,8 +28,11 @@ test('SYN-SOC-001: social credential encryption is versioned, authenticated and 
       accessToken: 'private-test-token',
     });
     assert.match(encryptSocial({ accessToken: 'new' }), /^v1:second:/);
-    const tampered =
-      value.slice(0, -2) + (value.endsWith('A') ? 'B' : 'A') + value.slice(-1);
+    const parts = value.split(':');
+    const tag = Buffer.from(parts[4]!, 'base64url');
+    tag[0] = tag[0]! ^ 1;
+    parts[4] = tag.toString('base64url');
+    const tampered = parts.join(':');
     assert.throws(() => decryptSocial(tampered));
     process.env.SOCIAL_TOKEN_KEYS_JSON = JSON.stringify({ second });
     assert.throws(() => decryptSocial(value));
