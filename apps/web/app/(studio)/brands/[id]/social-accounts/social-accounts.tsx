@@ -198,6 +198,31 @@ export function SocialAccounts({
     }
   }
 
+  async function checkMetaPermissions(id: string) {
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      await json(`/api/social/accounts/${id}/permissions/check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      await reload();
+      setNotice(
+        'Current Meta permissions checked. Publishing readiness is verified separately before each post.',
+      );
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : 'Could not check Meta permissions',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="social-workspace">
       <p className="eyebrow">{brandName}</p>
@@ -307,11 +332,25 @@ export function SocialAccounts({
                 .
               </p>
               <p>
-                Provider-reported scopes:{' '}
-                {account.scopes.join(', ') || 'Not reported'}. Publishing
-                eligibility has not been verified.
+                {account.platform === 'FACEBOOK' ||
+                account.platform === 'INSTAGRAM'
+                  ? 'Meta user grant permissions'
+                  : 'Provider-reported scopes'}
+                : {account.scopes.join(', ') || 'Not reported'}. Publishing
+                eligibility is checked separately before each post.
               </p>
               <div className="form-actions">
+                {(account.platform === 'FACEBOOK' ||
+                  account.platform === 'INSTAGRAM') &&
+                  account.status === 'CONNECTED' && (
+                    <button
+                      className="secondary-button"
+                      disabled={busy}
+                      onClick={() => void checkMetaPermissions(account.id)}
+                    >
+                      Check Meta permissions
+                    </button>
+                  )}
                 {(account.platform === 'FACEBOOK' ||
                   account.platform === 'INSTAGRAM' ||
                   account.platform === 'LINKEDIN' ||

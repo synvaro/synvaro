@@ -33,6 +33,7 @@ test(
     const originalComplete = provider.complete.bind(provider);
     const originalRevoke = provider.revoke.bind(provider);
     const originalRefreshGoogle = provider.refreshGoogle.bind(provider);
+    const originalMetaGrantedScopes = provider.metaGrantedScopes.bind(provider);
     const calls: string[] = [];
     const revoked: string[] = [];
     provider.complete = async (name, platform) => {
@@ -63,6 +64,7 @@ test(
           refreshExpiresAt: null,
           credential: {
             accessToken: `secret-${id}`,
+            ...(name === 'META' ? { userToken: 'secret-meta-user' } : {}),
             ...(platform === 'YOUTUBE'
               ? { refreshToken: 'refresh-secret' }
               : {}),
@@ -415,6 +417,102 @@ test(
                 .accessToken,
               `secret-${discovery.accounts[0]!.externalId}`,
             );
+            if (platform === 'FACEBOOK') {
+              provider.metaGrantedScopes = async (userToken) => {
+                assert.equal(userToken, 'secret-meta-user');
+                return ['pages_show_list', 'pages_manage_posts'];
+              };
+              assert.equal(
+                (
+                  await call(
+                    `/social/accounts/${account.id}/permissions/check`,
+                    'POST',
+                    {},
+                    b.cookie,
+                  )
+                ).status,
+                404,
+              );
+              assert.equal(
+                (
+                  await call(
+                    `/social/accounts/${account.id}/permissions/check`,
+                    'POST',
+                    {},
+                  )
+                ).status,
+                401,
+              );
+              assert.equal(
+                (
+                  await call(
+                    `/social/accounts/${account.id}/permissions/check`,
+                    'POST',
+                    {},
+                    a.cookie,
+                    'https://foreign.example',
+                  )
+                ).status,
+                403,
+              );
+              const checked = await call(
+                `/social/accounts/${account.id}/permissions/check`,
+                'POST',
+                {},
+                a.cookie,
+              );
+              assert.equal(checked.status, 201);
+              const checkedJson = (await checked.json()) as {
+                account: { scopes: string[] };
+              };
+              assert.deepEqual(checkedJson.account.scopes, [
+                'pages_show_list',
+                'pages_manage_posts',
+              ]);
+              assert.ok(!JSON.stringify(checkedJson).includes('secret-'));
+              assert.deepEqual(
+                (
+                  await db.socialAccount.findUniqueOrThrow({
+                    where: { id: account.id },
+                  })
+                ).scopes,
+                checkedJson.account.scopes,
+              );
+              provider.metaGrantedScopes = async () => {
+                throw new SocialProviderError('AUTH', 401);
+              };
+              const deniedCheck = await call(
+                `/social/accounts/${account.id}/permissions/check`,
+                'POST',
+                {},
+                a.cookie,
+              );
+              assert.equal(deniedCheck.status, 409);
+              assert.ok(
+                !JSON.stringify(await deniedCheck.json()).includes('secret-'),
+              );
+              assert.deepEqual(
+                (
+                  await db.socialAccount.findUniqueOrThrow({
+                    where: { id: account.id },
+                  })
+                ).scopes,
+                checkedJson.account.scopes,
+              );
+              provider.metaGrantedScopes = originalMetaGrantedScopes;
+            }
+            if (platform === 'LINKEDIN')
+              assert.equal(
+                (
+                  await call(
+                    `/social/accounts/${account.id}/permissions/check`,
+                    'POST',
+                    {},
+                    a.cookie,
+                  )
+                ).status,
+                404,
+              );
             if (platform === 'YOUTUBE') {
               const renewed = await call(
                 `/social/accounts/${account.id}/refresh`,

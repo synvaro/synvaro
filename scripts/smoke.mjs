@@ -4,7 +4,7 @@ const { FormData } = globalThis;
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { createDatabase } from '../packages/database/dist/index.js';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
@@ -73,6 +73,12 @@ try {
     API_HOST: '127.0.0.1',
     NODE_ENV: 'test',
     WEB_ORIGIN: origin,
+    META_APP_ID: 'smoke-meta-app',
+    META_APP_SECRET: 'smoke-only-secret',
+    SOCIAL_TOKEN_ACTIVE_KEY_ID: 'smoke',
+    SOCIAL_TOKEN_KEYS_JSON: JSON.stringify({
+      smoke: randomBytes(32).toString('base64'),
+    }),
   });
   const web = start(
     [
@@ -92,7 +98,8 @@ try {
     service: 'synvaro-api',
   });
   await ready(`${origin}/login`, web);
-  // SOC-002: a failed provider callback still returns a browser redirect.
+  // SOC-002: a failed provider callback lands on the public same-origin
+  // return page before entering the Strict-cookie protected Studio.
   // Response.redirect() has immutable headers in Next's runtime; attempting
   // to set no-store/no-referrer after creation used to turn this into a 500.
   const oauthCallback = await fetch(
@@ -102,10 +109,13 @@ try {
   assert.equal(oauthCallback.status, 303);
   assert.equal(
     oauthCallback.headers.get('location'),
-    `${origin}/brands?social=error`,
+    `${origin}/social/oauth/return`,
   );
   assert.equal(oauthCallback.headers.get('cache-control'), 'no-store');
   assert.equal(oauthCallback.headers.get('referrer-policy'), 'no-referrer');
+  const oauthReturn = await fetch(`${origin}/social/oauth/return`);
+  assert.equal(oauthReturn.status, 200);
+  assert.match(await oauthReturn.text(), /Returning to SYNVARO/);
   const anonymous = await fetch(`${origin}/brands`, { redirect: 'manual' });
   assert.equal(anonymous.status, 307);
   assert.equal(anonymous.headers.get('location'), '/login');
@@ -191,6 +201,27 @@ try {
   });
   assert.equal(created.status, 201);
   const { brand } = await created.json();
+  // A denied consent still returns a session-bound attempt through the
+  // same-origin landing page, without any provider token exchange.
+  const oauthStart = await product(`/brands/${brand.id}/social/oauth`, 'POST', {
+    platform: 'FACEBOOK',
+  });
+  assert.equal(oauthStart.status, 201);
+  const authorization = new URL((await oauthStart.json()).authorizationUrl);
+  const oauthState = authorization.searchParams.get('state');
+  assert.match(oauthState, /^[A-Za-z0-9_-]{43}$/);
+  const deniedReturn = await fetch(
+    `${origin}/api/social/oauth/meta/callback?state=${oauthState}&error=access_denied`,
+    { redirect: 'manual' },
+  );
+  assert.equal(deniedReturn.status, 303);
+  const landing = new URL(deniedReturn.headers.get('location'));
+  assert.equal(landing.pathname, '/social/oauth/return');
+  assert.equal(landing.searchParams.get('brand'), brand.id);
+  assert.match(landing.searchParams.get('attempt'), /^[0-9a-f-]{36}$/i);
+  const landingPage = await fetch(landing);
+  assert.equal(landingPage.status, 200);
+  assert.match(await landingPage.text(), /Returning to SYNVARO/);
   assert.equal(
     (await product('/brands', 'POST', { name: 'Second smoke brand' })).status,
     201,

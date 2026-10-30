@@ -51,6 +51,14 @@ test('SYN-SOC-001 provider adapters parse bounded OAuth token and account discov
           },
         ],
       });
+    if (url.endsWith('/me/permissions'))
+      return Response.json({
+        data: [
+          { permission: 'pages_show_list', status: 'granted' },
+          { permission: 'pages_manage_posts', status: 'granted' },
+          { permission: 'pages_read_engagement', status: 'declined' },
+        ],
+      });
     if (url.includes('/v2/userinfo'))
       return Response.json({ sub: 'member-1', name: 'Test Member' });
     if (url.includes('/youtube/v3/channels'))
@@ -64,6 +72,10 @@ test('SYN-SOC-001 provider adapters parse bounded OAuth token and account discov
     const page = await adapter.complete('META', 'FACEBOOK', 'code');
     assert.equal(page[0]?.externalId, 'page-1');
     assert.equal(page[0]?.credential.accessToken, 'private-page-token');
+    assert.deepEqual(page[0]?.scopes, [
+      'pages_show_list',
+      'pages_manage_posts',
+    ]);
     const instagram = await adapter.complete('META', 'INSTAGRAM', 'code');
     assert.equal(instagram[0]?.externalId, 'ig-1');
     assert.equal(instagram[0]?.accountType, 'PROFESSIONAL');
@@ -106,7 +118,7 @@ test('SYN-SOC-001 provider adapters parse bounded OAuth token and account discov
     );
     assert.equal(youtube[0]?.externalId, 'channel-1');
     assert.equal(youtube[0]?.credential.refreshToken, 'private-refresh');
-    assert.equal(requests.length, 8);
+    assert.equal(requests.length, 10);
   } finally {
     globalThis.fetch = oldFetch;
     for (const [key, value] of Object.entries(old)) {
