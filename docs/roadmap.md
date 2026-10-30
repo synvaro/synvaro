@@ -13,10 +13,10 @@
 
 ## Immediate sequence
 
-1. **Meta connection acceptance:** Verify the return/session/permission changes merged in [PR #44](https://github.com/synvaro/synvaro/pull/44) in the running environment. Preserve the existing Qos Facebook Page connection. A real image post requires separate owner approval for the exact content.
-2. **Other platform acceptance:** Establish account/app access for Instagram professional, LinkedIn member and YouTube, then verify real OAuth, scopes, tokens and controlled publication separately. Never infer live authorization from deterministic provider mocks.
-3. **Studio acceptance and readiness:** Validate desktop and 390px user journeys, current owner MFA and runtime release, without assuming CI means deployment acceptance.
-4. **Documentation alignment:** Keep this roadmap, [README](../README.md), [Engineering Master](../ENGINEERING_MASTER.md), GitHub public profile and the [Synvaro project page](https://spexop.com/synvaro/) consistent with evidence.
+1. **[SYN-ACC-001 — Meta connection acceptance](https://github.com/synvaro/synvaro/issues/46):** Verify the return/session/permission changes merged in [PR #44](https://github.com/synvaro/synvaro/pull/44) in the running environment. Preserve the existing Qos Facebook Page connection. A real image post requires separate owner approval for the exact content.
+2. **[SYN-ACC-002 — Other platform acceptance](https://github.com/synvaro/synvaro/issues/47):** Establish account/app access for Instagram professional, LinkedIn member and YouTube, then verify real OAuth, scopes, tokens and controlled publication separately. Never infer live authorization from deterministic provider mocks.
+3. **[SYN-ACC-003 — Studio acceptance and readiness](https://github.com/synvaro/synvaro/issues/48):** Validate desktop and 390px user journeys, current owner MFA and runtime release, without assuming CI means deployment acceptance.
+4. **Documentation alignment (also [SYN-ACC-003](https://github.com/synvaro/synvaro/issues/48)):** Keep this roadmap, [README](../README.md), [Engineering Master](../ENGINEERING_MASTER.md), GitHub public profile and the [Synvaro project page](https://spexop.com/synvaro/) consistent with evidence.
 
 ## Non-goals for this acceptance phase
 
