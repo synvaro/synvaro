@@ -379,6 +379,47 @@ export class SocialService {
     };
   }
 
+  async checkMetaPermissions(userId: string, accountId: string) {
+    const row = await this.db.client.socialAccount.findFirst({
+      where: {
+        id: accountId,
+        platform: { in: ['FACEBOOK', 'INSTAGRAM'] },
+        status: 'CONNECTED',
+        brand: { organization: { ownerUserId: userId } },
+      },
+    });
+    if (!row) throw missing();
+    const credential = decryptSocial<SocialCredential>(
+      row.credentialsEncrypted,
+    );
+    if (!credential.userToken)
+      throw new ConflictException('Reauthorization required');
+    let scopes: string[];
+    try {
+      scopes = await this.providers.metaGrantedScopes(credential.userToken);
+    } catch (error) {
+      if (
+        error instanceof SocialProviderError &&
+        ['AUTH', 'PERMISSION'].includes(error.category)
+      )
+        throw new ConflictException('Reauthorization required');
+      throw new ServiceUnavailableException(
+        'Provider permissions could not be checked',
+      );
+    }
+    const updated = await this.db.client.socialAccount.updateMany({
+      where: { id: row.id, status: 'CONNECTED', grantId: row.grantId },
+      data: { scopes },
+    });
+    if (updated.count !== 1)
+      throw new ConflictException('Connection changed; check again');
+    const account = await this.db.client.socialAccount.findUniqueOrThrow({
+      where: { id: row.id },
+      select: safeAccount,
+    });
+    return { account };
+  }
+
   async disconnect(userId: string, accountId: string) {
     const item = await this.db.client.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId}::uuid FOR UPDATE`;

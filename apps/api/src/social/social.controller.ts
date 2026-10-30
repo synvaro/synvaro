@@ -202,6 +202,22 @@ export class SocialController {
     return this.social.list(req.user!.id, uuid(id));
   }
 
+  @Post('social/accounts/:id/permissions/check')
+  @ApiCookieAuth('session')
+  @ApiUnauthorizedResponse({ description: 'SYNVARO session required' })
+  @ApiOperation({
+    summary: 'Check current Meta user grant for an owned connected account',
+  })
+  @ApiBody({ schema: { type: 'object', additionalProperties: false } })
+  checkMetaPermissions(
+    @Req() req: AuthRequest,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    parse(bodyEmpty, body);
+    return this.social.checkMetaPermissions(req.user!.id, uuid(id));
+  }
+
   @Delete('social/accounts/:id')
   @ApiCookieAuth('session')
   @ApiUnauthorizedResponse({ description: 'SYNVARO session required' })

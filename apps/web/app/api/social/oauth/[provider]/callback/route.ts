@@ -1,19 +1,30 @@
 import type { NextRequest } from 'next/server';
 import { apiBase, webOrigin } from '../../../../../../lib/auth';
 
+function safeRedirect(destination: URL) {
+  return new Response(null, {
+    status: 303,
+    headers: {
+      Location: destination.toString(),
+      'Cache-Control': 'no-store',
+      'Referrer-Policy': 'no-referrer',
+    },
+  });
+}
+
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ provider: string }> },
 ) {
   const { provider } = await context.params;
-  const destination = new URL('/brands?social=error', webOrigin());
+  const destination = new URL('/social/oauth/return', webOrigin());
   if (!['meta', 'linkedin', 'google'].includes(provider))
-    return Response.redirect(destination, 303);
+    return safeRedirect(destination);
   const state = req.nextUrl.searchParams.get('state');
   const code = req.nextUrl.searchParams.get('code');
   const error = req.nextUrl.searchParams.get('error');
   if (!state || !/^[A-Za-z0-9_-]{43}$/.test(state) || (!code && !error))
-    return Response.redirect(destination, 303);
+    return safeRedirect(destination);
   try {
     const response = await fetch(
       `${apiBase()}/social/oauth/${provider}/callback`,
@@ -41,19 +52,13 @@ export async function GET(
         /^[0-9a-f-]{36}$/i.test(result.brandId) &&
         /^[0-9a-f-]{36}$/i.test(result.attemptId)
       ) {
-        destination.pathname = `/brands/${result.brandId}/social-accounts`;
-        destination.search = `?attempt=${result.attemptId}`;
+        // A Strict session cookie is omitted on the provider's cross-site
+        // return. Land on a public same-origin page before loading the Studio.
+        destination.search = `?brand=${result.brandId}&attempt=${result.attemptId}`;
       }
     }
   } catch {
     // The browser sees only a fixed, safe destination.
   }
-  return new Response(null, {
-    status: 303,
-    headers: {
-      Location: destination.toString(),
-      'Cache-Control': 'no-store',
-      'Referrer-Policy': 'no-referrer',
-    },
-  });
+  return safeRedirect(destination);
 }

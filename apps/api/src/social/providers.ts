@@ -226,6 +226,23 @@ export class SocialProviders {
     };
   }
 
+  async metaGrantedScopes(userToken: string): Promise<string[]> {
+    const result = object(
+      await this.request(
+        `https://graph.facebook.com/${META_VERSION}/me/permissions`,
+        { headers: { Authorization: `Bearer ${userToken}` } },
+      ),
+    );
+    if (!Array.isArray(result.data) || result.data.length > 100)
+      throw new SocialProviderError('MALFORMED');
+    return result.data.flatMap((entry) => {
+      const permission = object(entry);
+      if (permission.status !== 'granted') return [];
+      const name = identifier(permission.permission);
+      return /^[a-z][a-z0-9_]{0,99}$/.test(name) ? [name] : [];
+    });
+  }
+
   async complete(
     provider: SocialProvider,
     platform: SocialPlatform,
@@ -233,9 +250,16 @@ export class SocialProviders {
     verifier?: string,
   ): Promise<DiscoveredAccount[]> {
     const token = await this.token(provider, code, verifier);
-    const granted = token.scope?.split(/[ ,]+/).filter(Boolean) ?? [];
+    let granted = token.scope?.split(/[ ,]+/).filter(Boolean) ?? [];
     const expiry = expiresIn(token.expiresIn);
     if (provider === 'META') {
+      // Meta commonly omits `scope` from the token exchange. Its current
+      // user grant is authoritative; if this read fails, keep it unknown.
+      try {
+        granted = await this.metaGrantedScopes(token.accessToken);
+      } catch {
+        granted = [];
+      }
       const url = new URL(
         `https://graph.facebook.com/${META_VERSION}/me/accounts`,
       );
