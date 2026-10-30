@@ -11,5 +11,5 @@ coverage/
 .pnpm-store/
 **/next-env.d.ts
 packages/database/src/generated/
-# Host-specific operational deployment material stays outside the public repository.
-/deploy/hostinger/
+# Operational deployment material stays outside the public repository.
+/deploy/

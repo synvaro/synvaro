@@ -31,6 +31,12 @@ jobs:
       NEXT_TELEMETRY_DISABLED: '1'
     steps:
       - uses: actions/checkout@v7.0.1
+      - name: Reject private deployment files
+        run: |
+          if git ls-files | grep -q '^deploy/'; then
+            echo 'Deployment files must stay outside the public repository.' >&2
+            exit 1
+          fi
       - uses: pnpm/action-setup@v6.1.0
       - uses: actions/setup-node@v7.1.0
         with:
