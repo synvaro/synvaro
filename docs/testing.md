@@ -1,5 +1,9 @@
 # Test strategy v0.1
 
+## Web internal API origin regression — 2026-10-30
+
+The server-side Next.js API origin validator rejected the configured private API service name, causing authenticated proxy routes to return 503 while the API itself remained healthy. The narrow repair accepts only that exact private HTTP origin in addition to the existing loopback HTTP and HTTPS choices. Two deterministic web tests cover accepted origins and rejection of arbitrary HTTP hosts, alternate ports, credentials, paths, queries, fragments and unsupported schemes. Local format, lint and typecheck passed with Node 22.23.3 (the repository pins 22.23.4 for CI). Full current-head CI and application acceptance are tracked on the corrective PR. No hostnames, credentials or operational paths are recorded here.
+
 ## AUTH-MFA-001 owner TOTP — 2026-10-30
 
 An isolated real-PostgreSQL database applied the forward-only MFA migration. Deterministic Nest HTTP tests cover pending-session isolation, encrypted setup, TOTP activation, session rotation, replay rejection, one-time recovery codes, concurrent recovery use, attempt limits, expiry and Origin checks. The local suite previously passed 166 API tests together with format, lint, typecheck, Prisma validation, build and smoke checks. A synthetic desktop and 390 px browser walkthrough exercised setup, recovery and sign-in; this is not evidence of a real owner's enrollment. Current-head CI is tracked on PR #41. Host-specific deployment and account records are maintained outside the public repository.
