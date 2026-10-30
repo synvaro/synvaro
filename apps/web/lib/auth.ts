@@ -1,24 +1,10 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import type { AuthResponse } from '@synvaro/contracts';
+import { apiOrigin } from './api-origin';
 
 export function apiBase() {
-  const url = new URL(process.env.API_INTERNAL_URL ?? 'http://127.0.0.1:3001');
-  if (
-    url.username ||
-    url.password ||
-    url.pathname !== '/' ||
-    url.search ||
-    url.hash ||
-    !['http:', 'https:'].includes(url.protocol) ||
-    (url.protocol === 'http:' &&
-      !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname))
-  ) {
-    throw new Error(
-      'API_INTERNAL_URL must be an HTTPS origin or loopback HTTP origin',
-    );
-  }
-  return url.origin;
+  return apiOrigin(process.env.API_INTERNAL_URL ?? 'http://127.0.0.1:3001');
 }
 export function webOrigin() {
   return process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3000';
